@@ -157,16 +157,32 @@
 
 /* ─── Glyph visibility: equal-specificity rules, no :not() ─── */
 .nav__menu-toggle {
-  @apply bg-transparent border-0 cursor-pointer p-1 flex items-center;
+  @apply bg-transparent border-0 cursor-pointer p-1;
   color: var(--text-color);
+  display: grid;
+  min-block-size: 2rem;
+  place-items: center;
 }
 
 .nav__menu-toggle:focus-visible {
   @apply outline-2 outline-offset-2 outline-current;
 }
 
+.nav__menu-toggle::before {
+  content: none;
+}
+
+[data-button-style="text"] .nav__menu-toggle::before {
+  content: "Menu";
+  font: inherit;
+  grid-area: 1 / 1;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
 .nav__menu-toggle-glyph {
   display: none;
+  grid-area: 1 / 1;
 }
 
 [data-open="false"][data-button-style="hamburger"] .nav__menu-toggle-glyph[data-glyph="hamburger"],
@@ -275,37 +291,72 @@
   @apply sr-only;
 }
 
-/* Search input opens to the right of the icon */
-[data-variant="top"] .nav__search-input {
+/* Search input opens to the right of the icon (top center/right, non-top right) */
+[data-variant="top"] .nav__search-input,
+[data-alignment="right"][data-variant="simple"] .nav__search-input,
+[data-alignment="right"][data-variant="fullscreen"] .nav__search-input,
+[data-alignment="right"][data-variant="sidebar"] .nav__search-input {
   right: auto;
   left: calc(100% + 8px);
   top: 50%;
   transform: translateY(-50%);
 }
 
-/* ─── Shared closed-state layout: logo left, actions + toggle right ─── */
+/* Top + left: search is on the right, revert to expand-left */
+[data-variant="top"][data-alignment="left"] .nav__search-input {
+  right: 2rem;
+  left: auto;
+  top: 0;
+  transform: none;
+}
+
+/* Hide cart when search expands toward it (right alignment, top center/right) */
+[data-alignment="right"] .nav__search[data-search-open="true"] ~ .nav__cart,
+[data-variant="top"]:not([data-alignment="left"]) .nav__search[data-search-open="true"] ~ .nav__cart {
+  display: none;
+}
+
+/* ─── Shared closed-state layout (CSS grid) ─── */
+
+/* Left alignment (default): logo left, actions+toggle right */
 [data-variant="simple"] .nav__inner,
 [data-variant="fullscreen"] .nav__inner,
 [data-variant="sidebar"] .nav__inner {
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  column-gap: 16px;
+}
+
+/* Hide nav__primary from grid flow in closed state (it's display:none anyway) */
+[data-variant="simple"] .nav__primary,
+[data-variant="fullscreen"] .nav__primary,
+[data-variant="sidebar"] .nav__primary {
+  grid-column: 1 / -1;
+  grid-row: 2;
 }
 
 [data-variant="simple"] .nav__logo,
 [data-variant="fullscreen"] .nav__logo,
 [data-variant="sidebar"] .nav__logo {
-  order: -1;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 [data-variant="simple"] .nav__actions,
 [data-variant="fullscreen"] .nav__actions,
 [data-variant="sidebar"] .nav__actions {
-  margin-left: auto;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
 }
 
 [data-variant="simple"] .nav__menu-toggle,
 [data-variant="fullscreen"] .nav__menu-toggle,
 [data-variant="sidebar"] .nav__menu-toggle {
-  order: 1;
+  grid-column: 4;
+  grid-row: 1;
+  justify-self: end;
 }
 
 [data-variant="simple"] .nav__cart-count,
@@ -315,13 +366,11 @@
 }
 
 /* ─── Simple variant open ─── */
-[data-variant="simple"][data-open="true"] .nav__inner {
-  @apply flex-wrap;
-}
+/* Keep grid layout (don't switch to flex) so alignment positions are preserved */
 
 [data-variant="simple"][data-open="true"] .nav__primary {
-  @apply block w-full p-4;
-  order: 2;
+  @apply block p-4;
+  /* grid-column: 1 / -1 and grid-row: 2 already set in shared closed-state */
 }
 
 [data-variant="simple"][data-open="true"] .nav__list {
@@ -345,8 +394,9 @@
   overflow: hidden;
 }
 
-/* Column layout, full height */
+/* Column layout, full height — explicit display:flex overrides grid */
 [data-variant="fullscreen"][data-open="true"] .nav__inner {
+  display: flex;
   @apply flex-col h-full items-stretch;
   padding-top: 16px;
   padding-bottom: 64px;
@@ -357,10 +407,15 @@
   @apply hidden;
 }
 
-/* X button: top-right */
+/* X button: top-right (default), tracks hamburger position per alignment */
 [data-variant="fullscreen"][data-open="true"] .nav__menu-toggle {
   @apply self-end;
   order: -1;
+}
+
+[data-alignment="center"][data-variant="fullscreen"][data-open="true"] .nav__menu-toggle,
+[data-alignment="right"][data-variant="fullscreen"][data-open="true"] .nav__menu-toggle {
+  @apply self-start;
 }
 
 /* Dissolve actions so search and cart become direct flex children */
@@ -451,17 +506,104 @@
   @apply relative z-50;
 }
 
-/* ─── Alignment ─── */
-[data-alignment="left"] .nav__list {
-  @apply items-start justify-start text-left;
+/* ─── Alignment (logo position) ─── */
+
+/* Left alignment is the default grid — no overrides needed */
+
+/* Center alignment: logo truly centered, icons split */
+[data-alignment="center"][data-variant="simple"] .nav__inner,
+[data-alignment="center"][data-variant="fullscreen"] .nav__inner,
+[data-alignment="center"][data-variant="sidebar"] .nav__inner {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 }
 
-[data-alignment="center"] .nav__list {
-  @apply items-center justify-center text-center;
+[data-alignment="center"][data-variant="simple"] .nav__menu-toggle,
+[data-alignment="center"][data-variant="fullscreen"] .nav__menu-toggle,
+[data-alignment="center"][data-variant="sidebar"] .nav__menu-toggle {
+  grid-column: 1;
+  justify-self: start;
 }
 
-[data-alignment="right"] .nav__list {
-  @apply items-end justify-end text-right;
+[data-alignment="center"][data-variant="simple"] .nav__logo,
+[data-alignment="center"][data-variant="fullscreen"] .nav__logo,
+[data-alignment="center"][data-variant="sidebar"] .nav__logo {
+  grid-column: 2;
+  justify-self: center;
+}
+
+[data-alignment="center"][data-variant="simple"] .nav__actions,
+[data-alignment="center"][data-variant="fullscreen"] .nav__actions,
+[data-alignment="center"][data-variant="sidebar"] .nav__actions {
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* Right alignment: icons left, logo right */
+[data-alignment="right"][data-variant="simple"] .nav__inner,
+[data-alignment="right"][data-variant="fullscreen"] .nav__inner,
+[data-alignment="right"][data-variant="sidebar"] .nav__inner {
+  grid-template-columns: auto auto 1fr auto;
+}
+
+[data-alignment="right"][data-variant="simple"] .nav__menu-toggle,
+[data-alignment="right"][data-variant="fullscreen"] .nav__menu-toggle,
+[data-alignment="right"][data-variant="sidebar"] .nav__menu-toggle {
+  grid-column: 1;
+  justify-self: start;
+}
+
+[data-alignment="right"][data-variant="simple"] .nav__actions,
+[data-alignment="right"][data-variant="fullscreen"] .nav__actions,
+[data-alignment="right"][data-variant="sidebar"] .nav__actions {
+  grid-column: 2;
+  justify-self: start;
+}
+
+[data-alignment="right"][data-variant="simple"] .nav__logo,
+[data-alignment="right"][data-variant="fullscreen"] .nav__logo,
+[data-alignment="right"][data-variant="sidebar"] .nav__logo {
+  grid-column: 4;
+  justify-self: end;
+}
+
+/* Top variant: left alignment */
+[data-variant="top"][data-alignment="left"] .nav__inner {
+  grid-template-columns: auto 1fr auto;
+}
+
+[data-variant="top"][data-alignment="left"] .nav__logo {
+  grid-column: 1;
+  justify-self: start;
+}
+
+[data-variant="top"][data-alignment="left"] .nav__search {
+  grid-column: 2;
+  justify-self: end;
+}
+
+[data-variant="top"][data-alignment="left"] .nav__cart {
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* Top variant: right alignment */
+[data-variant="top"][data-alignment="right"] .nav__inner {
+  grid-template-columns: auto auto 1fr auto;
+}
+
+[data-variant="top"][data-alignment="right"] .nav__search {
+  grid-column: 1;
+  justify-self: start;
+}
+
+[data-variant="top"][data-alignment="right"] .nav__cart {
+  grid-column: 2;
+  justify-self: start;
+}
+
+[data-variant="top"][data-alignment="right"] .nav__logo {
+  grid-column: 4;
+  justify-self: end;
 }
 
 /* ─── Capitalization ─── */

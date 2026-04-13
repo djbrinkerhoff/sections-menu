@@ -23,10 +23,6 @@ export function initControls(navRoot: HTMLElement): () => void {
     if (key === 'variant') {
       resetEphemeralState(navRoot);
       if (value === 'top') navRoot.dataset.open = 'false';
-      if (document.startViewTransition) {
-        document.startViewTransition(() => { navRoot.dataset[key] = value; });
-        return;
-      }
     }
     navRoot.dataset[key] = value;
   }
@@ -67,9 +63,9 @@ export function initControls(navRoot: HTMLElement): () => void {
     'buttonStyle',
   ));
 
-  // 6. Alignment
+  // 6. Logo position (alignment)
   wrapper.appendChild(createSegmentedGroup(
-    'alignment', 'Alignment', ALIGNMENTS,
+    'alignment', 'Logo position', ALIGNMENTS,
     { left: alignLeftIcon(), center: alignCenterIcon(), right: alignRightIcon() },
     'alignment',
   ));
