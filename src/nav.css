@@ -258,7 +258,7 @@
   display: none;
 }
 
-[data-variant="top"] .nav__list {
+[data-variant="top"] .nav__primary .nav__list {
   @apply flex flex-row flex-nowrap whitespace-nowrap;
   gap: 16px;
   width: max-content;
