@@ -42,12 +42,11 @@ export function initControls(navRoot: HTMLElement): () => void {
   // Header
   wrapper.innerHTML = `
     <div class="controls__header">
-      <h2 class="controls__title">Menu</h2>
-      <p class="controls__subtitle">Explain global nav so that they know it behaves differently than other blocks.</p>
+      <h2 class="controls__title">Navigation</h2>
     </div>
   `;
 
-  // 1. Style (variant) — 2x2 thumbnail grid
+  // 1. Style (variant) — 2x2 thumbnail grid (hero section)
   wrapper.appendChild(createVariantGroup());
 
   // 2. Logo style
@@ -57,25 +56,23 @@ export function initControls(navRoot: HTMLElement): () => void {
     'logoStyle',
   ));
 
-  // 3. Menu color
+  // 3. Menu color + 4. Text color (grouped)
   wrapper.appendChild(createColorGroup('menu-color', 'Menu color', 'menu', false));
+  wrapper.appendChild(createColorGroup('text-color', 'Text color', 'text', true));
 
-  // 4. Button style
+  // 5. Button style
   wrapper.appendChild(createSegmentedGroup(
     'button-style', 'Button style', BUTTON_STYLES,
     { hamburger: hamburgerIcon(), plus: plusIcon(), text: 'Menu' },
     'buttonStyle',
   ));
 
-  // 5. Alignment
+  // 6. Alignment
   wrapper.appendChild(createSegmentedGroup(
     'alignment', 'Alignment', ALIGNMENTS,
     { left: alignLeftIcon(), center: alignCenterIcon(), right: alignRightIcon() },
     'alignment',
   ));
-
-  // 6. Text color
-  wrapper.appendChild(createColorGroup('text-color', 'Text color', 'text', true));
 
   // 7. Capitalization
   wrapper.appendChild(createSegmentedGroup(

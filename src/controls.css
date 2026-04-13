@@ -1,27 +1,31 @@
 /* ─── Controls panel (dark tool-panel theme) ─── */
 
 #controls-root {
+  @apply relative;
   scrollbar-width: thin;
   scrollbar-color: #3f3f46 transparent;
+}
+
+/* Bottom fade — signals more content below */
+#controls-root::after {
+  content: '';
+  @apply pointer-events-none sticky bottom-0 left-0 right-0 block h-12;
+  background: linear-gradient(to bottom, transparent, #18181b);
 }
 
 .controls {
   @apply p-5 flex flex-col;
   gap: 0;
+  padding-bottom: 3rem;
 }
 
 .controls__header {
-  @apply pb-5;
+  @apply pb-4;
 }
 
 .controls__title {
   @apply text-sm font-semibold tracking-tight;
   color: #f4f4f5;
-}
-
-.controls__subtitle {
-  @apply text-[11px] mt-1.5 leading-relaxed;
-  color: #52525b;
 }
 
 /* ─── Control group (fieldset) ─── */
@@ -33,30 +37,41 @@
 .control-group__label {
   @apply text-[10px] font-medium uppercase;
   letter-spacing: 0.1em;
-  color: #52525b;
+  color: #71717a;
 }
 
-/* ─── Variant thumbnails (2x2 grid) ─── */
+/* ─── Style section — hero treatment ─── */
+.control-group--style {
+  @apply pt-0 pb-5;
+  border-top: none;
+  margin: 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  background: #111113;
+  border-bottom: 1px solid #27272a;
+}
+
+.control-group--style .control-group__label {
+  @apply pt-4;
+  color: #a1a1aa;
+}
+
 .control-group--style .control-group__options {
   @apply grid grid-cols-2 gap-1.5;
 }
 
+/* ─── Variant thumbnails (2x2 grid) ─── */
 .variant-thumb {
-  @apply relative cursor-pointer rounded-lg overflow-hidden flex flex-col items-center justify-center gap-1.5 transition-all duration-150;
-  aspect-ratio: 14/9;
-  border: 1.5px solid #27272a;
-  background: #09090b;
-  color: #3f3f46;
-}
-
-.variant-thumb:hover {
-  border-color: #3f3f46;
+  @apply relative cursor-pointer flex flex-col items-center gap-1.5 transition-all duration-150;
   color: #52525b;
 }
 
+.variant-thumb:hover {
+  color: #71717a;
+}
+
 .variant-thumb:has(input:checked) {
-  border-color: #F4D923;
-  background: #1a1a1e;
   color: #F4D923;
 }
 
@@ -65,7 +80,22 @@
 }
 
 .variant-thumb__preview {
-  @apply w-full px-3;
+  @apply w-full rounded-lg overflow-hidden transition-all duration-150;
+  aspect-ratio: 14/9;
+  padding: 12px;
+  border: 1.5px solid #27272a;
+  background: #09090b;
+  display: flex;
+  align-items: center;
+}
+
+.variant-thumb:hover .variant-thumb__preview {
+  border-color: #52525b;
+}
+
+.variant-thumb:has(input:checked) .variant-thumb__preview {
+  border-color: #F4D923;
+  background: #1a1a1e;
 }
 
 .variant-thumb__preview svg {
@@ -73,7 +103,7 @@
 }
 
 .variant-thumb__label {
-  @apply text-[9px] font-medium capitalize tracking-wide;
+  @apply text-[10px] font-medium capitalize tracking-wide;
 }
 
 /* ─── Swatch group (color pickers) ─── */
@@ -87,7 +117,7 @@
 }
 
 .swatch:hover {
-  border-color: #52525b;
+  border-color: #71717a;
   transform: scale(1.1);
 }
 
@@ -125,11 +155,11 @@
 
 .segmented-btn {
   @apply relative flex-1 cursor-pointer rounded-md px-2 py-1.5 text-center text-[11px] font-medium transition-all duration-150;
-  color: #52525b;
+  color: #71717a;
 }
 
 .segmented-btn:hover {
-  color: #71717a;
+  color: #a1a1aa;
 }
 
 .segmented-btn:has(input:checked) {
