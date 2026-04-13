@@ -1,11 +1,12 @@
 import {
-  VARIANTS, BUTTON_STYLES, ALIGNMENTS, CAPITALIZATIONS, CART_ICONS, COLORS,
+  VARIANTS, BUTTON_STYLES, ALIGNMENTS, CAPITALIZATIONS, CART_ICONS, LOGO_STYLES, COLORS,
 } from './nav.schema';
 import type { ControlMap, ColorName, ColorValue } from './nav.schema';
 import { resetEphemeralState } from './nav';
 
 // Color display names for labels
 const COLOR_LABELS: Record<ColorName, string> = {
+  white: 'White',
   black: 'Black',
   yellow: 'Yellow',
   pink: 'Pink',
@@ -49,34 +50,41 @@ export function initControls(navRoot: HTMLElement): () => void {
   // 1. Style (variant) — 2x2 thumbnail grid
   wrapper.appendChild(createVariantGroup());
 
-  // 2. Menu color
+  // 2. Logo style
+  wrapper.appendChild(createSegmentedGroup(
+    'logo-style', 'Logo', LOGO_STYLES,
+    { small: 'Horizontal', stacked: 'Stacked' },
+    'logoStyle',
+  ));
+
+  // 3. Menu color
   wrapper.appendChild(createColorGroup('menu-color', 'Menu color', 'menu', false));
 
-  // 3. Button style
+  // 4. Button style
   wrapper.appendChild(createSegmentedGroup(
     'button-style', 'Button style', BUTTON_STYLES,
     { hamburger: hamburgerIcon(), plus: plusIcon(), text: 'Menu' },
     'buttonStyle',
   ));
 
-  // 4. Alignment
+  // 5. Alignment
   wrapper.appendChild(createSegmentedGroup(
     'alignment', 'Alignment', ALIGNMENTS,
     { left: alignLeftIcon(), center: alignCenterIcon(), right: alignRightIcon() },
     'alignment',
   ));
 
-  // 5. Text color
+  // 6. Text color
   wrapper.appendChild(createColorGroup('text-color', 'Text color', 'text', true));
 
-  // 6. Capitalization
+  // 7. Capitalization
   wrapper.appendChild(createSegmentedGroup(
     'capitalization', 'Capitalization', CAPITALIZATIONS,
     { normal: 'Aa', lowercase: 'a↓', uppercase: 'A↑' },
     'capitalization',
   ));
 
-  // 7. Cart icon
+  // 8. Cart icon
   wrapper.appendChild(createSegmentedGroup(
     'cart-icon', 'Cart icon', CART_ICONS,
     { cart: cartIcon(), bag: bagIcon() },
@@ -115,6 +123,13 @@ export function initControls(navRoot: HTMLElement): () => void {
     const options = document.createElement('div');
     options.className = 'control-group__options';
 
+    const previews: Record<string, string> = {
+      simple: `<svg viewBox="0 0 56 36" fill="none"><rect width="56" height="7" rx="1" fill="currentColor" opacity=".3"/><line x1="0" y1="9" x2="56" y2="9" stroke="currentColor" opacity=".12"/><rect x="2" y="12" width="14" height="2" rx=".5" fill="currentColor" opacity=".2"/><rect x="18" y="12" width="11" height="2" rx=".5" fill="currentColor" opacity=".2"/><rect x="31" y="12" width="13" height="2" rx=".5" fill="currentColor" opacity=".2"/></svg>`,
+      fullscreen: `<svg viewBox="0 0 56 36" fill="none"><rect width="56" height="36" rx="1.5" fill="currentColor" opacity=".1"/><rect x="14" y="11" width="28" height="3.5" rx=".5" fill="currentColor" opacity=".3"/><rect x="17" y="18" width="22" height="3" rx=".5" fill="currentColor" opacity=".22"/><rect x="20" y="24" width="16" height="3" rx=".5" fill="currentColor" opacity=".15"/></svg>`,
+      sidebar: `<svg viewBox="0 0 56 36" fill="none"><rect width="56" height="7" rx="1" fill="currentColor" opacity=".3"/><rect y="7" width="20" height="29" fill="currentColor" opacity=".1"/><rect x="3" y="11" width="14" height="2" rx=".5" fill="currentColor" opacity=".22"/><rect x="3" y="16" width="11" height="2" rx=".5" fill="currentColor" opacity=".18"/><rect x="3" y="21" width="13" height="2" rx=".5" fill="currentColor" opacity=".15"/></svg>`,
+      top: `<svg viewBox="0 0 56 36" fill="none"><rect width="56" height="9" rx="1" fill="currentColor" opacity=".3"/><rect x="2" y="2.5" width="8" height="4" rx=".5" fill="currentColor" opacity=".35"/><rect x="12" y="3" width="8" height="3" rx=".5" fill="currentColor" opacity=".18"/><rect x="22" y="3" width="10" height="3" rx=".5" fill="currentColor" opacity=".18"/><rect x="34" y="3" width="7" height="3" rx=".5" fill="currentColor" opacity=".18"/><rect x="43" y="3" width="11" height="3" rx=".5" fill="currentColor" opacity=".18"/></svg>`,
+    };
+
     for (const v of VARIANTS) {
       const label = document.createElement('label');
       label.className = 'variant-thumb';
@@ -126,11 +141,16 @@ export function initControls(navRoot: HTMLElement): () => void {
       input.checked = v === 'simple';
       input.addEventListener('change', () => setControl('variant', v));
 
+      const preview = document.createElement('span');
+      preview.className = 'variant-thumb__preview';
+      preview.innerHTML = previews[v] ?? '';
+
       const text = document.createElement('span');
       text.className = 'variant-thumb__label';
       text.textContent = v;
 
       label.appendChild(input);
+      label.appendChild(preview);
       label.appendChild(text);
       options.appendChild(label);
     }
@@ -152,7 +172,7 @@ export function initControls(navRoot: HTMLElement): () => void {
     const options = document.createElement('div');
     options.className = 'control-group__options--swatches';
 
-    const defaultColor: ColorName = target === 'menu' ? 'black' : 'black';
+    const defaultColor: ColorName = target === 'menu' ? 'black' : 'white';
 
     for (const [colorName, colorValue] of Object.entries(COLORS) as [ColorName, ColorValue][]) {
       const isTransparentDisabled = disableTransparent && colorName === 'transparent';

@@ -18,11 +18,28 @@
 }
 
 .nav__logo-mark {
-  @apply h-6 w-6;
+  display: none;
+  background-color: currentColor;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-size: contain;
+  mask-repeat: no-repeat;
 }
 
-.nav__logo-text {
-  @apply text-sm font-bold tracking-widest;
+[data-logo-style="small"] .nav__logo-mark[data-glyph="small"] {
+  @apply inline-block;
+  width: 136px;
+  height: 16px;
+  -webkit-mask-image: url('/logos/bc-small.svg');
+  mask-image: url('/logos/bc-small.svg');
+}
+
+[data-logo-style="stacked"] .nav__logo-mark[data-glyph="stacked"] {
+  @apply inline-block;
+  width: 54px;
+  height: 24px;
+  -webkit-mask-image: url('/logos/bc-stacked.svg');
+  mask-image: url('/logos/bc-stacked.svg');
 }
 
 /* ─── Primary nav (closed state — hidden for simple/fullscreen) ─── */
