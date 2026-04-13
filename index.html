@@ -10,13 +10,13 @@
     <!-- Preview canvas (left) -->
     <div class="flex flex-1 flex-col overflow-hidden">
       <!-- Viewport switcher -->
-      <div id="viewport-bar" class="flex items-center gap-2 border-b border-neutral-200 bg-white px-4 py-2">
-        <span class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Viewport</span>
-        <div class="flex gap-1">
-          <button data-viewport="375" class="viewport-btn rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium hover:bg-neutral-50">375</button>
-          <button data-viewport="768" class="viewport-btn rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium hover:bg-neutral-50">768</button>
-          <button data-viewport="1280" class="viewport-btn rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium hover:bg-neutral-50">1280</button>
-          <button data-viewport="fluid" class="viewport-btn rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium hover:bg-neutral-50">Fluid</button>
+      <div id="viewport-bar" class="viewport-bar">
+        <span class="viewport-bar__label">Viewport</span>
+        <div class="viewport-bar__controls">
+          <button data-viewport="375" class="viewport-btn">375</button>
+          <button data-viewport="768" class="viewport-btn">768</button>
+          <button data-viewport="1280" class="viewport-btn">1280</button>
+          <button data-viewport="fluid" class="viewport-btn">Fluid</button>
         </div>
       </div>
       <!-- Preview container -->

@@ -198,11 +198,35 @@
   margin: 0;
 }
 
-/* ─── Viewport switcher (light theme, outside dark panel) ─── */
+/* ─── Viewport bar ─── */
+.viewport-bar {
+  @apply flex items-center justify-between gap-4 px-4 py-3;
+  background: #111113;
+  border-bottom: 1px solid #27272a;
+}
+
+.viewport-bar__label {
+  @apply text-[10px] font-medium uppercase shrink-0;
+  letter-spacing: 0.1em;
+  color: #71717a;
+}
+
+.viewport-bar__controls {
+  @apply flex gap-0.5 rounded-lg p-1;
+  background: #09090b;
+}
+
 .viewport-btn {
-  @apply transition-colors;
+  @apply cursor-pointer rounded-md px-3 py-1.5 text-[11px] font-medium transition-all duration-150;
+  color: #71717a;
+}
+
+.viewport-btn:hover {
+  color: #a1a1aa;
 }
 
 .viewport-btn[aria-pressed="true"] {
-  @apply bg-neutral-900 text-white border-neutral-900;
+  color: #f4f4f5;
+  background: #27272a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
