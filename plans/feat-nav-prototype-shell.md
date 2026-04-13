@@ -1,15 +1,26 @@
 # feat: E-commerce Nav Prototyping Shell
 
-_Plan last updated 2026-04-13 — ✨ pass 3 (deepened): incorporated findings from 8 parallel review agents (best-practices, framework-docs, architecture, patterns, TypeScript, frontend-races, simplicity, spec-flow)._
+_Plan last updated 2026-04-13 — ✨ pass 4 (Tailwind 4 migration): swapped Tailwind 3 for Tailwind 4 per directive; updated install, config, CSS import, and arbitrary-value syntax._
 
 ## Enhancement Summary
 
-**Deepened on:** 2026-04-13
-**Agents run:** `best-practices-researcher`, `framework-docs-researcher`, `architecture-strategist`, `pattern-recognition-specialist`, `kieran-typescript-reviewer`, `julik-frontend-races-reviewer`, `code-simplicity-reviewer`, `spec-flow-analyzer`.
+**Deepened on:** 2026-04-13 (pass 3); **Re-targeted:** 2026-04-13 (pass 4 — Tailwind 4)
+**Agents run (pass 3):** `best-practices-researcher`, `framework-docs-researcher`, `architecture-strategist`, `pattern-recognition-specialist`, `kieran-typescript-reviewer`, `julik-frontend-races-reviewer`, `code-simplicity-reviewer`, `spec-flow-analyzer`.
 
-### Key Improvements Incorporated
+### Pass 4: Tailwind 4 Migration
 
-1. **Factual corrections** — `<dialog>` backdrop click does NOT close natively; moved `aria-expanded` from the search `<form>` to the toggle button; `showModal()` already makes siblings inert (no need to duplicate); Tailwind v3 uses `@v3-lts` dist-tag.
+- **Install:** `npm i tailwindcss @tailwindcss/vite` (no PostCSS / no `tailwind.config.js` required).
+- **Vite plugin:** add `tailwindcss()` to `vite.config.ts`.
+- **CSS entry:** `@import "tailwindcss";` replaces v3's `@tailwind base; @tailwind components; @tailwind utilities;`.
+- **Config is CSS-native:** any custom tokens live in `@theme { … }` blocks inside `main.css`. For this prototype we don't extend the default theme (colors are runtime CSS vars), so the `@theme` block is empty / optional.
+- **Arbitrary-value shorthand:** `bg-(--menu-color)` replaces `bg-[var(--menu-color)]`. Type-hinted form is `bg-(color:--menu-color)` (parens, no `var()` wrapper). The v3 `bg-[color:var(--menu-color)]` form still works but is not idiomatic.
+- **`@apply` in nested CSS modules** needs a `@reference "../main.css";` directive at the top of the module so Tailwind can resolve theme tokens (new in v4).
+- **`data-*` / `group-data-*` named-group variants** (e.g. `group/nav` + `group-data-[variant=sidebar]/nav:…`) work identically to v3.2+. No changes needed there.
+- **Browser requirements tighten slightly:** Safari 16.4+, Chrome 111+, Firefox 128+. Evergreen-only targets. Acceptable for a prototype; flag for the WYSIWYG builder if broader support is needed downstream.
+
+### Key Improvements Incorporated (pass 3)
+
+1. **Factual corrections** — `<dialog>` backdrop click does NOT close natively; moved `aria-expanded` from the search `<form>` to the toggle button; `showModal()` already makes siblings inert (no need to duplicate). _Pass 4 supersedes the previous v3 dist-tag correction._
 2. **Type-safe controls contract** — `ControlMap` mapped type eliminates the `value: string` hole; `setControl(root, 'variant', 'banana')` is now a compile error. Dead ternary deleted.
 3. **State reset on variant switch** — added a first-class `resetEphemeralState(root)` contract; variant/viewport changes close the menu, search, submenu, and cart. Fixes three real races.
 4. **Magic-string source of truth** — introduced `src/nav.schema.ts` exporting `as const` tuples for every valid data-attribute value; consumed by controls panel and TS types.
@@ -49,7 +60,7 @@ Without this shell, variants only exist in Figma and can't prove the "one DOM, f
 
 ## Proposed Solution
 
-A Vite + vanilla TypeScript single-page app. **Tailwind CSS v3.4** is the styling language. No runtime UI framework and no control-panel library — the controls panel is a small custom component built with the same Tailwind utilities.
+A Vite + vanilla TypeScript single-page app. **Tailwind CSS v4** is the styling language (installed via the `@tailwindcss/vite` plugin; no PostCSS or `tailwind.config.js` required). No runtime UI framework and no control-panel library — the controls panel is a small custom component built with the same Tailwind utilities.
 
 Page layout:
 
@@ -74,17 +85,17 @@ Page layout:
 - **Colors** are CSS custom properties set on the `.nav` root:
   - `--menu-color` (background) and `--text-color` are set by the controls panel via `style.setProperty`. Five preset swatches.
   - _Follow-up:_ move colors to `data-menu-color` / `data-text-color` attributes when the WYSIWYG builder schema is defined, for a uniform data-attr contract.
-- **Tailwind 3's `group-data-*` variant** (available since v3.2) handles ancestor-driven utility switching. The nav root gets `class="group/nav ..."` and descendants style themselves via `group-data-[variant=sidebar]/nav:...` etc.
-- For rules that would produce an explosion of group-data chains (e.g. the fullscreen open-state fixed overlay), use `@apply` inside a scoped CSS block: `[data-variant="fullscreen"][data-open="true"] .nav__menu { @apply fixed inset-0 ...; }`.
+- **Tailwind's `group-data-*` variant** handles ancestor-driven utility switching. The nav root gets `class="group/nav ..."` and descendants style themselves via `group-data-[variant=sidebar]/nav:...` etc. (Works identically in v3.2+ and v4.)
+- For rules that would produce an explosion of group-data chains (e.g. the fullscreen open-state fixed overlay), use `@apply` inside a scoped CSS block: `[data-variant="fullscreen"][data-open="true"] .nav__menu { @apply fixed inset-0 ...; }`. In v4, nested CSS modules that use `@apply` must include `@reference "../main.css";` at the top so theme tokens resolve.
 - The controls panel is a custom right-hand sidebar built with Tailwind utilities. **Radio-group semantics** use native `<input type="radio">` inputs wrapped in `<fieldset><legend>` — free keyboard arrow-key navigation, no custom ARIA. Labels are styled as swatches / segmented buttons via the Tailwind `peer-checked:` variant.
 
 ### Why these choices
 
-- **Tailwind 3 (not 4)** is a user requirement.
+- **Tailwind 4** is the user requirement (switched from v3 in pass 4). Rust-based engine via `@tailwindcss/vite` is dramatically faster, CSS-native config eliminates a config file, and the new `bg-(--var)` shorthand plays very naturally with runtime-swappable CSS custom properties — exactly this prototype's theming model.
 - **Vanilla TS over React:** the target is a WYSIWYG builder that emits raw HTML — no JSX abstraction between us and the DOM.
 - **Custom controls panel (not Tweakpane/Leva):** the designed controls are all **discrete, themed widgets** (swatches, segmented buttons) — not generic sliders. A generic panel library would fight the design. A ~200-line custom component built in the same Tailwind language keeps the shell coherent.
-- **`data-*` on the root + `group-data-*` utilities** is the 2026-idiomatic Tailwind 3 pattern for "same markup, many skins" and keeps the mapping control → visual direct and grep-able.
-- **Five fixed color swatches** expressed as CSS custom properties let Tailwind utilities read them via arbitrary values (`bg-[color:var(--menu-color)]`) while the controls swap the var.
+- **`data-*` on the root + `group-data-*` utilities** is the 2026-idiomatic Tailwind pattern for "same markup, many skins" and keeps the mapping control → visual direct and grep-able.
+- **Five fixed color swatches** expressed as CSS custom properties let Tailwind utilities read them via the v4 shorthand (`bg-(color:--menu-color)`) while the controls swap the var.
 - **Native `<dialog>` for the slide-over cart:** focus trap, `::backdrop`, Escape-to-close, and sibling `inert` for free. _Correction: backdrop click-to-close is NOT free; add a JS handler._
 - **`:focus-within` + JS click-outside for search expand:** mostly CSS, with one document-level `pointerdown` listener to handle click-outside (pure CSS can't detect that).
 
@@ -95,8 +106,8 @@ Page layout:
 1. **`<dialog>` backdrop click does NOT close natively.** Either add a JS handler that checks `event.target === dialog`, or use the new `closedby="any"` attribute (which has no Safari support as of 2026; use the JS handler).
 2. **`aria-expanded` belongs on the toggle button, not the `<form>`.** Previous draft placed `aria-expanded` on `<form class="nav__search">`; corrected to `.nav__search-toggle`.
 3. **`showModal()` already makes siblings inert.** Do NOT set `inert` on siblings for the cart drawer — the browser handles it. For the fullscreen/sidebar menu (which is NOT a `<dialog>`), manual `inert` is still required.
-4. **Tailwind v3 dist-tag is `@v3-lts`** (resolving to 3.4.19). `npm i -D tailwindcss@3` works functionally because npm interprets `@3` as a semver range, but `tailwindcss@v3-lts` is the officially-recommended pin.
-5. **`@starting-style` is not officially "Baseline"** yet per caniuse (~91% global support). Safe for evergreen targets; treat the animated dialog exit as progressive enhancement.
+4. **Tailwind 4 install** is `npm i tailwindcss @tailwindcss/vite`. No PostCSS or `tailwind.config.js` required; any theme tokens live in `@theme { }` blocks in `main.css`.
+5. **`@starting-style` is not officially "Baseline"** yet per caniuse (~91% global support). Safe for Tailwind 4's evergreen targets; treat the animated dialog exit as progressive enhancement.
 6. **Latest Vite stable is 8.0.8.** Plan's "Vite 8.x" claim is correct.
 
 ## The Four Variants
@@ -349,8 +360,8 @@ The listener is attached on `open` and removed on `close`. Using `pointerdown` (
 
 ## Technical Considerations
 
-- **Stack:** Vite 8.0.8 + vanilla TypeScript, Tailwind CSS v3.4.19 (`tailwindcss@v3-lts`), PostCSS, Autoprefixer. No other runtime deps.
-- **Tailwind config (`tailwind.config.js`):** `content: ['./index.html', './src/**/*.{ts,html}']`. No `safelist` expected.
+- **Stack:** Vite 8.0.8 + vanilla TypeScript, Tailwind CSS v4 (`tailwindcss` + `@tailwindcss/vite` plugin). No PostCSS, no Autoprefixer (Tailwind 4 handles vendor prefixes via Lightning CSS), no `tailwind.config.js`. No other runtime deps.
+- **Tailwind configuration is CSS-native:** a single `@import "tailwindcss";` at the top of `main.css` and an optional empty `@theme { }` block for future tokens. Content-scanning is automatic — Tailwind 4 discovers template files from the Vite graph, so there is no `content: [...]` array to maintain.
 - **Strict tsconfig** shipped from day one (see Implementation Sketch below).
 - **Import the partial as a raw string** using Vite's `?raw` suffix: `import navHtml from './nav.partial.html?raw'`.
 - **Variant styling split and refactor trigger:**
@@ -495,10 +506,8 @@ These are **not** runtime guards for pass-3 — just documented. The builder can
 sections-menu/
 ├── index.html                 # Shell chrome + preview + controls mount
 ├── package.json
-├── tailwind.config.js
-├── postcss.config.js
 ├── tsconfig.json
-├── vite.config.ts
+├── vite.config.ts             # registers @tailwindcss/vite plugin
 ├── plans/
 │   ├── feat-nav-prototype-shell.md
 │   └── assets/
@@ -540,14 +549,35 @@ _Note:_ the simplicity reviewer recommended collapsing to 3 files. We keep the 8
 }
 ```
 
-### `tailwind.config.js`
-```js
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: ['./index.html', './src/**/*.{ts,html}'],
-  theme: { extend: {} },
-  plugins: [],
-};
+### `vite.config.ts`
+```ts
+import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  plugins: [tailwindcss()],
+});
+```
+
+### `src/main.css` (Tailwind 4 entry)
+```css
+@import "tailwindcss";
+
+/* Empty @theme block reserved for future token extensions. */
+@theme {
+  /* e.g. --color-brand: oklch(0.8 0.2 140); */
+}
+
+@import "./nav.css";
+@import "./controls.css";
+```
+
+### `src/nav.css` (top of file)
+```css
+/* Required in v4: gives @apply access to theme tokens from main.css. */
+@reference "./main.css";
+
+/* variant names sourced from src/nav.schema.ts */
 ```
 
 ### `src/main.ts`
@@ -648,7 +678,7 @@ export function initControls(navRoot: HTMLElement): () => void {
 /* Shared overlay base — dedup for fullscreen + sidebar open */
 [data-variant="fullscreen"][data-open="true"] .nav__primary,
 [data-variant="sidebar"][data-open="true"]    .nav__primary {
-  @apply fixed z-40 bg-[color:var(--menu-color)] text-[color:var(--text-color)];
+  @apply fixed z-40 bg-(color:--menu-color) text-(color:--text-color);
 }
 
 [data-variant="fullscreen"][data-open="true"] .nav__primary {
@@ -676,10 +706,10 @@ export function initControls(navRoot: HTMLElement): () => void {
 
 ## Dependencies & Risks
 
-- **Dependency:** Tailwind CSS v3.4.19 ([docs](https://v3.tailwindcss.com/docs/installation/using-postcss)). Pin via `tailwindcss@v3-lts` dist-tag.
+- **Dependency:** Tailwind CSS v4 + `@tailwindcss/vite` ([install guide](https://tailwindcss.com/docs/installation/using-vite)). Use `tailwindcss@latest` (resolves to v4); no PostCSS, no Autoprefixer, no `tailwind.config.js`.
 - **Dependency:** Vite 8.0.8 ([docs](https://vite.dev/guide/)).
 - **No runtime JS libraries.**
-- **Risk — Tailwind v4 drift:** `tailwindcss@latest` resolves to v4. Pin `"tailwindcss": "^3.4.19"` or use the `v3-lts` tag.
+- **Risk — Tailwind v4 browser baseline:** v4 requires Safari 16.4+, Chrome 111+, Firefox 128+. Acceptable for a modern prototype; if the eventual builder must support older browsers, re-evaluate. Mitigation: pin `"@tailwindcss/vite": "^4.0.0"` so a future Tailwind v5 with breaking changes doesn't drift in.
 - **Risk — variant pressure on markup:** a designer may want a structural change. CSS Grid named areas + flex `order` cover most cases. If a variant genuinely can't be done in CSS, escalate — the WYSIWYG builder can't render it either.
 - **Risk — `<dialog>` animation portability:** `@starting-style` ~91% support. Acceptable for a prototype.
 - **Risk — fullscreen without `<dialog>`:** markup unified at the cost of manual `inert` / focus management. Flagged; focus trap deferred to follow-up.
@@ -689,10 +719,12 @@ export function initControls(navRoot: HTMLElement): () => void {
 ## References & Research
 
 ### External
-- [Tailwind v3 — `data-*` / `group-data-*` variants](https://v3.tailwindcss.com/docs/hover-focus-and-other-states).
-- [Tailwind v3 — arbitrary values with CSS custom properties](https://v3.tailwindcss.com/docs/adding-custom-styles#using-arbitrary-values).
-- [Tailwind v3 — `@apply` directive](https://v3.tailwindcss.com/docs/functions-and-directives#apply).
-- [Tailwind v3 — Vite guide](https://v3.tailwindcss.com/docs/guides/vite).
+- [Tailwind v4 — installation with Vite](https://tailwindcss.com/docs/installation/using-vite).
+- [Tailwind v4 — `data-*` / `group-data-*` variants (hover, focus, and other states)](https://tailwindcss.com/docs/hover-focus-and-other-states).
+- [Tailwind v4 — arbitrary values with CSS custom properties (`bg-(--var)` shorthand)](https://tailwindcss.com/docs/adding-custom-styles#using-arbitrary-values).
+- [Tailwind v4 — `@apply` directive and `@reference` for nested CSS](https://tailwindcss.com/docs/functions-and-directives#apply-directive).
+- [Tailwind v4 — CSS-first config with `@theme`](https://tailwindcss.com/docs/theme).
+- [Tailwind v3 → v4 upgrade guide](https://tailwindcss.com/docs/upgrade-guide).
 - [Vite — importing assets as strings (`?raw`)](https://vite.dev/guide/assets#importing-asset-as-string).
 - [MDN — `<dialog>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog).
 - [MDN — `inert`](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inert).
