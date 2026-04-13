@@ -39,6 +39,37 @@ function getCartDialog(): HTMLDialogElement | null {
   return document.getElementById('cart-drawer') as HTMLDialogElement | null;
 }
 
+function closeSearch(root: HTMLElement, { restoreFocus = false }: { restoreFocus?: boolean } = {}): void {
+  const searchBtn = root.querySelector<HTMLButtonElement>('.nav__search-toggle');
+  const searchForm = root.querySelector<HTMLFormElement>('.nav__search');
+  const searchInput = root.querySelector<HTMLInputElement>('.nav__search-input');
+
+  if (searchBtn) {
+    searchBtn.setAttribute('aria-expanded', 'false');
+    searchBtn.setAttribute('aria-label', 'Open search');
+  }
+  if (searchForm) searchForm.removeAttribute('data-search-open');
+  searchInput?.blur();
+
+  if (restoreFocus && searchBtn) {
+    searchBtn.focus();
+  }
+}
+
+function closeShopSubmenu(root: HTMLElement, { restoreFocus = false }: { restoreFocus?: boolean } = {}): void {
+  const shopBtn = root.querySelector<HTMLButtonElement>('[aria-controls="shop-submenu"]');
+  const shopSubmenu = root.querySelector<HTMLElement>('#shop-submenu');
+
+  if (shopBtn) {
+    shopBtn.setAttribute('aria-expanded', 'false');
+  }
+  shopSubmenu?.setAttribute('hidden', '');
+
+  if (restoreFocus && shopBtn) {
+    shopBtn.focus();
+  }
+}
+
 // ─── Rapid double-click guard ───
 let animating = false;
 
@@ -61,19 +92,10 @@ export function resetEphemeralState(root: HTMLElement): void {
   }
 
   // Collapse search
-  const searchBtn = root.querySelector<HTMLButtonElement>('.nav__search-toggle');
-  if (searchBtn) {
-    searchBtn.setAttribute('aria-expanded', 'false');
-    searchBtn.setAttribute('aria-label', 'Open search');
-  }
-  const searchForm = root.querySelector<HTMLFormElement>('.nav__search');
-  if (searchForm) searchForm.removeAttribute('data-search-open');
-  root.querySelector<HTMLInputElement>('.nav__search-input')?.blur();
+  closeSearch(root);
 
   // Close Shop submenu
-  const shopBtn = root.querySelector<HTMLButtonElement>('[aria-controls="shop-submenu"]');
-  if (shopBtn) shopBtn.setAttribute('aria-expanded', 'false');
-  root.querySelector('#shop-submenu')?.setAttribute('hidden', '');
+  closeShopSubmenu(root);
 
   // Close cart dialog
   closeCartDrawer({ restoreFocus: false });
@@ -212,10 +234,7 @@ function closeMenu(root: HTMLElement): void {
     previousMenuFocus = null;
   }
 
-  // Also close submenu
-  const shopBtn = root.querySelector<HTMLButtonElement>('[aria-controls="shop-submenu"]');
-  if (shopBtn) shopBtn.setAttribute('aria-expanded', 'false');
-  root.querySelector('#shop-submenu')?.setAttribute('hidden', '');
+  closeShopSubmenu(root);
 }
 
 // ─── Init ───
@@ -246,10 +265,7 @@ export function initNavBehavior(root: HTMLElement): () => void {
     searchToggle.addEventListener('click', () => {
       const isOpen = searchToggle.getAttribute('aria-expanded') === 'true';
       if (isOpen) {
-        searchToggle.setAttribute('aria-expanded', 'false');
-        searchToggle.setAttribute('aria-label', 'Open search');
-        searchForm.removeAttribute('data-search-open');
-        searchInput.blur();
+        closeSearch(root);
       } else {
         searchToggle.setAttribute('aria-expanded', 'true');
         searchToggle.setAttribute('aria-label', 'Close search');
@@ -264,9 +280,7 @@ export function initNavBehavior(root: HTMLElement): () => void {
         searchToggle.getAttribute('aria-expanded') === 'true' &&
         !e.composedPath().includes(searchForm)
       ) {
-        searchToggle.setAttribute('aria-expanded', 'false');
-        searchToggle.setAttribute('aria-label', 'Open search');
-        searchForm.removeAttribute('data-search-open');
+        closeSearch(root);
       }
     }, { signal });
 
@@ -281,10 +295,10 @@ export function initNavBehavior(root: HTMLElement): () => void {
   if (shopBtn && shopSubmenu) {
     shopBtn.addEventListener('click', () => {
       const isOpen = shopBtn.getAttribute('aria-expanded') === 'true';
-      shopBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
       if (isOpen) {
-        shopSubmenu.setAttribute('hidden', '');
+        closeShopSubmenu(root);
       } else {
+        shopBtn.setAttribute('aria-expanded', 'true');
         shopSubmenu.removeAttribute('hidden');
       }
     }, { signal });
@@ -307,11 +321,15 @@ export function initNavBehavior(root: HTMLElement): () => void {
     }, { signal });
   }
 
-  // Escape key handler (cart first, then fullscreen/sidebar menu)
+  // Escape key handler: search, cart, submenu, then fullscreen/sidebar/simple menu
   document.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      if (cartDialog?.open) {
+      if (searchToggle?.getAttribute('aria-expanded') === 'true') {
+        closeSearch(root, { restoreFocus: true });
+      } else if (cartDialog?.open) {
         closeCartDrawer();
+      } else if (shopBtn?.getAttribute('aria-expanded') === 'true') {
+        closeShopSubmenu(root, { restoreFocus: true });
       } else if (root.dataset.open === 'true' && root.dataset.variant !== 'top') {
         closeMenu(root);
       }

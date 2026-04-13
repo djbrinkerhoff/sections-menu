@@ -63,6 +63,7 @@
 
     <div class="nav__actions">
       <form class="nav__search" role="search" aria-label="Site search">
+        <label class="sr-only" for="nav-search-input">Search Site</label>
         <button
           class="nav__search-toggle"
           type="button"
@@ -83,7 +84,14 @@
             </svg>
           </span>
         </button>
-        <input id="nav-search-input" class="nav__search-input" type="search" name="q" placeholder="Search" />
+        <input
+          id="nav-search-input"
+          class="nav__search-input"
+          type="search"
+          name="q"
+          placeholder="Search…"
+          autocomplete="off"
+        />
       </form>
 
       <button class="nav__cart" type="button" aria-label="Open cart" aria-controls="cart-drawer">

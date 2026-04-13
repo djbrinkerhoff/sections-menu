@@ -93,6 +93,11 @@
   border-color: #52525b;
 }
 
+.variant-thumb:has(input:focus-visible) .variant-thumb__preview {
+  border-color: #F4D923;
+  box-shadow: 0 0 0 2px #18181b, 0 0 0 3.5px #F4D923;
+}
+
 .variant-thumb:has(input:checked) .variant-thumb__preview {
   border-color: #F4D923;
   background: #1a1a1e;
@@ -119,6 +124,11 @@
 .swatch:hover {
   border-color: #71717a;
   transform: scale(1.1);
+}
+
+.swatch:has(input:focus-visible) {
+  border-color: #F4D923;
+  box-shadow: 0 0 0 2px #18181b, 0 0 0 3.5px #F4D923;
 }
 
 .swatch:has(input:checked) {
@@ -162,6 +172,11 @@
   color: #a1a1aa;
 }
 
+.segmented-btn:has(input:focus-visible) {
+  color: #f4f4f5;
+  box-shadow: 0 0 0 1px #18181b, 0 0 0 2.5px #F4D923;
+}
+
 .segmented-btn:has(input:checked) {
   color: #f4f4f5;
   background: #27272a;
@@ -178,7 +193,7 @@
 
 /* ─── Text / numeric inputs ─── */
 .control-group__input {
-  @apply w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors;
+  @apply w-full rounded-lg border px-3 py-2 text-sm transition-colors;
   border-color: #27272a;
   background: #09090b;
   color: #f4f4f5;
@@ -188,7 +203,7 @@
   border-color: #3f3f46;
 }
 
-.control-group__input:focus {
+.control-group__input:focus-visible {
   border-color: #F4D923;
   box-shadow: 0 0 0 1px #F4D923;
 }
@@ -223,6 +238,11 @@
 
 .viewport-btn:hover {
   color: #a1a1aa;
+}
+
+.viewport-btn:focus-visible {
+  color: #f4f4f5;
+  box-shadow: 0 0 0 1px #18181b, 0 0 0 2.5px #F4D923;
 }
 
 .viewport-btn[aria-pressed="true"] {

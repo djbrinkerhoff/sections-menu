@@ -17,6 +17,8 @@ const COLOR_LABELS: Record<ColorName, string> = {
 export function initControls(navRoot: HTMLElement): () => void {
   const container = document.getElementById('controls-root');
   if (!container) throw new Error('Missing #controls-root');
+  const abortController = new AbortController();
+  const { signal } = abortController;
   const cartButton = navRoot.querySelector<HTMLButtonElement>('.nav__cart');
   const cartCountBadge = navRoot.querySelector<HTMLElement>('.nav__cart-count');
   const initialCartCount = Number.parseInt(navRoot.dataset.cartCount ?? '0', 10) || 0;
@@ -124,7 +126,7 @@ export function initControls(navRoot: HTMLElement): () => void {
       // Update pressed state
       viewportBtns.forEach(b => b.setAttribute('aria-pressed', 'false'));
       btn.setAttribute('aria-pressed', 'true');
-    });
+    }, { signal });
   });
   // Set initial viewport state
   viewportBtns.forEach(b => {
@@ -157,7 +159,7 @@ export function initControls(navRoot: HTMLElement): () => void {
       input.name = 'variant';
       input.value = v;
       input.checked = v === 'simple';
-      input.addEventListener('change', () => setControl('variant', v));
+      input.addEventListener('change', () => setControl('variant', v), { signal });
 
       const preview = document.createElement('span');
       preview.className = 'variant-thumb__preview';
@@ -209,7 +211,8 @@ export function initControls(navRoot: HTMLElement): () => void {
       input.name = name;
       input.value = colorValue;
       input.checked = colorName === defaultColor;
-      input.addEventListener('change', () => setColor(target, colorValue));
+      input.ariaLabel = COLOR_LABELS[colorName];
+      input.addEventListener('change', () => setColor(target, colorValue), { signal });
 
       labelEl.appendChild(input);
       options.appendChild(labelEl);
@@ -244,7 +247,7 @@ export function initControls(navRoot: HTMLElement): () => void {
       input.checked = v === values[0];
       input.addEventListener('change', () => {
         setControl(controlKey, v as ControlMap[typeof controlKey]);
-      });
+      }, { signal });
 
       labelEl.appendChild(input);
 
@@ -276,16 +279,18 @@ export function initControls(navRoot: HTMLElement): () => void {
     input.className = 'control-group__input';
     input.type = 'number';
     input.name = name;
+    input.ariaLabel = label;
+    input.autocomplete = 'off';
     input.min = '0';
     input.step = '1';
     input.inputMode = 'numeric';
     input.value = String(initialValue);
     input.addEventListener('input', () => {
       onInput(Number.parseInt(input.value, 10) || 0);
-    });
+    }, { signal });
     input.addEventListener('blur', () => {
       input.value = navRoot.dataset.cartCount ?? '0';
-    });
+    }, { signal });
 
     fieldset.appendChild(input);
     return fieldset;
@@ -322,6 +327,7 @@ export function initControls(navRoot: HTMLElement): () => void {
   }
 
   return () => {
+    abortController.abort();
     wrapper.remove();
   };
 }
