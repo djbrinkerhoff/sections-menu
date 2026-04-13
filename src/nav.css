@@ -5,16 +5,26 @@
   @apply w-full;
   background-color: var(--menu-color);
   color: var(--text-color);
+  container-type: inline-size;
 }
 
 .nav__inner {
-  @apply flex items-center justify-between px-4 py-3;
+  @apply flex items-center justify-between gap-4 px-4 py-3;
+  align-content: flex-start;
 }
 
 /* ─── Logo ─── */
 .nav__logo {
   @apply flex items-center gap-2 no-underline;
   color: var(--text-color);
+  transition: opacity 150ms ease;
+}
+
+@container (max-width: 767px) {
+  .nav:has(.nav__search[data-search-open="true"]) .nav__logo {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 .nav__logo-mark {
@@ -44,7 +54,7 @@
 
 /* ─── Primary nav (closed state — hidden for simple/fullscreen) ─── */
 .nav__primary {
-  @apply hidden;
+  @apply hidden pt-4;
 }
 
 .nav__list {
@@ -52,9 +62,10 @@
 }
 
 .nav__link {
-  @apply bg-transparent border-0 cursor-pointer no-underline px-2 py-1 text-sm;
+  @apply bg-transparent border-0 cursor-pointer no-underline px-2 py-1 text-sm leading-none;
   color: var(--text-color);
   font: inherit;
+  vertical-align: middle;
 }
 
 .nav__link:hover {
@@ -86,7 +97,7 @@
 
 /* ─── Actions (search + cart) ─── */
 .nav__actions {
-  @apply flex items-center gap-3;
+  @apply flex items-center gap-4;
 }
 
 .nav__search {
@@ -94,12 +105,30 @@
 }
 
 .nav__search-toggle {
-  @apply bg-transparent border-0 cursor-pointer p-1;
+  @apply bg-transparent border-0 cursor-pointer p-1 flex items-center;
   color: var(--text-color);
 }
 
 .nav__search-toggle:focus-visible {
   @apply outline-2 outline-offset-2 outline-current;
+}
+
+/* Search glyph swap (search ↔ close) */
+.nav__search-glyph {
+  display: inline-flex;
+  transition: opacity 120ms ease;
+}
+
+.nav__search-glyph[data-glyph="close"] {
+  display: none;
+}
+
+.nav__search[data-search-open="true"] .nav__search-glyph[data-glyph="search"] {
+  display: none;
+}
+
+.nav__search[data-search-open="true"] .nav__search-glyph[data-glyph="close"] {
+  display: inline-flex;
 }
 
 .nav__search-input {
@@ -114,7 +143,7 @@
 }
 
 .nav__cart {
-  @apply relative bg-transparent border-0 cursor-pointer p-1;
+  @apply relative bg-transparent border-0 cursor-pointer p-1 flex items-center;
   color: var(--text-color);
 }
 
@@ -128,7 +157,7 @@
 
 /* ─── Glyph visibility: equal-specificity rules, no :not() ─── */
 .nav__menu-toggle {
-  @apply bg-transparent border-0 cursor-pointer p-1;
+  @apply bg-transparent border-0 cursor-pointer p-1 flex items-center;
   color: var(--text-color);
 }
 
@@ -156,13 +185,72 @@
   display: inline-flex;
 }
 
-/* ─── Top variant: no hamburger, always inline ─── */
+/* ─── Top variant: centered masthead + inline links row ─── */
+[data-variant="top"] {
+  background-color: var(--menu-color);
+}
+
 [data-variant="top"] .nav__menu-toggle {
   display: none;
 }
 
+[data-variant="top"] .nav__inner {
+  display: grid;
+  grid-template-columns: minmax(48px, 1fr) auto minmax(48px, 1fr);
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 16px;
+  padding: 16px 16px 0;
+  position: relative;
+}
+
+[data-variant="top"] .nav__inner::before {
+  content: "";
+  grid-column: 1 / -1;
+  grid-row: 1;
+  min-height: 0;
+  background-color: var(--menu-color);
+  pointer-events: none;
+}
+
+/* Dissolve actions so search and cart become direct flex children */
+[data-variant="top"] .nav__actions {
+  display: contents;
+}
+
+[data-variant="top"] .nav__search,
+[data-variant="top"] .nav__logo,
+[data-variant="top"] .nav__cart {
+  grid-row: 1;
+  position: relative;
+  z-index: 1;
+}
+
+/* Search: far left */
+[data-variant="top"] .nav__search {
+  grid-column: 1;
+  justify-self: start;
+}
+
+/* Logo: centered */
+[data-variant="top"] .nav__logo {
+  grid-column: 2;
+  justify-self: center;
+  margin: 0;
+}
+
+[data-variant="top"] .nav__cart {
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* Links row: full-width scrollable strip */
 [data-variant="top"] .nav__primary {
-  @apply block overflow-x-auto;
+  @apply block w-full overflow-x-auto;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  padding: 0 16px 16px;
+  background: rgba(255, 255, 255, 0.08);
   scrollbar-width: none;
 }
 
@@ -171,57 +259,163 @@
 }
 
 [data-variant="top"] .nav__list {
-  @apply flex flex-row flex-nowrap gap-4 whitespace-nowrap;
+  @apply flex flex-row flex-nowrap whitespace-nowrap;
+  gap: 16px;
+  width: max-content;
+  min-width: 100%;
+  justify-content: center;
+  margin: 0 auto;
 }
 
-[data-variant="top"] .nav__inner {
-  @apply gap-4;
+[data-variant="top"] .nav__link {
+  padding: 0;
+}
+
+[data-variant="top"] .nav__cart-count {
+  @apply sr-only;
+}
+
+/* Search input opens to the right of the icon */
+[data-variant="top"] .nav__search-input {
+  right: auto;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ─── Shared closed-state layout: logo left, actions + toggle right ─── */
+[data-variant="simple"] .nav__inner,
+[data-variant="fullscreen"] .nav__inner,
+[data-variant="sidebar"] .nav__inner {
+  justify-content: flex-start;
+}
+
+[data-variant="simple"] .nav__logo,
+[data-variant="fullscreen"] .nav__logo,
+[data-variant="sidebar"] .nav__logo {
+  order: -1;
+}
+
+[data-variant="simple"] .nav__actions,
+[data-variant="fullscreen"] .nav__actions,
+[data-variant="sidebar"] .nav__actions {
+  margin-left: auto;
+}
+
+[data-variant="simple"] .nav__menu-toggle,
+[data-variant="fullscreen"] .nav__menu-toggle,
+[data-variant="sidebar"] .nav__menu-toggle {
+  order: 1;
+}
+
+[data-variant="simple"] .nav__cart-count,
+[data-variant="sidebar"] .nav__cart-count,
+[data-variant="fullscreen"][data-open="false"] .nav__cart-count {
+  @apply sr-only;
 }
 
 /* ─── Simple variant open ─── */
+[data-variant="simple"][data-open="true"] .nav__inner {
+  @apply flex-wrap;
+}
+
 [data-variant="simple"][data-open="true"] .nav__primary {
-  @apply block border-t border-current/10 px-4 py-3;
+  @apply block w-full p-4;
+  order: 2;
 }
 
 [data-variant="simple"][data-open="true"] .nav__list {
-  @apply flex flex-row flex-wrap gap-x-4 gap-y-2;
+  @apply flex flex-row flex-wrap justify-center gap-x-6 gap-y-2;
 }
 
 [data-variant="simple"][data-open="true"] .nav__link {
-  @apply text-xs uppercase tracking-wider;
+  @apply text-sm font-medium;
+}
+
+/* Fullscreen closed: hide search icon (search lives in the overlay) */
+[data-variant="fullscreen"][data-open="false"] .nav__search-toggle {
+  @apply hidden;
 }
 
 /* ─── Fullscreen variant open ─── */
+
+/* Nav fills the preview frame */
+[data-variant="fullscreen"][data-open="true"] {
+  @apply absolute inset-0 z-40;
+  overflow: hidden;
+}
+
+/* Column layout, full height */
+[data-variant="fullscreen"][data-open="true"] .nav__inner {
+  @apply flex-col h-full items-stretch;
+  padding-top: 16px;
+  padding-bottom: 64px;
+}
+
+/* Hide logo */
+[data-variant="fullscreen"][data-open="true"] .nav__logo {
+  @apply hidden;
+}
+
+/* X button: top-right */
+[data-variant="fullscreen"][data-open="true"] .nav__menu-toggle {
+  @apply self-end;
+  order: -1;
+}
+
+/* Dissolve actions so search and cart become direct flex children */
+[data-variant="fullscreen"][data-open="true"] .nav__actions {
+  display: contents;
+}
+
+/* Search: full-width bar */
+[data-variant="fullscreen"][data-open="true"] .nav__search {
+  @apply w-full relative;
+  order: 0;
+}
+
+[data-variant="fullscreen"][data-open="true"] .nav__search-input {
+  @apply static w-full opacity-100 border border-current bg-transparent text-base;
+  padding: 16px;
+  padding-right: 48px;
+}
+
+[data-variant="fullscreen"][data-open="true"] .nav__search-toggle {
+  @apply absolute right-4 top-1/2 -translate-y-1/2;
+}
+
+/* Always show search icon in fullscreen, never close icon */
+[data-variant="fullscreen"][data-open="true"] .nav__search-glyph[data-glyph="search"] {
+  display: inline-flex;
+}
+
+[data-variant="fullscreen"][data-open="true"] .nav__search-glyph[data-glyph="close"] {
+  display: none;
+}
+
+/* Primary nav: vertically centered in remaining space */
 [data-variant="fullscreen"][data-open="true"] .nav__primary {
-  @apply absolute inset-0 z-40 flex flex-col items-center justify-center gap-6;
-  background-color: var(--menu-color);
-  color: var(--text-color);
+  @apply flex flex-col items-center justify-center flex-1;
+  order: 1;
 }
 
 [data-variant="fullscreen"][data-open="true"] .nav__list {
-  @apply flex flex-col items-center gap-4;
+  @apply flex flex-col items-center;
+  gap: 32px;
 }
 
 [data-variant="fullscreen"][data-open="true"] .nav__link {
-  @apply text-3xl md:text-5xl font-bold uppercase;
+  @apply text-xl font-bold uppercase;
 }
 
-/* Z-stack individual top-bar children above the overlay, NOT nav__inner
-   (which would create a containing block and trap the overlay). */
-[data-variant="fullscreen"][data-open="true"] .nav__menu-toggle,
-[data-variant="fullscreen"][data-open="true"] .nav__logo,
-[data-variant="fullscreen"][data-open="true"] .nav__actions {
-  @apply relative z-50;
+/* Cart: centered column at bottom */
+[data-variant="fullscreen"][data-open="true"] .nav__cart {
+  @apply flex-col items-center self-center gap-2;
+  order: 2;
 }
 
-/* Fullscreen: show cart count prominently at bottom */
 [data-variant="fullscreen"][data-open="true"] .nav__cart-count {
   @apply text-base;
-}
-
-/* Fullscreen: lock scroll on preview container while open */
-[data-variant="fullscreen"][data-open="true"] {
-  overflow: hidden;
 }
 
 /* ─── Sidebar variant ───
