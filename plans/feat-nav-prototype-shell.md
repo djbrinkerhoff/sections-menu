@@ -452,36 +452,36 @@ These are **not** runtime guards for pass-3 — just documented. The builder can
 
 ### Functional (must pass — pass-3)
 
-- [ ] `npm install && npm run dev` boots the shell at localhost.
-- [ ] Shell renders the controls panel and preview canvas side-by-side.
-- [ ] **Style** control switches `data-variant` — all four variants render correctly in both closed and open states.
-- [ ] **Menu color** swatch click updates `--menu-color` and the nav background updates live in every variant.
-- [ ] **Text color** swatch click updates `--text-color`; link text updates live. Transparent swatch is disabled (non-interactive, crossed-out).
-- [ ] **Button style** switches the glyph inside `.nav__menu-toggle` (hamburger / plus / "Menu" text). Glyphs are pre-rendered; none are added or removed. Changing button style while `data-open="true"` leaves the close (X) glyph visible (button style only affects closed-state glyph).
-- [ ] **Alignment** changes horizontal alignment of the link list in the open state (left / center / right).
-- [ ] **Capitalization** applies `text-transform` to link labels (normal / lowercase / uppercase).
-- [ ] **Cart icon** switches between cart and bag glyph without mutating DOM.
-- [ ] **Viewport** selector resizes the preview container to 375 / 768 / 1280 / fluid. Viewport switch triggers `resetEphemeralState`.
-- [ ] Shop submenu opens and closes; shows five placeholder categories in every variant. Submenu resets (closes) on variant switch.
-- [ ] Search icon expands into an input in **every** variant; Escape, outside-click, or blur collapses it. Search resets on variant switch.
-- [ ] Cart icon is visible in both closed and open states of **every** variant; clicking opens the slide-over `<dialog>` containing the literal text "cart". Backdrop click closes (JS handler). Escape closes (native). Cart closes on variant switch.
-- [ ] `top` variant: hamburger/X is hidden; link list is inline and horizontally scrolls when overflow. Scroll container is keyboard-reachable.
-- [ ] Colors set via the controls are **preserved across variant switches** (switching from `fullscreen` to `sidebar` keeps `--menu-color` and `--text-color`).
-- [ ] **Variant switch resets `data-open`** to `false`, clearing any stale overlay state.
-- [ ] **`aria-label` on menu-toggle** flips "Menu" ↔ "Close menu" with `data-open`.
-- [ ] **`inert` is scoped to preview content only** — the controls panel is never inerted.
-- [ ] **Sidebar close-on-outside-click** uses a document-level `pointerdown` listener (no DOM injection).
-- [ ] **Fullscreen at 1280px** still renders `fixed inset-0` within the preview container.
+- [x] `npm install && npm run dev` boots the shell at localhost.
+- [x] Shell renders the controls panel and preview canvas side-by-side.
+- [x] **Style** control switches `data-variant` — all four variants render correctly in both closed and open states.
+- [x] **Menu color** swatch click updates `--menu-color` and the nav background updates live in every variant.
+- [x] **Text color** swatch click updates `--text-color`; link text updates live. Transparent swatch is disabled (non-interactive, crossed-out).
+- [x] **Button style** switches the glyph inside `.nav__menu-toggle` (hamburger / plus / "Menu" text). Glyphs are pre-rendered; none are added or removed. Changing button style while `data-open="true"` leaves the close (X) glyph visible (button style only affects closed-state glyph).
+- [x] **Alignment** changes horizontal alignment of the link list in the open state (left / center / right).
+- [x] **Capitalization** applies `text-transform` to link labels (normal / lowercase / uppercase).
+- [x] **Cart icon** switches between cart and bag glyph without mutating DOM.
+- [x] **Viewport** selector resizes the preview container to 375 / 768 / 1280 / fluid. Viewport switch triggers `resetEphemeralState`.
+- [x] Shop submenu opens and closes; shows five placeholder categories in every variant. Submenu resets (closes) on variant switch.
+- [x] Search icon expands into an input in **every** variant; Escape, outside-click, or blur collapses it. Search resets on variant switch.
+- [x] Cart icon is visible in both closed and open states of **every** variant; clicking opens the slide-over `<dialog>` containing the literal text "cart". Backdrop click closes (JS handler). Escape closes (native). Cart closes on variant switch.
+- [x] `top` variant: hamburger/X is hidden; link list is inline and horizontally scrolls when overflow. Scroll container is keyboard-reachable.
+- [x] Colors set via the controls are **preserved across variant switches** (switching from `fullscreen` to `sidebar` keeps `--menu-color` and `--text-color`).
+- [x] **Variant switch resets `data-open`** to `false`, clearing any stale overlay state.
+- [x] **`aria-label` on menu-toggle** flips "Menu" ↔ "Close menu" with `data-open`.
+- [x] **`inert` is scoped to preview content only** — the controls panel is never inerted.
+- [x] **Sidebar close-on-outside-click** uses a document-level `pointerdown` listener (no DOM injection).
+- [x] **Fullscreen at 1280px** still renders `fixed inset-0` within the preview container.
 
 ### Quality
 
-- [ ] Keyboard navigation: Tab reaches every interactive element; Escape closes dialogs/menus/search.
+- [x] Keyboard navigation: Tab reaches every interactive element; Escape closes dialogs/menus/search.
 - [ ] Lighthouse accessibility ≥ 95 on mobile and desktop.
-- [ ] No variant-specific JS introduced.
-- [ ] No variant adds/removes DOM nodes.
+- [x] No variant-specific JS introduced.
+- [x] No variant adds/removes DOM nodes.
 - [ ] **Byte-identity Vitest unit test** (promoted from dev-time `console.log`): inject `navHtml` into 4 containers with different `data-variant` values; assert `innerHTML` is identical after injection.
 - [ ] **Schema-selector sync test:** for each value in `VARIANTS`/`BUTTON_STYLES`/etc., assert a corresponding `[data-*="..."]` selector exists in `nav.css`.
-- [ ] `pnpm build` produces a static bundle under 120 KB gzipped.
+- [x] `pnpm build` produces a static bundle under 120 KB gzipped.
 
 ### Follow-ups (deferred)
 

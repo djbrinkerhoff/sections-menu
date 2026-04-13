@@ -1,0 +1,275 @@
+/* variant names sourced from src/nav.schema.ts */
+
+/* ─── Base nav layout ─── */
+.nav {
+  @apply relative w-full;
+  background-color: var(--menu-color);
+  color: var(--text-color);
+}
+
+.nav__inner {
+  @apply flex items-center justify-between px-4 py-3;
+}
+
+/* ─── Logo ─── */
+.nav__logo {
+  @apply flex items-center gap-2 no-underline;
+  color: var(--text-color);
+}
+
+.nav__logo-mark {
+  @apply h-6 w-6;
+}
+
+.nav__logo-text {
+  @apply text-sm font-bold tracking-widest;
+}
+
+/* ─── Primary nav (closed state — hidden for simple/fullscreen) ─── */
+.nav__primary {
+  @apply hidden;
+}
+
+.nav__list {
+  @apply list-none m-0 p-0 flex flex-col gap-1;
+}
+
+.nav__link {
+  @apply bg-transparent border-0 cursor-pointer no-underline px-2 py-1 text-sm;
+  color: var(--text-color);
+  font: inherit;
+}
+
+.nav__link:hover {
+  @apply opacity-70;
+}
+
+.nav__link:focus-visible {
+  @apply outline-2 outline-offset-2 outline-current;
+}
+
+/* ─── Submenu ─── */
+.nav__submenu {
+  @apply list-none m-0 p-0 pl-4 flex flex-col gap-1;
+}
+
+.nav__submenu[hidden] {
+  display: none;
+}
+
+.nav__submenu-link {
+  @apply text-xs no-underline px-2 py-1;
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+.nav__submenu-link:hover {
+  opacity: 1;
+}
+
+/* ─── Actions (search + cart) ─── */
+.nav__actions {
+  @apply flex items-center gap-3;
+}
+
+.nav__search {
+  @apply relative flex items-center;
+}
+
+.nav__search-toggle {
+  @apply bg-transparent border-0 cursor-pointer p-1;
+  color: var(--text-color);
+}
+
+.nav__search-toggle:focus-visible {
+  @apply outline-2 outline-offset-2 outline-current;
+}
+
+.nav__search-input {
+  @apply absolute right-8 top-0 w-0 overflow-hidden border-0 bg-transparent text-sm opacity-0;
+  color: var(--text-color);
+  transition: width 200ms ease, opacity 200ms ease;
+}
+
+.nav__search-input:focus,
+.nav__search[data-search-open="true"] .nav__search-input {
+  @apply w-40 opacity-100 border-b border-current px-1 py-1;
+}
+
+.nav__cart {
+  @apply relative bg-transparent border-0 cursor-pointer p-1;
+  color: var(--text-color);
+}
+
+.nav__cart:focus-visible {
+  @apply outline-2 outline-offset-2 outline-current;
+}
+
+.nav__cart-count {
+  @apply text-xs ml-1;
+}
+
+/* ─── Glyph visibility: equal-specificity rules, no :not() ─── */
+.nav__menu-toggle {
+  @apply bg-transparent border-0 cursor-pointer p-1;
+  color: var(--text-color);
+}
+
+.nav__menu-toggle:focus-visible {
+  @apply outline-2 outline-offset-2 outline-current;
+}
+
+.nav__menu-toggle-glyph {
+  display: none;
+}
+
+[data-open="false"][data-button-style="hamburger"] .nav__menu-toggle-glyph[data-glyph="hamburger"],
+[data-open="false"][data-button-style="plus"] .nav__menu-toggle-glyph[data-glyph="plus"],
+[data-open="false"][data-button-style="text"] .nav__menu-toggle-glyph[data-glyph="text"],
+[data-open="true"] .nav__menu-toggle-glyph[data-glyph="close"] {
+  display: inline-flex;
+}
+
+.nav__cart-glyph {
+  display: none;
+}
+
+[data-cart-icon="cart"] .nav__cart-glyph[data-glyph="cart"],
+[data-cart-icon="bag"] .nav__cart-glyph[data-glyph="bag"] {
+  display: inline-flex;
+}
+
+/* ─── Top variant: no hamburger, always inline ─── */
+[data-variant="top"] .nav__menu-toggle {
+  display: none;
+}
+
+[data-variant="top"] .nav__primary {
+  @apply block overflow-x-auto;
+  scrollbar-width: none;
+}
+
+[data-variant="top"] .nav__primary::-webkit-scrollbar {
+  display: none;
+}
+
+[data-variant="top"] .nav__list {
+  @apply flex flex-row flex-nowrap gap-4 whitespace-nowrap;
+}
+
+[data-variant="top"] .nav__inner {
+  @apply gap-4;
+}
+
+/* ─── Simple variant open ─── */
+[data-variant="simple"][data-open="true"] .nav__primary {
+  @apply block border-t border-current/10 px-4 py-3;
+}
+
+[data-variant="simple"][data-open="true"] .nav__list {
+  @apply flex flex-row flex-wrap gap-x-4 gap-y-2;
+}
+
+[data-variant="simple"][data-open="true"] .nav__link {
+  @apply text-xs uppercase tracking-wider;
+}
+
+/* ─── Fullscreen variant open ─── */
+[data-variant="fullscreen"][data-open="true"] .nav__primary {
+  @apply fixed inset-0 z-40 flex flex-col items-center justify-center gap-6;
+  background-color: var(--menu-color);
+  color: var(--text-color);
+}
+
+[data-variant="fullscreen"][data-open="true"] .nav__list {
+  @apply flex flex-col items-center gap-4;
+}
+
+[data-variant="fullscreen"][data-open="true"] .nav__link {
+  @apply text-3xl md:text-5xl font-bold uppercase;
+}
+
+[data-variant="fullscreen"][data-open="true"] .nav__inner {
+  @apply relative z-50;
+}
+
+/* Fullscreen: show cart count prominently at bottom */
+[data-variant="fullscreen"][data-open="true"] .nav__cart-count {
+  @apply text-base;
+}
+
+/* Fullscreen: lock scroll on preview container while open */
+[data-variant="fullscreen"][data-open="true"] {
+  overflow: hidden;
+}
+
+/* ─── Sidebar variant ───
+   Always positioned fixed + off-screen so transform can animate.
+   Overrides the base display:none for this variant. */
+[data-variant="sidebar"] .nav__primary {
+  @apply fixed inset-y-0 left-0 z-40 flex flex-col gap-2 px-6 pt-14;
+  width: min(70vw, 360px);
+  background-color: var(--menu-color);
+  color: var(--text-color);
+  transform: translateX(-100%);
+  transition: transform 200ms ease;
+  visibility: hidden;
+}
+
+[data-variant="sidebar"][data-open="true"] .nav__primary {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+[data-variant="sidebar"][data-open="true"] .nav__list {
+  @apply flex flex-col gap-2;
+}
+
+[data-variant="sidebar"][data-open="true"] .nav__link {
+  @apply text-base;
+}
+
+[data-variant="sidebar"][data-open="true"] .nav__inner {
+  @apply relative z-50;
+}
+
+/* ─── Alignment ─── */
+[data-alignment="left"] .nav__list {
+  @apply items-start text-left;
+}
+
+[data-alignment="center"] .nav__list {
+  @apply items-center text-center;
+}
+
+[data-alignment="right"] .nav__list {
+  @apply items-end text-right;
+}
+
+/* ─── Capitalization ─── */
+[data-capitalization="normal"] .nav__link {
+  text-transform: none;
+}
+
+[data-capitalization="lowercase"] .nav__link {
+  text-transform: lowercase;
+}
+
+[data-capitalization="uppercase"] .nav__link {
+  text-transform: uppercase;
+}
+
+/* ─── Cart drawer dialog ─── */
+.cart-drawer {
+  @apply fixed inset-y-0 right-0 z-50 m-0 h-full w-80 max-w-full border-0 bg-white p-6 shadow-2xl;
+  transform: translateX(100%);
+  transition: transform 200ms ease;
+}
+
+.cart-drawer[open] {
+  transform: translateX(0);
+}
+
+.cart-drawer::backdrop {
+  background: rgb(0 0 0 / 0.3);
+}

@@ -1,0 +1,103 @@
+<!-- src/nav.partial.html -->
+<header
+  class="nav group/nav"
+  data-variant="simple"
+  data-open="false"
+  data-button-style="hamburger"
+  data-alignment="left"
+  data-capitalization="normal"
+  data-cart-icon="cart"
+  style="--menu-color: #000000; --text-color: #ffffff;"
+>
+  <div class="nav__inner">
+
+    <button class="nav__menu-toggle" aria-expanded="false" aria-controls="nav-primary" aria-label="Menu">
+      <!-- All three button-style glyphs + close glyph; CSS shows exactly one -->
+      <span class="nav__menu-toggle-glyph" data-glyph="hamburger" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </span>
+      <span class="nav__menu-toggle-glyph" data-glyph="plus" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="12" y1="4" x2="12" y2="20"/>
+          <line x1="4" y1="12" x2="20" y2="12"/>
+        </svg>
+      </span>
+      <span class="nav__menu-toggle-glyph" data-glyph="text" aria-hidden="true">Menu</span>
+      <span class="nav__menu-toggle-glyph" data-glyph="close" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18"/>
+          <line x1="18" y1="6" x2="6" y2="18"/>
+        </svg>
+      </span>
+    </button>
+
+    <a class="nav__logo" href="/" aria-label="Big Cartel home">
+      <svg class="nav__logo-mark" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.85 0 3.58-.5 5.07-1.38l-2.83-2.83C13.34 18.56 12.18 19 11 19c-3.87 0-7-3.13-7-7s3.13-7 7-7c1.18 0 2.34.44 3.24 1.21l2.83-2.83A9.96 9.96 0 0012 2z"/>
+      </svg>
+      <span class="nav__logo-text">BIG CARTEL</span>
+    </a>
+
+    <nav id="nav-primary" class="nav__primary" aria-label="Primary">
+      <ul class="nav__list">
+        <li class="nav__item"><a class="nav__link" href="#">Home</a></li>
+        <li class="nav__item nav__item--has-submenu">
+          <button class="nav__link" aria-expanded="false" aria-controls="shop-submenu">Shop</button>
+          <ul id="shop-submenu" class="nav__submenu" hidden>
+            <li><a class="nav__submenu-link" href="#">Category One</a></li>
+            <li><a class="nav__submenu-link" href="#">Category Two</a></li>
+            <li><a class="nav__submenu-link" href="#">Category Three</a></li>
+            <li><a class="nav__submenu-link" href="#">Category Four</a></li>
+            <li><a class="nav__submenu-link" href="#">Category Five</a></li>
+          </ul>
+        </li>
+        <li class="nav__item"><a class="nav__link" href="#">About Us</a></li>
+        <li class="nav__item"><a class="nav__link" href="#">Contact</a></li>
+      </ul>
+    </nav>
+
+    <div class="nav__actions">
+      <form class="nav__search" role="search" aria-label="Site search">
+        <button
+          class="nav__search-toggle"
+          type="button"
+          aria-label="Open search"
+          aria-expanded="false"
+          aria-controls="nav-search-input"
+        >
+          <svg class="nav__icon nav__icon--search" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
+        <input id="nav-search-input" class="nav__search-input" type="search" name="q" placeholder="Search" />
+      </form>
+
+      <button class="nav__cart" type="button" aria-label="Open cart" aria-controls="cart-drawer">
+        <!-- Both cart-icon glyphs present; CSS shows exactly one -->
+        <span class="nav__cart-glyph" data-glyph="cart" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+          </svg>
+        </span>
+        <span class="nav__cart-glyph" data-glyph="bag" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+          </svg>
+        </span>
+        <span class="nav__cart-count" aria-hidden="true">0 items</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<dialog id="cart-drawer" class="cart-drawer" aria-label="Shopping cart">
+  <div class="cart-drawer__body">cart</div>
+</dialog>
