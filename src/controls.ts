@@ -36,11 +36,16 @@ export function initControls(navRoot: HTMLElement): () => void {
     navRoot.style.setProperty(target === 'menu' ? '--menu-color' : '--text-color', value);
   }
 
+<<<<<<< djbrinkerhoff/nav-item-count-control-v1
+  function setNavItemCount(rawValue: number): void {
+    const count = Number.isFinite(rawValue) ? Math.max(0, Math.min(20, Math.trunc(rawValue))) : 4;
+=======
   let currentNavItemCount = 4;
 
   function setNavItemCount(rawValue: number): void {
     const count = Number.isFinite(rawValue) ? Math.max(0, Math.min(20, Math.trunc(rawValue))) : 4;
     currentNavItemCount = count;
+>>>>>>> main
     const list = navRoot.querySelector<HTMLUListElement>('.nav__list');
     if (!list) return;
 
@@ -148,6 +153,9 @@ export function initControls(navRoot: HTMLElement): () => void {
 
   // 10. Nav item count
   wrapper.appendChild(createNumberInputGroup('nav-items', 'Nav items', 4, setNavItemCount, () => String(currentNavItemCount)));
+
+  // 10. Nav item count
+  wrapper.appendChild(createNumberInputGroup('nav-items', 'Nav items', 4, setNavItemCount));
 
   container.appendChild(wrapper);
   setCartCount(initialCartCount);
