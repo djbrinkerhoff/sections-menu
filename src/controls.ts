@@ -36,6 +36,39 @@ export function initControls(navRoot: HTMLElement): () => void {
     navRoot.style.setProperty(target === 'menu' ? '--menu-color' : '--text-color', value);
   }
 
+  function setNavItemCount(rawValue: number): void {
+    const count = Number.isFinite(rawValue) ? Math.max(0, Math.min(20, Math.trunc(rawValue))) : 4;
+    const list = navRoot.querySelector<HTMLUListElement>('.nav__list');
+    if (!list) return;
+
+    resetEphemeralState(navRoot);
+    list.innerHTML = '';
+
+    for (let i = 1; i <= count; i++) {
+      const li = document.createElement('li');
+
+      if (i === 2) {
+        // Shop submenu item
+        li.className = 'nav__item nav__item--has-submenu';
+        li.innerHTML = `
+          <button class="nav__link" aria-expanded="false" aria-controls="shop-submenu">Shop</button>
+          <ul id="shop-submenu" class="nav__submenu" hidden>
+            <li><a class="nav__submenu-link" href="#">Category One</a></li>
+            <li><a class="nav__submenu-link" href="#">Category Two</a></li>
+            <li><a class="nav__submenu-link" href="#">Category Three</a></li>
+            <li><a class="nav__submenu-link" href="#">Category Four</a></li>
+            <li><a class="nav__submenu-link" href="#">Category Five</a></li>
+          </ul>`;
+      } else {
+        li.className = 'nav__item';
+        const name = i === 1 ? 'Home' : `Page ${i}`;
+        li.innerHTML = `<a class="nav__link" href="#">${name}</a>`;
+      }
+
+      list.appendChild(li);
+    }
+  }
+
   function setCartCount(rawValue: number): void {
     const count = Number.isFinite(rawValue) ? Math.max(0, Math.trunc(rawValue)) : 0;
     navRoot.dataset.cartCount = String(count);
@@ -109,6 +142,9 @@ export function initControls(navRoot: HTMLElement): () => void {
 
   // 9. Cart count
   wrapper.appendChild(createNumberInputGroup('cart-count', 'Cart count', initialCartCount, setCartCount));
+
+  // 10. Nav item count
+  wrapper.appendChild(createNumberInputGroup('nav-items', 'Nav items', 4, setNavItemCount));
 
   container.appendChild(wrapper);
   setCartCount(initialCartCount);
