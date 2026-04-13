@@ -381,7 +381,7 @@
 }
 
 [data-variant="simple"][data-open="true"] .nav__list {
-  @apply flex flex-row flex-wrap justify-center gap-x-6 gap-y-2;
+  @apply flex flex-row flex-wrap justify-center gap-x-4 gap-y-2;
 }
 
 [data-variant="simple"][data-open="true"] .nav__link {
