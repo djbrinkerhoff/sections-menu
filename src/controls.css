@@ -176,6 +176,28 @@
   @apply mx-auto;
 }
 
+/* ─── Text / numeric inputs ─── */
+.control-group__input {
+  @apply w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors;
+  border-color: #27272a;
+  background: #09090b;
+  color: #f4f4f5;
+}
+
+.control-group__input:hover {
+  border-color: #3f3f46;
+}
+
+.control-group__input:focus {
+  border-color: #F4D923;
+  box-shadow: 0 0 0 1px #F4D923;
+}
+
+.control-group__input::-webkit-outer-spin-button,
+.control-group__input::-webkit-inner-spin-button {
+  margin: 0;
+}
+
 /* ─── Viewport switcher (light theme, outside dark panel) ─── */
 .viewport-btn {
   @apply transition-colors;

@@ -17,6 +17,9 @@ const COLOR_LABELS: Record<ColorName, string> = {
 export function initControls(navRoot: HTMLElement): () => void {
   const container = document.getElementById('controls-root');
   if (!container) throw new Error('Missing #controls-root');
+  const cartButton = navRoot.querySelector<HTMLButtonElement>('.nav__cart');
+  const cartCountBadge = navRoot.querySelector<HTMLElement>('.nav__cart-count');
+  const initialCartCount = Number.parseInt(navRoot.dataset.cartCount ?? '0', 10) || 0;
 
   // ─── Private helpers ───
   function setControl<K extends keyof ControlMap>(key: K, value: ControlMap[K]): void {
@@ -29,6 +32,24 @@ export function initControls(navRoot: HTMLElement): () => void {
 
   function setColor(target: 'menu' | 'text', value: ColorValue): void {
     navRoot.style.setProperty(target === 'menu' ? '--menu-color' : '--text-color', value);
+  }
+
+  function setCartCount(rawValue: number): void {
+    const count = Number.isFinite(rawValue) ? Math.max(0, Math.trunc(rawValue)) : 0;
+    navRoot.dataset.cartCount = String(count);
+
+    if (cartCountBadge) {
+      cartCountBadge.textContent = String(count);
+      cartCountBadge.hidden = count <= 0;
+    }
+
+    if (cartButton) {
+      if (count > 0) {
+        cartButton.setAttribute('aria-label', `Open cart, ${count} ${count === 1 ? 'item' : 'items'}`);
+      } else {
+        cartButton.setAttribute('aria-label', 'Open cart');
+      }
+    }
   }
 
   // ─── Render ───
@@ -84,7 +105,11 @@ export function initControls(navRoot: HTMLElement): () => void {
     'cartIcon',
   ));
 
+  // 9. Cart count
+  wrapper.appendChild(createNumberInputGroup('cart-count', 'Cart count', initialCartCount, setCartCount));
+
   container.appendChild(wrapper);
+  setCartCount(initialCartCount);
 
   // ─── Wire viewport buttons ───
   const viewportBtns = document.querySelectorAll<HTMLButtonElement>('[data-viewport]');
@@ -234,6 +259,35 @@ export function initControls(navRoot: HTMLElement): () => void {
     }
 
     fieldset.appendChild(options);
+    return fieldset;
+  }
+
+  function createNumberInputGroup(
+    name: string,
+    label: string,
+    initialValue: number,
+    onInput: (value: number) => void,
+  ): HTMLFieldSetElement {
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'control-group';
+    fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
+
+    const input = document.createElement('input');
+    input.className = 'control-group__input';
+    input.type = 'number';
+    input.name = name;
+    input.min = '0';
+    input.step = '1';
+    input.inputMode = 'numeric';
+    input.value = String(initialValue);
+    input.addEventListener('input', () => {
+      onInput(Number.parseInt(input.value, 10) || 0);
+    });
+    input.addEventListener('blur', () => {
+      input.value = navRoot.dataset.cartCount ?? '0';
+    });
+
+    fieldset.appendChild(input);
     return fieldset;
   }
 
