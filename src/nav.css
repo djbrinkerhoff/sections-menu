@@ -2,7 +2,7 @@
 
 /* ─── Base nav layout ─── */
 .nav {
-  @apply relative w-full;
+  @apply w-full;
   background-color: var(--menu-color);
   color: var(--text-color);
 }
@@ -176,7 +176,7 @@
 
 /* ─── Fullscreen variant open ─── */
 [data-variant="fullscreen"][data-open="true"] .nav__primary {
-  @apply fixed inset-0 z-40 flex flex-col items-center justify-center gap-6;
+  @apply absolute inset-0 z-40 flex flex-col items-center justify-center gap-6;
   background-color: var(--menu-color);
   color: var(--text-color);
 }
@@ -189,7 +189,11 @@
   @apply text-3xl md:text-5xl font-bold uppercase;
 }
 
-[data-variant="fullscreen"][data-open="true"] .nav__inner {
+/* Z-stack individual top-bar children above the overlay, NOT nav__inner
+   (which would create a containing block and trap the overlay). */
+[data-variant="fullscreen"][data-open="true"] .nav__menu-toggle,
+[data-variant="fullscreen"][data-open="true"] .nav__logo,
+[data-variant="fullscreen"][data-open="true"] .nav__actions {
   @apply relative z-50;
 }
 
@@ -204,10 +208,11 @@
 }
 
 /* ─── Sidebar variant ───
-   Always positioned fixed + off-screen so transform can animate.
+   Always positioned absolute + off-screen so transform can animate
+   within the preview frame.
    Overrides the base display:none for this variant. */
 [data-variant="sidebar"] .nav__primary {
-  @apply fixed inset-y-0 left-0 z-40 flex flex-col gap-2 px-6 pt-14;
+  @apply absolute inset-y-0 left-0 z-40 flex flex-col gap-2 px-6 pt-14;
   width: min(70vw, 360px);
   background-color: var(--menu-color);
   color: var(--text-color);
@@ -229,21 +234,23 @@
   @apply text-base;
 }
 
-[data-variant="sidebar"][data-open="true"] .nav__inner {
+[data-variant="sidebar"][data-open="true"] .nav__menu-toggle,
+[data-variant="sidebar"][data-open="true"] .nav__logo,
+[data-variant="sidebar"][data-open="true"] .nav__actions {
   @apply relative z-50;
 }
 
 /* ─── Alignment ─── */
 [data-alignment="left"] .nav__list {
-  @apply items-start text-left;
+  @apply items-start justify-start text-left;
 }
 
 [data-alignment="center"] .nav__list {
-  @apply items-center text-center;
+  @apply items-center justify-center text-center;
 }
 
 [data-alignment="right"] .nav__list {
-  @apply items-end text-right;
+  @apply items-end justify-end text-right;
 }
 
 /* ─── Capitalization ─── */
@@ -261,15 +268,20 @@
 
 /* ─── Cart drawer dialog ─── */
 .cart-drawer {
-  @apply fixed inset-y-0 right-0 z-50 m-0 h-full w-80 max-w-full border-0 bg-white p-6 shadow-2xl;
+  @apply absolute inset-0 z-50 m-0 h-full w-full max-w-none overflow-hidden border-0 bg-transparent p-0;
+}
+
+.cart-drawer[open] {
+  @apply flex justify-end;
+  background: rgb(0 0 0 / 0.3);
+}
+
+.cart-drawer__body {
+  @apply h-full w-80 max-w-full bg-white p-6 shadow-2xl;
   transform: translateX(100%);
   transition: transform 200ms ease;
 }
 
-.cart-drawer[open] {
+.cart-drawer[open] .cart-drawer__body {
   transform: translateX(0);
-}
-
-.cart-drawer::backdrop {
-  background: rgb(0 0 0 / 0.3);
 }

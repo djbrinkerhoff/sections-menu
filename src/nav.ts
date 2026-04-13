@@ -35,6 +35,10 @@ export function inertReset(): void {
   applyInert(false);
 }
 
+function getCartDialog(): HTMLDialogElement | null {
+  return document.getElementById('cart-drawer') as HTMLDialogElement | null;
+}
+
 // ─── Rapid double-click guard ───
 let animating = false;
 
@@ -72,8 +76,7 @@ export function resetEphemeralState(root: HTMLElement): void {
   root.querySelector('#shop-submenu')?.setAttribute('hidden', '');
 
   // Close cart dialog
-  const dialog = document.getElementById('cart-drawer') as HTMLDialogElement | null;
-  if (dialog?.open) dialog.close();
+  closeCartDrawer({ restoreFocus: false });
 
   // Drain inert counter
   inertReset();
@@ -86,6 +89,9 @@ export function resetEphemeralState(root: HTMLElement): void {
 
   // Unlock scroll
   unlockPreviewScroll();
+
+  previousMenuFocus = null;
+  previousCartFocus = null;
 }
 
 // ─── Scroll lock for fullscreen overlay ───
@@ -100,7 +106,8 @@ function unlockPreviewScroll(): void {
 }
 
 // ─── Focus return ───
-let previousFocus: Element | null = null;
+let previousMenuFocus: Element | null = null;
+let previousCartFocus: Element | null = null;
 
 // ─── Sidebar outside-click handler ───
 let currentSidebarCleanup: (() => void) | null = null;
@@ -129,9 +136,36 @@ function installSidebarOutsideClose(root: HTMLElement): void {
   currentSidebarCleanup = () => document.removeEventListener('pointerdown', handler, true);
 }
 
+function openCartDrawer(): void {
+  const dialog = getCartDialog();
+  if (!dialog || dialog.open) return;
+
+  previousCartFocus = document.activeElement;
+  dialog.show();
+  dialog.dataset.previewOpen = 'true';
+  inertPush();
+  dialog.focus();
+}
+
+function closeCartDrawer({ restoreFocus = true }: { restoreFocus?: boolean } = {}): void {
+  const dialog = getCartDialog();
+  if (!dialog?.open) return;
+
+  dialog.close();
+  if (dialog.dataset.previewOpen === 'true') {
+    delete dialog.dataset.previewOpen;
+    inertPop();
+  }
+
+  if (restoreFocus && previousCartFocus instanceof HTMLElement) {
+    previousCartFocus.focus();
+  }
+  previousCartFocus = null;
+}
+
 // ─── Menu open/close ───
 function openMenu(root: HTMLElement): void {
-  previousFocus = document.activeElement;
+  previousMenuFocus = document.activeElement;
 
   root.dataset.open = 'true';
   const toggle = root.querySelector<HTMLButtonElement>('.nav__menu-toggle');
@@ -172,10 +206,10 @@ function closeMenu(root: HTMLElement): void {
     removeSidebarHandler();
 
     // Restore focus
-    if (previousFocus instanceof HTMLElement) {
-      previousFocus.focus();
+    if (previousMenuFocus instanceof HTMLElement) {
+      previousMenuFocus.focus();
     }
-    previousFocus = null;
+    previousMenuFocus = null;
   }
 
   // Also close submenu
@@ -262,21 +296,23 @@ export function initNavBehavior(root: HTMLElement): () => void {
 
   if (cartBtn && cartDialog) {
     cartBtn.addEventListener('click', () => {
-      cartDialog.showModal();
+      openCartDrawer();
     }, { signal });
 
-    // Backdrop click to close (not free with <dialog>)
+    // Click the preview-scoped backdrop to close the drawer.
     cartDialog.addEventListener('click', (e) => {
       if (e.target === cartDialog) {
-        cartDialog.close();
+        closeCartDrawer();
       }
     }, { signal });
   }
 
-  // Escape key handler (for fullscreen/sidebar menu)
+  // Escape key handler (cart first, then fullscreen/sidebar menu)
   document.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      if (root.dataset.open === 'true' && root.dataset.variant !== 'top') {
+      if (cartDialog?.open) {
+        closeCartDrawer();
+      } else if (root.dataset.open === 'true' && root.dataset.variant !== 'top') {
         closeMenu(root);
       }
     }
