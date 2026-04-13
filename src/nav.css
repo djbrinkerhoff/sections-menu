@@ -173,7 +173,7 @@
 }
 
 [data-button-style="text"] .nav__menu-toggle::before {
-  content: "Menu";
+  content: "Close";
   font: inherit;
   grid-area: 1 / 1;
   visibility: hidden;
@@ -188,7 +188,8 @@
 [data-open="false"][data-button-style="hamburger"] .nav__menu-toggle-glyph[data-glyph="hamburger"],
 [data-open="false"][data-button-style="plus"] .nav__menu-toggle-glyph[data-glyph="plus"],
 [data-open="false"][data-button-style="text"] .nav__menu-toggle-glyph[data-glyph="text"],
-[data-open="true"] .nav__menu-toggle-glyph[data-glyph="close"] {
+[data-open="true"][data-button-style="text"] .nav__menu-toggle-glyph[data-glyph="close-text"],
+[data-open="true"]:not([data-button-style="text"]) .nav__menu-toggle-glyph[data-glyph="close"] {
   display: inline-flex;
 }
 

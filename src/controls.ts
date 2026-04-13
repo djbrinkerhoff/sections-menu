@@ -53,8 +53,8 @@ export function initControls(navRoot: HTMLElement): () => void {
   ));
 
   // 3. Menu color + 4. Text color (grouped)
-  wrapper.appendChild(createColorGroup('menu-color', 'Menu color', 'menu', false));
-  wrapper.appendChild(createColorGroup('text-color', 'Text color', 'text', true));
+  wrapper.appendChild(createColorGroup('menu-color', 'Menu color', 'menu'));
+  wrapper.appendChild(createColorGroup('text-color', 'Text color', 'text'));
 
   // 5. Button style
   wrapper.appendChild(createSegmentedGroup(
@@ -156,7 +156,6 @@ export function initControls(navRoot: HTMLElement): () => void {
     name: string,
     label: string,
     target: 'menu' | 'text',
-    disableTransparent: boolean,
   ): HTMLFieldSetElement {
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'control-group';
@@ -166,37 +165,26 @@ export function initControls(navRoot: HTMLElement): () => void {
     options.className = 'control-group__options--swatches';
 
     const defaultColor: ColorName = target === 'menu' ? 'black' : 'white';
+    const colorEntries = Object.entries(COLORS).filter(([colorName]) => {
+      return !(target === 'text' && colorName === 'transparent');
+    }) as [ColorName, ColorValue][];
 
-    for (const [colorName, colorValue] of Object.entries(COLORS) as [ColorName, ColorValue][]) {
-      const isTransparentDisabled = disableTransparent && colorName === 'transparent';
-
+    for (const [colorName, colorValue] of colorEntries) {
       const labelEl = document.createElement('label');
-      labelEl.className = isTransparentDisabled
-        ? 'swatch swatch--transparent-disabled'
-        : colorName === 'transparent'
-          ? 'swatch swatch--transparent'
-          : 'swatch';
+      labelEl.className = colorName === 'transparent' ? 'swatch swatch--transparent' : 'swatch';
 
       if (colorName !== 'transparent') {
         labelEl.style.backgroundColor = colorValue;
       }
 
-      labelEl.title = isTransparentDisabled
-        ? 'Not available for text color'
-        : COLOR_LABELS[colorName];
+      labelEl.title = COLOR_LABELS[colorName];
 
       const input = document.createElement('input');
       input.type = 'radio';
       input.name = name;
       input.value = colorValue;
       input.checked = colorName === defaultColor;
-
-      if (isTransparentDisabled) {
-        input.disabled = true;
-        labelEl.setAttribute('aria-disabled', 'true');
-      } else {
-        input.addEventListener('change', () => setColor(target, colorValue));
-      }
+      input.addEventListener('change', () => setColor(target, colorValue));
 
       labelEl.appendChild(input);
       options.appendChild(labelEl);
