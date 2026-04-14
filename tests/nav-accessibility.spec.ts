@@ -239,6 +239,82 @@ test('moves top variant links into the masthead as soon as they fit', async ({ p
   expect(inline.primaryRect?.bottom).toBeGreaterThan(inline.cartRect?.top ?? 0);
 
   await page.getByRole('button', { name: '1280' }).click();
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
+
+  const nearBreakpoint = await page.evaluate(async () => {
+    const preview = document.getElementById('preview-root');
+    const nav = document.querySelector('.nav');
+    const inner = nav?.querySelector<HTMLElement>('.nav__inner');
+    const list = nav?.querySelector<HTMLElement>('.nav__list');
+    const logo = nav?.querySelector<HTMLElement>('.nav__logo');
+    const search = nav?.querySelector<HTMLElement>('.nav__search');
+    const cart = nav?.querySelector<HTMLElement>('.nav__cart');
+
+    if (!preview || !(nav instanceof HTMLElement) || !inner || !list || !logo || !search || !cart) {
+      throw new Error('Missing top nav elements');
+    }
+
+    const waitForLayout = () => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
+
+    const getInlineNavWidth = () => {
+      const styles = getComputedStyle(list);
+      const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+      const itemWidths = Array.from(list.children).map((item) => {
+        const trigger = item.firstElementChild;
+        return trigger instanceof HTMLElement ? trigger.getBoundingClientRect().width : 0;
+      });
+
+      return itemWidths.reduce((sum, width) => sum + width, 0) + gap * Math.max(itemWidths.length - 1, 0);
+    };
+
+    const measure = () => {
+      const styles = getComputedStyle(inner);
+      const paddingInline =
+        (Number.parseFloat(styles.paddingLeft) || 0) +
+        (Number.parseFloat(styles.paddingRight) || 0);
+      const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+      const contentWidth = inner.clientWidth - paddingInline;
+      const fixedWidth =
+        logo.getBoundingClientRect().width +
+        search.getBoundingClientRect().width +
+        cart.getBoundingClientRect().width;
+      const linkWidth = getInlineNavWidth();
+
+      return {
+        availableWidth: contentWidth - fixedWidth - gap * 3,
+        linkWidth,
+        topInline: nav.dataset.topInline,
+      };
+    };
+
+    let metrics = measure();
+    let previewWidth = Number.parseFloat(preview.style.width || '1280');
+
+    while (!(metrics.availableWidth < metrics.linkWidth && metrics.availableWidth >= metrics.linkWidth - 16)) {
+      previewWidth -= 1;
+      if (previewWidth < 320) {
+        throw new Error('Failed to reach the top-nav breakpoint band');
+      }
+
+      preview.style.width = `${previewWidth}px`;
+      await waitForLayout();
+      metrics = measure();
+    }
+
+    return metrics;
+  });
+
+  expect(nearBreakpoint.availableWidth).toBeLessThan(nearBreakpoint.linkWidth);
+  expect(nearBreakpoint.availableWidth).toBeGreaterThanOrEqual(nearBreakpoint.linkWidth - 16);
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('false');
+
+  await page.getByRole('button', { name: '1280' }).click();
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
+
   await setAlignment('center');
   await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('false');
 

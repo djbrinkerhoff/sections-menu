@@ -122,11 +122,11 @@ function syncTopInlineState(root: HTMLElement): void {
 
   const availableWidth = contentWidth - fixedWidth - gap * 3;
   const wasInline = root.dataset.topInline === 'true';
-  // Hysteresis: once inline, require 16px clearance before flipping back.
-  // Prevents oscillation when layout changes shift the breakpoint.
+  // Hysteresis only on entry: require extra clearance before promoting the
+  // links into the masthead row, but collapse immediately once they stop fitting.
   const newInline = wasInline
-    ? availableWidth >= linkWidth - 16
-    : availableWidth >= linkWidth;
+    ? availableWidth >= linkWidth
+    : availableWidth >= linkWidth + 16;
   const newValue = newInline ? 'true' : 'false';
   if (root.dataset.topInline !== newValue) {
     root.dataset.topInline = newValue;
