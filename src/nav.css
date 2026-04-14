@@ -6,6 +6,9 @@
   background-color: var(--menu-color);
   color: var(--text-color);
   container-type: inline-size;
+  --sidebar-rail-width: 88px;
+  --sidebar-panel-width: 425px;
+  --sidebar-logo-box-width: 168px;
 }
 
 .nav__inner {
@@ -459,7 +462,8 @@
 [data-variant="fullscreen"][data-open="true"] .nav__primary {
   @apply flex flex-col items-center flex-1;
   order: 1;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: hidden;
   mask-image: linear-gradient(to bottom, black calc(100% - 48px), transparent);
   -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 48px), transparent);
 }
@@ -467,7 +471,10 @@
 [data-variant="fullscreen"][data-open="true"] .nav__list {
   @apply flex flex-col items-center;
   gap: 32px;
+  max-height: 100%;
   margin-block: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 [data-variant="fullscreen"][data-open="true"] .nav__link {
@@ -511,33 +518,43 @@
 
 [data-variant="sidebar"][data-open="true"] .nav__list {
   @apply flex flex-col;
+  block-size: 100%;
+  flex: 1 1 auto;
   gap: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Shop submenu item: move to top, section header style */
 [data-variant="sidebar"][data-open="true"] .nav__item--has-submenu {
   order: -1;
-  padding: 0 0 16px 0;
-  border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  padding: 72px 32px 40px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
 }
 
 [data-variant="sidebar"][data-open="true"] .nav__item--has-submenu .nav__link {
-  @apply text-xs font-bold uppercase tracking-wider;
+  @apply text-xs font-semibold uppercase;
   padding: 0;
   pointer-events: none;
   cursor: default;
+  letter-spacing: 0.08em;
 }
 
 /* Submenu always visible, no indent */
 [data-variant="sidebar"][data-open="true"] .nav__submenu {
-  @apply pl-0 mt-3;
-  gap: 6px;
+  @apply pl-0 mt-8;
+  gap: 16px;
 }
 
 [data-variant="sidebar"][data-open="true"] .nav__submenu-link {
-  @apply text-base no-underline;
+  @apply no-underline;
   opacity: 1;
-  padding: 2px 0;
+  display: block;
+  padding: 0;
+  font-size: clamp(1.875rem, 6cqi, 2.25rem);
+  font-weight: 500;
+  line-height: 1.3;
 }
 
 /* Regular nav items: top border separators */
@@ -546,9 +563,11 @@
 }
 
 [data-variant="sidebar"][data-open="true"] .nav__item:not(.nav__item--has-submenu) .nav__link {
-  @apply text-sm font-semibold uppercase tracking-wider;
+  @apply font-medium;
   display: block;
-  padding: 14px 0;
+  padding: 16px 32px;
+  font-size: 1.25rem;
+  line-height: 1.3;
 }
 
 /* Sidebar desktop rules moved to end of file (after alignment overrides) */
@@ -704,75 +723,132 @@
     right: 0;
     top: 0;
     bottom: 0;
-    width: auto;
+    width: var(--sidebar-rail-width);
     background-color: var(--menu-color);
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: 0 var(--sidebar-rail-width);
     grid-template-rows: auto 1fr auto;
-    padding: 16px;
-    column-gap: 12px;
-    row-gap: 0;
-    transition: width 200ms ease;
+    align-items: start;
+    padding: 0;
+    gap: 0;
+    z-index: 2;
+    overflow: visible;
+    transition: width 200ms ease, grid-template-columns 200ms ease;
+  }
+
+  .nav[data-variant="sidebar"] .nav__inner::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: var(--sidebar-rail-width);
+    border-left: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+    background-color: var(--menu-color);
+    pointer-events: none;
   }
 
   .nav[data-variant="sidebar"] .nav__logo {
-    grid-row: 1;
-    grid-column: 1;
-    justify-self: end;
+    position: absolute;
+    top: 0;
+    right: var(--sidebar-rail-width);
+    width: var(--sidebar-logo-box-width);
+    min-height: 64px;
+    padding: 24px 16px;
+    align-items: flex-start;
+    background-color: var(--menu-color);
+    pointer-events: auto;
+    z-index: 3;
   }
 
   .nav[data-variant="sidebar"] .nav__menu-toggle {
-    grid-row: 1;
     grid-column: 2;
-    justify-self: end;
+    grid-row: 1;
+    justify-self: center;
+    margin-top: 24px;
+    position: relative;
+    z-index: 1;
   }
 
-  /* Primary nav: override mobile absolute positioning → grid flow, hidden */
+  .nav[data-variant="sidebar"] .nav__actions {
+    grid-column: 2;
+    grid-row: 3;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-top: auto;
+    margin-bottom: 24px;
+    justify-self: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .nav[data-variant="sidebar"] .nav__menu-toggle-glyph svg,
+  .nav[data-variant="sidebar"] .nav__search-glyph svg,
+  .nav[data-variant="sidebar"] .nav__cart-glyph svg {
+    width: 31px;
+    height: 31px;
+  }
+
+  /* Primary nav becomes the open panel sitting to the left of the rail. */
   .nav[data-variant="sidebar"] .nav__primary {
     position: static;
     inset: auto;
     width: auto;
     background-color: transparent;
+    grid-column: 1;
+    grid-row: 1 / -1;
     color: inherit;
-    transform: none;
-    visibility: visible;
-    z-index: auto;
+    transform: translateX(24px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1;
     padding: 0;
-    display: none;
-    grid-row: 2;
-    grid-column: 1 / -1;
-    transition: none;
-  }
-
-  .nav[data-variant="sidebar"] .nav__actions {
-    grid-row: 3;
-    grid-column: 1 / -1;
+    display: flex;
     flex-direction: column;
-    align-self: end;
-    justify-self: end;
-    gap: 16px;
+    block-size: 100%;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+    transition: transform 200ms ease, opacity 200ms ease, visibility 0s linear 200ms;
   }
 
-  /* ── Desktop open: widen inner to panel ── */
   .nav[data-variant="sidebar"][data-open="true"] .nav__inner {
-    width: clamp(320px, 35cqi, 480px);
+    width: min(calc(var(--sidebar-panel-width) + var(--sidebar-rail-width)), 100%);
+    grid-template-columns: minmax(0, calc(100% - var(--sidebar-rail-width))) var(--sidebar-rail-width);
+    overflow: hidden;
   }
 
   .nav[data-variant="sidebar"][data-open="true"] .nav__logo {
     display: none;
   }
 
-  .nav[data-variant="sidebar"][data-open="true"] .nav__menu-toggle {
-    grid-column: 1 / -1;
-    justify-self: end;
+  .nav[data-variant="sidebar"][data-open="true"] .nav__primary {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform 200ms ease, opacity 200ms ease;
   }
 
-  .nav[data-variant="sidebar"][data-open="true"] .nav__primary {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    overflow-y: auto;
-    padding: 24px 8px;
-    gap: 0;
+  .nav[data-variant="sidebar"][data-open="true"] .nav__item--has-submenu {
+    padding: 96px 48px 56px;
+  }
+
+  .nav[data-variant="sidebar"][data-open="true"] .nav__item:not(.nav__item--has-submenu) .nav__link {
+    padding-inline: 48px;
+  }
+
+  .nav[data-variant="sidebar"][data-alignment="left"] .nav__logo {
+    justify-content: flex-start;
+  }
+
+  .nav[data-variant="sidebar"][data-alignment="center"] .nav__logo {
+    justify-content: center;
+  }
+
+  .nav[data-variant="sidebar"][data-alignment="right"] .nav__logo {
+    justify-content: flex-end;
   }
 }

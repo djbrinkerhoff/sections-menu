@@ -66,6 +66,77 @@ test('preserves existing Escape behavior for cart and menu', async ({ page }) =>
   await expect(menuToggle).toBeFocused();
 });
 
+test('lets nav__list scroll on desktop and toggles the sidebar logo per Figma', async ({ page }) => {
+  await page.getByRole('button', { name: '1280' }).click();
+
+  await page.locator('input[name="variant"][value="sidebar"]').evaluate((input) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error('Expected sidebar variant input');
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  const logo = page.locator('.nav__logo');
+  const closedLogoDisplay = await logo.evaluate((element) => getComputedStyle(element).display);
+  const closedLogoHitTarget = await logo.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    return hit instanceof Element ? Boolean(hit.closest('.nav__logo')) : false;
+  });
+  expect(closedLogoDisplay).toBe('flex');
+  expect(closedLogoHitTarget).toBe(true);
+
+  await page.getByRole('spinbutton', { name: 'Nav items' }).fill('20');
+  await page.locator('.nav__menu-toggle').click();
+
+  const list = page.locator('.nav__list');
+  const metrics = await list.evaluate((element) => {
+    const listEl = element as HTMLElement;
+    listEl.scrollTop = 9999;
+
+    return {
+      overflowY: getComputedStyle(listEl).overflowY,
+      clientHeight: listEl.clientHeight,
+      scrollHeight: listEl.scrollHeight,
+      scrollTop: listEl.scrollTop,
+    };
+  });
+  const logoDisplay = await logo.evaluate((element) => getComputedStyle(element).display);
+
+  expect(metrics.overflowY).toBe('auto');
+  expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight);
+  expect(metrics.scrollTop).toBeGreaterThan(0);
+  expect(logoDisplay).toBe('none');
+});
+
+test('keeps the desktop sidebar logo container in sync with menu color', async ({ page }) => {
+  await page.getByRole('button', { name: '1280' }).click();
+
+  await page.locator('input[name="variant"][value="sidebar"]').evaluate((input) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error('Expected sidebar variant input');
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  await page.locator('input[name="menu-color"][aria-label="Yellow"]').evaluate((input) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error('Expected yellow menu color input');
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  const colors = await page.evaluate(() => {
+    const logo = document.querySelector('.nav__logo');
+    const rail = document.querySelector('.nav__inner');
+
+    return {
+      logoBackground: logo ? getComputedStyle(logo).backgroundColor : null,
+      railBackground: rail ? getComputedStyle(rail).backgroundColor : null,
+    };
+  });
+
+  expect(colors.logoBackground).toBe('rgb(244, 217, 35)');
+  expect(colors.railBackground).toBe(colors.logoBackground);
+});
+
 test('cleans up viewport listeners when controls are remounted', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const { initControls } = await import('/src/controls.ts');
