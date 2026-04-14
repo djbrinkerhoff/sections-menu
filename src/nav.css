@@ -116,6 +116,12 @@
   @apply outline-2 outline-offset-2 outline-current;
 }
 
+/* Match menu-toggle glyph size to search/cart (20px) for consistent bar height */
+.nav__menu-toggle-glyph svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* Search glyph swap (search ↔ close) */
 .nav__search-glyph {
   display: inline-flex;
@@ -179,7 +185,7 @@
   @apply bg-transparent border-0 cursor-pointer p-1;
   color: var(--text-color);
   display: grid;
-  min-block-size: 2rem;
+  min-block-size: 28px;
   place-items: center;
 }
 
@@ -236,7 +242,7 @@
   align-items: center;
   column-gap: 16px;
   row-gap: 16px;
-  padding: 16px 16px 0;
+  padding: 12px 16px 0;
   position: relative;
 }
 
@@ -306,13 +312,14 @@
 }
 
 [data-variant="top"] .nav__link {
+  @apply text-sm font-medium;
   padding: 0;
 }
 
 /* When the top links fit, promote them into the masthead row. */
 [data-variant="top"][data-top-inline="true"] .nav__inner {
   row-gap: 0;
-  padding-bottom: 16px;
+  padding-bottom: 12px;
 }
 
 [data-variant="top"][data-top-inline="true"] .nav__primary {
@@ -566,9 +573,12 @@
   }
 }
 
-/* Fullscreen closed: hide search icon (search lives in the overlay) */
+/* Fullscreen closed: hide search icon (search lives in the overlay).
+   Use visibility instead of display:none to preserve layout space so
+   the cart icon doesn't shift when switching between variants. */
 [data-variant="fullscreen"][data-open="false"] .nav__search-toggle {
-  @apply hidden;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* ─── Fullscreen variant open ─── */
@@ -953,7 +963,11 @@
   }
 
   .nav[data-variant="simple"][data-alignment="center"] .nav__primary {
-    grid-column: 3;
+    grid-column: 1;
+  }
+
+  .nav[data-variant="simple"][data-alignment="center"] .nav__list {
+    justify-content: start;
   }
 
   .nav[data-variant="simple"][data-alignment="center"] .nav__actions {
@@ -1063,6 +1077,45 @@
   .nav[data-variant="sidebar"] .nav__cart-glyph svg {
     width: 31px;
     height: 31px;
+  }
+
+  /* Search field expands left from the icon as a solid box */
+  .nav[data-variant="sidebar"] .nav__search {
+    position: relative;
+  }
+
+  .nav[data-variant="sidebar"] .nav__search-input {
+    position: absolute;
+    right: calc(100% + 8px);
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%) scaleX(0);
+    transform-origin: right center;
+    width: 208px;
+    height: 46px;
+    background-color: var(--menu-color);
+    border-radius: 0;
+    border: 0;
+    border-bottom: none;
+    outline: none;
+    padding: 0 16px;
+    font-size: 20px;
+    letter-spacing: 0.4px;
+    opacity: 0;
+    transition: transform 200ms ease, opacity 150ms ease;
+  }
+
+  .nav[data-variant="sidebar"] .nav__search[data-search-open="true"] .nav__search-input {
+    transform: translateY(-50%) scaleX(1);
+    width: 208px;
+    opacity: 1;
+    border-bottom: none;
+    padding: 0 16px;
+  }
+
+  /* Hide search when sidebar menu is open */
+  .nav[data-variant="sidebar"][data-open="true"] .nav__search {
+    display: none;
   }
 
   /* Primary nav becomes the open panel sitting to the left of the rail. */

@@ -1,8 +1,13 @@
 import {
   VARIANTS, BUTTON_STYLES, ALIGNMENTS, CAPITALIZATIONS, CART_ICONS, LOGO_STYLES, COLORS,
 } from './nav.schema';
-import type { ControlMap, ColorName, ColorValue } from './nav.schema';
+import type { ControlMap, ColorName, ColorValue, Variant } from './nav.schema';
 import { resetEphemeralState } from './nav';
+
+// Controls hidden per variant (extensible — add entries as needed)
+const HIDDEN_CONTROLS: Partial<Record<Variant, string[]>> = {
+  top: ['button-style'],
+};
 
 // Color display names for labels
 const COLOR_LABELS: Record<ColorName, string> = {
@@ -23,13 +28,26 @@ export function initControls(navRoot: HTMLElement): () => void {
   const cartCountBadge = navRoot.querySelector<HTMLElement>('.nav__cart-count');
   const initialCartCount = Number.parseInt(navRoot.dataset.cartCount ?? '0', 10) || 0;
 
+  // ─── Render wrapper (hoisted for use in helpers) ───
+  const wrapper = document.createElement('div');
+  wrapper.className = 'controls';
+
   // ─── Private helpers ───
+  function syncControlVisibility(): void {
+    const variant = (navRoot.dataset.variant ?? 'simple') as Variant;
+    const hidden = HIDDEN_CONTROLS[variant] ?? [];
+    for (const el of wrapper.querySelectorAll<HTMLFieldSetElement>('[data-control]')) {
+      el.hidden = hidden.includes(el.dataset.control!);
+    }
+  }
+
   function setControl<K extends keyof ControlMap>(key: K, value: ControlMap[K]): void {
     if (key === 'variant') {
       resetEphemeralState(navRoot);
       if (value === 'top') navRoot.dataset.open = 'false';
     }
     navRoot.dataset[key] = value;
+    if (key === 'variant') syncControlVisibility();
   }
 
   // APCA-based band mix: tint the link-row band toward the text color,
@@ -141,9 +159,6 @@ export function initControls(navRoot: HTMLElement): () => void {
   }
 
   // ─── Render ───
-  const wrapper = document.createElement('div');
-  wrapper.className = 'controls';
-
   // Header
   wrapper.innerHTML = `
     <div class="controls__header">
@@ -201,6 +216,7 @@ export function initControls(navRoot: HTMLElement): () => void {
 
   container.appendChild(wrapper);
   setCartCount(initialCartCount);
+  syncControlVisibility();
 
   // ─── Wire viewport buttons ───
   const viewportBtns = document.querySelectorAll<HTMLButtonElement>('[data-viewport]');
@@ -275,6 +291,7 @@ export function initControls(navRoot: HTMLElement): () => void {
   ): HTMLFieldSetElement {
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'control-group';
+    fieldset.dataset.control = name;
     fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
 
     const options = document.createElement('div');
@@ -320,6 +337,7 @@ export function initControls(navRoot: HTMLElement): () => void {
   ): HTMLFieldSetElement {
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'control-group';
+    fieldset.dataset.control = name;
     fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
 
     const options = document.createElement('div');
@@ -363,6 +381,7 @@ export function initControls(navRoot: HTMLElement): () => void {
   ): HTMLFieldSetElement {
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'control-group';
+    fieldset.dataset.control = name;
     fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
 
     const input = document.createElement('input');

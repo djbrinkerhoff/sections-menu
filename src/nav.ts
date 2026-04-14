@@ -271,6 +271,8 @@ function openMenu(root: HTMLElement): void {
     openSearch(root, { focusInput: false });
   }
   if (variant === 'sidebar') {
+    // Close search before opening menu (desktop hides it via CSS)
+    closeSearch(root);
     installSidebarOutsideClose(root);
 
     // Auto-expand Shop submenu (always-open in sidebar variant)
