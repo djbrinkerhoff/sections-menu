@@ -263,11 +263,13 @@ function openMenu(root: HTMLElement): void {
   }
 
   const variant = root.dataset.variant;
-  if (variant === 'fullscreen' || variant === 'sidebar') {
+  if (variant === 'simple' || variant === 'fullscreen' || variant === 'sidebar') {
     inertPush();
   }
-  if (variant === 'fullscreen') {
+  if (variant === 'simple' || variant === 'fullscreen') {
     lockPreviewScroll();
+  }
+  if (variant === 'fullscreen') {
     openSearch(root, { focusInput: false });
   }
   if (variant === 'sidebar') {
@@ -296,12 +298,14 @@ function closeMenu(root: HTMLElement): void {
 
   if (wasOpen) {
     const variant = root.dataset.variant;
-    if (variant === 'fullscreen' || variant === 'sidebar') {
+    if (variant === 'simple' || variant === 'fullscreen' || variant === 'sidebar') {
       inertPop();
+    }
+    if (variant === 'simple' || variant === 'fullscreen') {
+      unlockPreviewScroll();
     }
     if (variant === 'fullscreen') {
       closeSearch(root);
-      unlockPreviewScroll();
     }
     removeSidebarHandler();
 

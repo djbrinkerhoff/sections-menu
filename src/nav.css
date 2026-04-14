@@ -489,13 +489,22 @@
 }
 
 /* ─── Simple variant open ─── */
+/* Position on .nav itself must live outside @container because
+   .nav IS the container — a container can't style itself. */
+[data-variant="simple"][data-open="true"] {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+}
+
 @container (max-width: 767px) {
   [data-variant="simple"][data-open="true"] .nav__inner {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: 56px auto;
+    grid-template-rows: auto 1fr;
     align-items: center;
     row-gap: 0;
-    padding: 0 16px;
+    height: 100%;
   }
 
   [data-variant="simple"][data-open="true"] .nav__logo {
@@ -510,8 +519,6 @@
     grid-row: 1;
     justify-self: end;
     align-self: center;
-    min-block-size: 24px;
-    padding: 0;
   }
 
   [data-variant="simple"][data-open="true"] .nav__actions {
@@ -522,7 +529,10 @@
     @apply block;
     grid-column: 1 / -1;
     grid-row: 2;
+    align-self: stretch;
     padding: 26px 16px 38px;
+    overflow-y: auto;
+    min-height: 0;
   }
 
   [data-variant="simple"][data-open="true"] .nav__list {
