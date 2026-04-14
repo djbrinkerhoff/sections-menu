@@ -205,6 +205,14 @@ function openMenu(root: HTMLElement): void {
   }
   if (variant === 'sidebar') {
     installSidebarOutsideClose(root);
+
+    // Auto-expand Shop submenu (always-open in sidebar variant)
+    const shopBtn = root.querySelector<HTMLButtonElement>('[aria-controls="shop-submenu"]');
+    const shopSubmenu = root.querySelector<HTMLElement>('#shop-submenu');
+    if (shopBtn && shopSubmenu) {
+      shopBtn.setAttribute('aria-expanded', 'true');
+      shopSubmenu.removeAttribute('hidden');
+    }
   }
 }
 
@@ -294,6 +302,12 @@ export function initNavBehavior(root: HTMLElement): () => void {
     if (!btn) return;
     const submenuId = btn.getAttribute('aria-controls');
     if (!submenuId) return;
+
+    // In sidebar variant, Shop submenu is always open — don't toggle
+    if (root.dataset.variant === 'sidebar' && submenuId === 'shop-submenu') {
+      return;
+    }
+
     const submenu = root.querySelector<HTMLElement>(`#${submenuId}`);
     if (!submenu) return;
 

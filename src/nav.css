@@ -481,17 +481,19 @@
 }
 
 /* ─── Sidebar variant ───
-   Always positioned absolute + off-screen so transform can animate
-   within the preview frame.
-   Overrides the base display:none for this variant. */
+   Mobile: horizontal bar + right-slide panel.
+   Desktop (≥768 cqi): vertical right strip + expanding panel. */
+
+/* Mobile: right-slide panel (overrides base display:none) */
 [data-variant="sidebar"] .nav__primary {
-  @apply absolute inset-y-0 left-0 z-40 flex flex-col gap-2 px-6 pt-14;
-  width: min(70vw, 360px);
+  @apply absolute inset-y-0 right-0 z-40 flex flex-col px-6 pt-16;
+  width: min(80vw, 400px);
   background-color: var(--menu-color);
   color: var(--text-color);
-  transform: translateX(-100%);
+  transform: translateX(100%);
   transition: transform 200ms ease;
   visibility: hidden;
+  gap: 0;
 }
 
 [data-variant="sidebar"][data-open="true"] .nav__primary {
@@ -499,19 +501,57 @@
   visibility: visible;
 }
 
-[data-variant="sidebar"][data-open="true"] .nav__list {
-  @apply flex flex-col gap-2;
-}
-
-[data-variant="sidebar"][data-open="true"] .nav__link {
-  @apply text-base;
-}
-
 [data-variant="sidebar"][data-open="true"] .nav__menu-toggle,
 [data-variant="sidebar"][data-open="true"] .nav__logo,
 [data-variant="sidebar"][data-open="true"] .nav__actions {
   @apply relative z-50;
 }
+
+/* ─── Sidebar open: panel content (shared mobile + desktop) ─── */
+
+[data-variant="sidebar"][data-open="true"] .nav__list {
+  @apply flex flex-col;
+  gap: 0;
+}
+
+/* Shop submenu item: move to top, section header style */
+[data-variant="sidebar"][data-open="true"] .nav__item--has-submenu {
+  order: -1;
+  padding: 0 0 16px 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+}
+
+[data-variant="sidebar"][data-open="true"] .nav__item--has-submenu .nav__link {
+  @apply text-xs font-bold uppercase tracking-wider;
+  padding: 0;
+  pointer-events: none;
+  cursor: default;
+}
+
+/* Submenu always visible, no indent */
+[data-variant="sidebar"][data-open="true"] .nav__submenu {
+  @apply pl-0 mt-3;
+  gap: 6px;
+}
+
+[data-variant="sidebar"][data-open="true"] .nav__submenu-link {
+  @apply text-base no-underline;
+  opacity: 1;
+  padding: 2px 0;
+}
+
+/* Regular nav items: top border separators */
+[data-variant="sidebar"][data-open="true"] .nav__item:not(.nav__item--has-submenu) {
+  border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+}
+
+[data-variant="sidebar"][data-open="true"] .nav__item:not(.nav__item--has-submenu) .nav__link {
+  @apply text-sm font-semibold uppercase tracking-wider;
+  display: block;
+  padding: 14px 0;
+}
+
+/* Sidebar desktop rules moved to end of file (after alignment overrides) */
 
 /* ─── Alignment (logo position) ─── */
 
@@ -644,4 +684,95 @@
 
 .cart-drawer[open] .cart-drawer__body {
   transform: translateX(0);
+}
+
+/* ─── Sidebar: desktop vertical right strip ───
+   .nav stays full-size (preserving container-query width) but goes
+   transparent/non-interactive. .nav__inner becomes the visible strip
+   positioned on the right edge. */
+@container (min-width: 768px) {
+  .nav[data-variant="sidebar"] {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    pointer-events: none;
+  }
+
+  .nav[data-variant="sidebar"] .nav__inner {
+    pointer-events: auto;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: auto;
+    background-color: var(--menu-color);
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto 1fr auto;
+    padding: 16px;
+    column-gap: 12px;
+    row-gap: 0;
+    transition: width 200ms ease;
+  }
+
+  .nav[data-variant="sidebar"] .nav__logo {
+    grid-row: 1;
+    grid-column: 1;
+    justify-self: end;
+  }
+
+  .nav[data-variant="sidebar"] .nav__menu-toggle {
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  /* Primary nav: override mobile absolute positioning → grid flow, hidden */
+  .nav[data-variant="sidebar"] .nav__primary {
+    position: static;
+    inset: auto;
+    width: auto;
+    background-color: transparent;
+    color: inherit;
+    transform: none;
+    visibility: visible;
+    z-index: auto;
+    padding: 0;
+    display: none;
+    grid-row: 2;
+    grid-column: 1 / -1;
+    transition: none;
+  }
+
+  .nav[data-variant="sidebar"] .nav__actions {
+    grid-row: 3;
+    grid-column: 1 / -1;
+    flex-direction: column;
+    align-self: end;
+    justify-self: end;
+    gap: 16px;
+  }
+
+  /* ── Desktop open: widen inner to panel ── */
+  .nav[data-variant="sidebar"][data-open="true"] .nav__inner {
+    width: clamp(320px, 35cqi, 480px);
+  }
+
+  .nav[data-variant="sidebar"][data-open="true"] .nav__logo {
+    display: none;
+  }
+
+  .nav[data-variant="sidebar"][data-open="true"] .nav__menu-toggle {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+
+  .nav[data-variant="sidebar"][data-open="true"] .nav__primary {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 8px;
+    gap: 0;
+  }
 }
