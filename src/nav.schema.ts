@@ -31,4 +31,5 @@ export type ControlMap = {
   capitalization: Capitalization;
   cartIcon: CartIcon;
   logoStyle: LogoStyle;
+  inset: 'true' | 'false';
 };

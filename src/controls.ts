@@ -7,6 +7,7 @@ import { resetEphemeralState } from './nav';
 // Controls hidden per variant (extensible — add entries as needed)
 const HIDDEN_CONTROLS: Partial<Record<Variant, string[]>> = {
   top: ['button-style'],
+  sidebar: ['inset'],
 };
 
 // Color display names for labels
@@ -47,6 +48,11 @@ export function initControls(navRoot: HTMLElement): () => void {
       if (value === 'top') navRoot.dataset.open = 'false';
     }
     navRoot.dataset[key] = value;
+    if (key === 'inset') {
+      const on = value === 'true';
+      navRoot.style.setProperty('--nav-inset', on ? '16px' : '0px');
+      navRoot.style.setProperty('--nav-inset-radius', '0px');
+    }
     if (key === 'variant') syncControlVisibility();
   }
 
@@ -194,7 +200,14 @@ export function initControls(navRoot: HTMLElement): () => void {
     'alignment',
   ));
 
-  // 7. Capitalization
+  // 7. Inset
+  wrapper.appendChild(createSegmentedGroup(
+    'inset', 'Inset', ['false', 'true'] as const,
+    { false: 'Off', true: 'On' },
+    'inset',
+  ));
+
+  // 8. Capitalization
   wrapper.appendChild(createSegmentedGroup(
     'capitalization', 'Capitalization', CAPITALIZATIONS,
     { normal: 'Aa', lowercase: 'a↓', uppercase: 'A↑' },

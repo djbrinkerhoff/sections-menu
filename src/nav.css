@@ -11,6 +11,17 @@
   --sidebar-logo-box-width: 168px;
 }
 
+/* ─── Inset (simple, fullscreen, top only) ─── */
+.nav[data-inset="true"]:is(
+  [data-variant="simple"],
+  [data-variant="fullscreen"],
+  [data-variant="top"]
+) {
+  width: auto;
+  margin: var(--nav-inset, 0px);
+  border-radius: var(--nav-inset-radius, 0px);
+}
+
 .nav__inner {
   @apply flex items-center justify-between gap-4 px-4 py-3;
   align-content: flex-start;
