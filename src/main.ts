@@ -13,7 +13,7 @@ const preview = requireElement<HTMLElement>('#preview-root');
 preview.innerHTML = navHtml;
 const navRoot = requireElement<HTMLElement>('.nav', preview);
 
-const cleanupNav = initNavBehavior(navRoot);
+const cleanupNav = initNavBehavior(navRoot, preview);
 const cleanupControls = initControls(navRoot);
 
 // Cleanup contract available if the preview ever re-mounts.

@@ -1,14 +1,16 @@
 // Shared nav behavior: menu toggle, search, submenu, cart dialog,
 // sidebar outside-click, escape, inert counter, ephemeral state reset.
 
+// ─── Preview element (set once by initNavBehavior) ───
+let previewEl: HTMLElement | null = null;
+
 // ─── Inert reference counter ───
 let inertDepth = 0;
 
 function applyInert(on: boolean): void {
   // Inert applies to preview content siblings of the nav, never the controls panel
-  const preview = document.getElementById('preview-root');
-  if (!preview) return;
-  for (const child of Array.from(preview.children)) {
+  if (!previewEl) return;
+  for (const child of Array.from(previewEl.children)) {
     if (!child.classList.contains('nav') && !child.matches('dialog')) {
       if (on) {
         child.setAttribute('inert', '');
@@ -119,7 +121,16 @@ function syncTopInlineState(root: HTMLElement): void {
   }
 
   const availableWidth = contentWidth - fixedWidth - gap * 3;
-  root.dataset.topInline = availableWidth >= linkWidth ? 'true' : 'false';
+  const wasInline = root.dataset.topInline === 'true';
+  // Hysteresis: once inline, require 16px clearance before flipping back.
+  // Prevents oscillation when layout changes shift the breakpoint.
+  const newInline = wasInline
+    ? availableWidth >= linkWidth - 16
+    : availableWidth >= linkWidth;
+  const newValue = newInline ? 'true' : 'false';
+  if (root.dataset.topInline !== newValue) {
+    root.dataset.topInline = newValue;
+  }
 }
 
 function closeShopSubmenu(root: HTMLElement, { restoreFocus = false }: { restoreFocus?: boolean } = {}): void {
@@ -184,13 +195,11 @@ export function resetEphemeralState(root: HTMLElement): void {
 
 // ─── Scroll lock for fullscreen overlay ───
 function lockPreviewScroll(): void {
-  const preview = document.getElementById('preview-root');
-  if (preview) preview.style.overflow = 'hidden';
+  if (previewEl) previewEl.style.overflow = 'hidden';
 }
 
 function unlockPreviewScroll(): void {
-  const preview = document.getElementById('preview-root');
-  if (preview) preview.style.overflow = '';
+  if (previewEl) previewEl.style.overflow = '';
 }
 
 // ─── Focus return ───
@@ -320,7 +329,8 @@ function closeMenu(root: HTMLElement): void {
 }
 
 // ─── Init ───
-export function initNavBehavior(root: HTMLElement): () => void {
+export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => void {
+  previewEl = preview;
   const abortController = new AbortController();
   const { signal } = abortController;
   let topInlineFrame = 0;

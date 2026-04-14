@@ -456,47 +456,32 @@
 
 /* ─── Shared closed-state layout (CSS grid) ─── */
 
-/* Left alignment (default): logo left, actions+toggle right */
-[data-variant="simple"] .nav__inner,
-[data-variant="fullscreen"] .nav__inner,
-[data-variant="sidebar"] .nav__inner,
-[data-variant="tile"] .nav__inner {
+/* Left alignment (default): logo left, actions+toggle right.
+   Applies to every variant except top, which has its own grid. */
+.nav:not([data-variant="top"]) .nav__inner {
   display: grid;
   grid-template-columns: auto 1fr auto auto;
   align-items: center;
   column-gap: 16px;
 }
 
-/* Hide nav__primary from grid flow in closed state (it's display:none anyway) */
-[data-variant="simple"] .nav__primary,
-[data-variant="fullscreen"] .nav__primary,
-[data-variant="sidebar"] .nav__primary,
-[data-variant="tile"] .nav__primary {
+.nav:not([data-variant="top"]) .nav__primary {
   grid-column: 1 / -1;
   grid-row: 2;
 }
 
-[data-variant="simple"] .nav__logo,
-[data-variant="fullscreen"] .nav__logo,
-[data-variant="sidebar"] .nav__logo,
-[data-variant="tile"] .nav__logo {
+.nav:not([data-variant="top"]) .nav__logo {
   grid-column: 1;
   grid-row: 1;
 }
 
-[data-variant="simple"] .nav__actions,
-[data-variant="fullscreen"] .nav__actions,
-[data-variant="sidebar"] .nav__actions,
-[data-variant="tile"] .nav__actions {
+.nav:not([data-variant="top"]) .nav__actions {
   grid-column: 3;
   grid-row: 1;
   justify-self: end;
 }
 
-[data-variant="simple"] .nav__menu-toggle,
-[data-variant="fullscreen"] .nav__menu-toggle,
-[data-variant="sidebar"] .nav__menu-toggle,
-[data-variant="tile"] .nav__menu-toggle {
+.nav:not([data-variant="top"]) .nav__menu-toggle {
   grid-column: 4;
   grid-row: 1;
   justify-self: end;
@@ -798,65 +783,41 @@
 /* Left alignment is the default grid — no overrides needed */
 
 /* Center alignment: logo truly centered, icons split */
-[data-alignment="center"][data-variant="simple"] .nav__inner,
-[data-alignment="center"][data-variant="fullscreen"] .nav__inner,
-[data-alignment="center"][data-variant="sidebar"] .nav__inner,
-[data-alignment="center"][data-variant="tile"] .nav__inner {
+[data-alignment="center"].nav:not([data-variant="top"]) .nav__inner {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 }
 
-[data-alignment="center"][data-variant="simple"] .nav__menu-toggle,
-[data-alignment="center"][data-variant="fullscreen"] .nav__menu-toggle,
-[data-alignment="center"][data-variant="sidebar"] .nav__menu-toggle,
-[data-alignment="center"][data-variant="tile"] .nav__menu-toggle {
+[data-alignment="center"].nav:not([data-variant="top"]) .nav__menu-toggle {
   grid-column: 1;
   justify-self: start;
 }
 
-[data-alignment="center"][data-variant="simple"] .nav__logo,
-[data-alignment="center"][data-variant="fullscreen"] .nav__logo,
-[data-alignment="center"][data-variant="sidebar"] .nav__logo,
-[data-alignment="center"][data-variant="tile"] .nav__logo {
+[data-alignment="center"].nav:not([data-variant="top"]) .nav__logo {
   grid-column: 2;
   justify-self: center;
 }
 
-[data-alignment="center"][data-variant="simple"] .nav__actions,
-[data-alignment="center"][data-variant="fullscreen"] .nav__actions,
-[data-alignment="center"][data-variant="sidebar"] .nav__actions,
-[data-alignment="center"][data-variant="tile"] .nav__actions {
+[data-alignment="center"].nav:not([data-variant="top"]) .nav__actions {
   grid-column: 3;
   justify-self: end;
 }
 
 /* Right alignment: icons left, logo right */
-[data-alignment="right"][data-variant="simple"] .nav__inner,
-[data-alignment="right"][data-variant="fullscreen"] .nav__inner,
-[data-alignment="right"][data-variant="sidebar"] .nav__inner,
-[data-alignment="right"][data-variant="tile"] .nav__inner {
+[data-alignment="right"].nav:not([data-variant="top"]) .nav__inner {
   grid-template-columns: auto auto 1fr auto;
 }
 
-[data-alignment="right"][data-variant="simple"] .nav__menu-toggle,
-[data-alignment="right"][data-variant="fullscreen"] .nav__menu-toggle,
-[data-alignment="right"][data-variant="sidebar"] .nav__menu-toggle,
-[data-alignment="right"][data-variant="tile"] .nav__menu-toggle {
+[data-alignment="right"].nav:not([data-variant="top"]) .nav__menu-toggle {
   grid-column: 1;
   justify-self: start;
 }
 
-[data-alignment="right"][data-variant="simple"] .nav__actions,
-[data-alignment="right"][data-variant="fullscreen"] .nav__actions,
-[data-alignment="right"][data-variant="sidebar"] .nav__actions,
-[data-alignment="right"][data-variant="tile"] .nav__actions {
+[data-alignment="right"].nav:not([data-variant="top"]) .nav__actions {
   grid-column: 2;
   justify-self: start;
 }
 
-[data-alignment="right"][data-variant="simple"] .nav__logo,
-[data-alignment="right"][data-variant="fullscreen"] .nav__logo,
-[data-alignment="right"][data-variant="sidebar"] .nav__logo,
-[data-alignment="right"][data-variant="tile"] .nav__logo {
+[data-alignment="right"].nav:not([data-variant="top"]) .nav__logo {
   grid-column: 4;
   justify-self: end;
 }
