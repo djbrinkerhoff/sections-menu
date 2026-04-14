@@ -1,5 +1,6 @@
 import {
   VARIANTS, BUTTON_STYLES, ALIGNMENTS, CAPITALIZATIONS, CART_ICONS, LOGO_STYLES, COLORS,
+  BORDER_RADIUS_STEPS,
 } from './nav.schema';
 import type { ControlMap, ColorName, ColorValue, Variant } from './nav.schema';
 import { resetEphemeralState } from './nav';
@@ -7,7 +8,7 @@ import { resetEphemeralState } from './nav';
 // Controls hidden per variant (extensible — add entries as needed)
 const HIDDEN_CONTROLS: Partial<Record<Variant, string[]>> = {
   top: ['button-style'],
-  sidebar: ['inset'],
+  sidebar: ['inset', 'border-radius'],
   tile: ['inset', 'logo-style', 'alignment', 'button-style'],
 };
 
@@ -52,7 +53,6 @@ export function initControls(navRoot: HTMLElement): () => void {
     if (key === 'inset') {
       const on = value === 'true';
       navRoot.style.setProperty('--nav-inset', on ? '16px' : '0px');
-      navRoot.style.setProperty('--nav-inset-radius', '0px');
     }
     if (key === 'variant') syncControlVisibility();
   }
@@ -208,7 +208,19 @@ export function initControls(navRoot: HTMLElement): () => void {
     'inset',
   ));
 
-  // 8. Capitalization
+  // 8. Border radius
+  wrapper.appendChild(createRangeGroup(
+    'border-radius', 'Border radius', BORDER_RADIUS_STEPS,
+    (stepIndex) => {
+      const value = BORDER_RADIUS_STEPS[stepIndex];
+      if (value !== undefined) {
+        navRoot.style.setProperty('--border-radius', value);
+        navRoot.dataset.borderRadius = String(stepIndex);
+      }
+    },
+  ));
+
+  // 9. Capitalization
   wrapper.appendChild(createSegmentedGroup(
     'capitalization', 'Capitalization', CAPITALIZATIONS,
     { normal: 'Aa', lowercase: 'a↓', uppercase: 'A↑' },
@@ -417,6 +429,39 @@ export function initControls(navRoot: HTMLElement): () => void {
     }, { signal });
 
     fieldset.appendChild(input);
+    return fieldset;
+  }
+
+  function createRangeGroup(
+    name: string,
+    label: string,
+    steps: readonly string[],
+    onInput: (stepIndex: number) => void,
+  ): HTMLFieldSetElement {
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'control-group';
+    fieldset.dataset.control = name;
+    fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
+
+    const range = document.createElement('input');
+    range.className = 'control-group__range';
+    range.type = 'range';
+    range.name = name;
+    range.min = '0';
+    range.max = String(steps.length - 1);
+    range.step = '1';
+    range.value = '0';
+    range.ariaLabel = label;
+    range.addEventListener('input', () => {
+      onInput(Number.parseInt(range.value, 10));
+    }, { signal });
+
+    const labels = document.createElement('div');
+    labels.className = 'control-group__range-labels';
+    labels.innerHTML = `<span>Sharp</span><span>Full</span>`;
+
+    fieldset.appendChild(range);
+    fieldset.appendChild(labels);
     return fieldset;
   }
 

@@ -4,6 +4,7 @@ export const ALIGNMENTS = ['left', 'center', 'right'] as const;
 export const CAPITALIZATIONS = ['normal', 'lowercase', 'uppercase'] as const;
 export const CART_ICONS = ['cart', 'bag'] as const;
 export const LOGO_STYLES = ['small', 'stacked'] as const;
+export const BORDER_RADIUS_STEPS = ['0px', '4px', '8px', '16px', '9999px'] as const;
 
 export const COLORS = {
   white: '#FFFFFF',
@@ -32,4 +33,5 @@ export type ControlMap = {
   cartIcon: CartIcon;
   logoStyle: LogoStyle;
   inset: 'true' | 'false';
+  borderRadius: '0' | '1' | '2' | '3' | '4';
 };

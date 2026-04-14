@@ -19,7 +19,16 @@
 ) {
   width: auto;
   margin: var(--nav-inset, 0px);
-  border-radius: var(--nav-inset-radius, 0px);
+  border-radius: var(--border-radius, 0px);
+}
+
+/* Cap radius on inset open overlays so "full" doesn't create a pill */
+.nav[data-inset="true"][data-open="true"]:is(
+  [data-variant="simple"],
+  [data-variant="fullscreen"],
+  [data-variant="top"]
+) {
+  border-radius: min(var(--border-radius, 0px), 16px);
 }
 
 .nav__inner {
@@ -965,6 +974,14 @@
     padding: 0;
   }
 
+  /* Tile mobile closed: border-radius on individual boxes */
+  .nav[data-variant="tile"][data-open="false"] .nav__logo,
+  .nav[data-variant="tile"][data-open="false"] .nav__search-toggle,
+  .nav[data-variant="tile"][data-open="false"] .nav__cart,
+  .nav[data-variant="tile"][data-open="false"] .nav__menu-toggle {
+    border-radius: var(--border-radius, 0px);
+  }
+
   /* ─ Tile mobile search open: search box replaces logo ─ */
 
   /* Hide logo when search is open */
@@ -989,6 +1006,7 @@
     height: 56px;
     padding: 16px;
     gap: 12px;
+    border-radius: var(--border-radius, 0px);
   }
 
   .nav[data-variant="tile"] .nav__search[data-search-open="true"] .nav__search-toggle {
@@ -1043,6 +1061,7 @@
   width: auto;
   z-index: 40;
   overflow: hidden;
+  border-radius: min(var(--border-radius, 0px), 16px);
 }
 
 @container (max-width: 767px) {
@@ -1115,6 +1134,7 @@
     font-weight: 700;
     line-height: 1.2;
     letter-spacing: 0.4px;
+    border-radius: min(var(--border-radius, 0px), 16px);
   }
 
   /* Submenu tile: the entire nav__item is the white tile block, so the button
@@ -1127,6 +1147,7 @@
     flex-direction: column;
     justify-content: center;
     padding: 20px 16px;
+    border-radius: min(var(--border-radius, 0px), 16px);
   }
 
   [data-variant="tile"][data-open="true"] .nav__item--has-submenu > .nav__link {
@@ -1219,6 +1240,7 @@
     height: 48px;
     display: flex;
     align-items: center;
+    border-radius: var(--border-radius, 0px);
   }
 
   .nav[data-variant="tile"] .nav__primary {
@@ -1257,6 +1279,7 @@
     letter-spacing: 0.32px;
     white-space: nowrap;
     width: 100%;
+    border-radius: var(--border-radius, 0px);
   }
 
   /* Desktop submenu: dropdown below tile, same width as parent */
@@ -1269,6 +1292,7 @@
     background-color: var(--menu-color);
     border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
     z-index: 30;
+    border-radius: var(--border-radius, 0px);
   }
 
   .nav[data-variant="tile"] .nav__submenu-link {
@@ -1313,6 +1337,7 @@
     align-items: center;
     justify-content: center;
     padding: 0;
+    border-radius: var(--border-radius, 0px);
   }
 
   /* Kill transitions on tile desktop to prevent icons flying during search toggle */
@@ -1344,6 +1369,7 @@
     color: var(--text-color);
     display: flex;
     align-items: center;
+    border-radius: var(--border-radius, 0px);
   }
 
   /* Search icon as pseudo-element on the form (left side) */

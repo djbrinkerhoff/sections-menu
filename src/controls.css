@@ -213,6 +213,21 @@
   margin: 0;
 }
 
+/* ─── Range slider ─── */
+.control-group__range {
+  width: 100%;
+  accent-color: #fff;
+  cursor: pointer;
+}
+
+.control-group__range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6875rem;
+  color: #999;
+  margin-top: 4px;
+}
+
 /* ─── Viewport bar ─── */
 .viewport-bar {
   @apply flex items-center justify-between gap-4 px-4 py-3;
