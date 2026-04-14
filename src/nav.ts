@@ -72,6 +72,55 @@ function openSearch(root: HTMLElement, { focusInput = true }: { focusInput?: boo
   }
 }
 
+function getInlineNavWidth(list: HTMLElement): number {
+  const styles = getComputedStyle(list);
+  const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+  const itemWidths = Array.from(list.children).map((item) => {
+    const trigger = item.firstElementChild;
+    return trigger instanceof HTMLElement ? trigger.getBoundingClientRect().width : 0;
+  });
+
+  return itemWidths.reduce((sum, width) => sum + width, 0) + gap * Math.max(itemWidths.length - 1, 0);
+}
+
+function syncTopInlineState(root: HTMLElement): void {
+  if (root.dataset.variant !== 'top') {
+    delete root.dataset.topInline;
+    return;
+  }
+
+  const inner = root.querySelector<HTMLElement>('.nav__inner');
+  const primary = root.querySelector<HTMLElement>('.nav__primary');
+  const list = root.querySelector<HTMLElement>('.nav__list');
+  const logo = root.querySelector<HTMLElement>('.nav__logo');
+  const search = root.querySelector<HTMLElement>('.nav__search');
+  const cart = root.querySelector<HTMLElement>('.nav__cart');
+
+  if (!inner || !primary || !list || !logo || !search || !cart) {
+    root.dataset.topInline = 'false';
+    return;
+  }
+
+  const styles = getComputedStyle(inner);
+  const paddingInline =
+    (Number.parseFloat(styles.paddingLeft) || 0) +
+    (Number.parseFloat(styles.paddingRight) || 0);
+  const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+  const contentWidth = inner.clientWidth - paddingInline;
+  const fixedWidth =
+    logo.getBoundingClientRect().width +
+    search.getBoundingClientRect().width +
+    cart.getBoundingClientRect().width;
+  const linkWidth = getInlineNavWidth(list);
+
+  let availableWidth = contentWidth - fixedWidth - gap * 3;
+  if (root.dataset.alignment === 'center') {
+    availableWidth = (contentWidth - fixedWidth - gap * 4) / 2;
+  }
+
+  root.dataset.topInline = availableWidth >= linkWidth ? 'true' : 'false';
+}
+
 function closeShopSubmenu(root: HTMLElement, { restoreFocus = false }: { restoreFocus?: boolean } = {}): void {
   const shopBtn = root.querySelector<HTMLButtonElement>('[aria-controls="shop-submenu"]');
   const shopSubmenu = root.querySelector<HTMLElement>('#shop-submenu');
@@ -267,6 +316,15 @@ function closeMenu(root: HTMLElement): void {
 export function initNavBehavior(root: HTMLElement): () => void {
   const abortController = new AbortController();
   const { signal } = abortController;
+  let topInlineFrame = 0;
+
+  const scheduleTopInlineSync = () => {
+    if (topInlineFrame) cancelAnimationFrame(topInlineFrame);
+    topInlineFrame = requestAnimationFrame(() => {
+      topInlineFrame = 0;
+      syncTopInlineState(root);
+    });
+  };
 
   // Menu toggle (with rapid double-click guard)
   const menuToggle = root.querySelector<HTMLButtonElement>('.nav__menu-toggle');
@@ -389,8 +447,34 @@ export function initNavBehavior(root: HTMLElement): () => void {
     primary.setAttribute('role', 'region');
   }
 
+  const topInlineResizeObserver = new ResizeObserver(() => {
+    scheduleTopInlineSync();
+  });
+  topInlineResizeObserver.observe(root);
+
+  const topInlineMutationObserver = new MutationObserver(() => {
+    scheduleTopInlineSync();
+  });
+
+  topInlineMutationObserver.observe(root, {
+    attributes: true,
+    attributeFilter: ['data-variant', 'data-alignment', 'data-logo-style', 'data-cart-count'],
+  });
+
+  if (primary) {
+    topInlineMutationObserver.observe(primary, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  scheduleTopInlineSync();
+
   return () => {
     abortController.abort();
+    if (topInlineFrame) cancelAnimationFrame(topInlineFrame);
+    topInlineResizeObserver.disconnect();
+    topInlineMutationObserver.disconnect();
     removeSidebarHandler();
     inertReset();
   };

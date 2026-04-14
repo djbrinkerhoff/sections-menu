@@ -179,6 +179,94 @@ test('shows simple variant links inline in the desktop nav bar', async ({ page }
   expect(layout.primaryRect?.right).toBeLessThanOrEqual(layout.actionsRect?.left ?? Number.MAX_SAFE_INTEGER);
 });
 
+test('moves top variant links into the masthead as soon as they fit', async ({ page }) => {
+  const setTopVariant = async () => {
+    await page.locator('input[name="variant"][value="top"]').evaluate((input) => {
+      if (!(input instanceof HTMLInputElement)) throw new Error('Expected top variant input');
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  };
+
+  const readLayout = async () => page.evaluate(() => {
+    const nav = document.querySelector('.nav');
+    const logo = document.querySelector('.nav__logo');
+    const primary = document.querySelector('.nav__primary');
+    const list = document.querySelector('.nav__list');
+    const search = document.querySelector('.nav__search');
+    const cart = document.querySelector('.nav__cart');
+    const rect = (element: Element | null) => element?.getBoundingClientRect() ?? null;
+
+    return {
+      alignment: nav instanceof HTMLElement ? nav.dataset.alignment : null,
+      topInline: nav instanceof HTMLElement ? nav.dataset.topInline : null,
+      listJustifyContent: list ? getComputedStyle(list).justifyContent : null,
+      logoRect: rect(logo),
+      primaryRect: rect(primary),
+      searchRect: rect(search),
+      cartRect: rect(cart),
+    };
+  });
+
+  const setAlignment = async (value: 'left' | 'center' | 'right') => {
+    await page.locator(`input[name="alignment"][value="${value}"]`).evaluate((input) => {
+      if (!(input instanceof HTMLInputElement)) throw new Error('Expected alignment input');
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  };
+
+  await setTopVariant();
+  await page.getByRole('button', { name: '375' }).click();
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('false');
+
+  const stacked = await readLayout();
+  expect(stacked.topInline).toBe('false');
+  expect(stacked.primaryRect?.top).toBeGreaterThan(stacked.logoRect?.bottom ?? 0);
+
+  await page.getByRole('button', { name: '768' }).click();
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
+
+  const inline = await readLayout();
+  expect(inline.alignment).toBe('left');
+  expect(inline.topInline).toBe('true');
+  expect(inline.listJustifyContent).toBe('center');
+  expect(inline.primaryRect?.left).toBeGreaterThanOrEqual(inline.logoRect?.right ?? 0);
+  expect(inline.primaryRect?.right).toBeLessThanOrEqual(inline.searchRect?.left ?? Number.MAX_SAFE_INTEGER);
+  expect(inline.primaryRect?.top).toBeLessThan(inline.logoRect?.bottom ?? Number.MAX_SAFE_INTEGER);
+  expect(inline.primaryRect?.bottom).toBeGreaterThan(inline.logoRect?.top ?? 0);
+  expect(inline.primaryRect?.top).toBeLessThan(inline.cartRect?.bottom ?? Number.MAX_SAFE_INTEGER);
+  expect(inline.primaryRect?.bottom).toBeGreaterThan(inline.cartRect?.top ?? 0);
+
+  await page.getByRole('button', { name: '1280' }).click();
+  await setAlignment('center');
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
+
+  const centeredLogo = await readLayout();
+  expect(centeredLogo.alignment).toBe('center');
+  expect(centeredLogo.listJustifyContent).toBe('flex-end');
+  expect(centeredLogo.primaryRect?.left).toBeGreaterThanOrEqual(centeredLogo.searchRect?.right ?? 0);
+  expect(centeredLogo.primaryRect?.right).toBeLessThanOrEqual(centeredLogo.logoRect?.left ?? Number.MAX_SAFE_INTEGER);
+
+  await setAlignment('right');
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
+
+  const rightAlignedLogo = await readLayout();
+  expect(rightAlignedLogo.alignment).toBe('right');
+  expect(rightAlignedLogo.listJustifyContent).toBe('center');
+  expect(rightAlignedLogo.primaryRect?.left).toBeGreaterThanOrEqual(rightAlignedLogo.cartRect?.right ?? 0);
+  expect(rightAlignedLogo.primaryRect?.right).toBeLessThanOrEqual(rightAlignedLogo.logoRect?.left ?? Number.MAX_SAFE_INTEGER);
+
+  await setAlignment('left');
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
+  await page.getByRole('spinbutton', { name: 'Nav items' }).fill('20');
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('false');
+
+  const overflowed = await readLayout();
+  expect(overflowed.topInline).toBe('false');
+  expect(overflowed.primaryRect?.top).toBeGreaterThan(overflowed.logoRect?.bottom ?? 0);
+});
+
 test('lets nav__list scroll on desktop and toggles the sidebar logo per Figma', async ({ page }) => {
   await page.getByRole('button', { name: '1280' }).click();
 
