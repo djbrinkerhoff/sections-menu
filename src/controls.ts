@@ -32,9 +32,59 @@ export function initControls(navRoot: HTMLElement): () => void {
     navRoot.dataset[key] = value;
   }
 
+  // APCA-based band mix: tint the link-row band toward the text color,
+  // scaling the percentage so low-contrast pairs get more tinting.
+  let currentMenuHex = navRoot.style.getPropertyValue('--menu-color').trim() || '#000000';
+  let currentTextHex = navRoot.style.getPropertyValue('--text-color').trim() || '#FFFFFF';
+
+  function hexToRGB(hex: string): [number, number, number] {
+    return [
+      parseInt(hex.slice(1, 3), 16),
+      parseInt(hex.slice(3, 5), 16),
+      parseInt(hex.slice(5, 7), 16),
+    ];
+  }
+
+  function apcaY(r: number, g: number, b: number): number {
+    return 0.2126729 * (r / 255) ** 2.4
+         + 0.7151522 * (g / 255) ** 2.4
+         + 0.0721750 * (b / 255) ** 2.4;
+  }
+
+  function apcaLc(txtY: number, bgY: number): number {
+    const sc = (y: number) => y > 0.022 ? y : y + (0.022 - y) ** 1.414;
+    const tYc = sc(txtY);
+    const bYc = sc(bgY);
+    if (Math.abs(bYc - tYc) < 0.0005) return 0;
+    if (bYc > tYc) {
+      const s = (bYc ** 0.56 - tYc ** 0.57) * 1.14;
+      return s < 0.1 ? 0 : s - 0.027;
+    }
+    const s = (bYc ** 0.65 - tYc ** 0.62) * 1.14;
+    return s > -0.1 ? 0 : s + 0.027;
+  }
+
+  function syncBandMix(): void {
+    if (!currentMenuHex.startsWith('#') || !currentTextHex.startsWith('#')) return;
+    const [mr, mg, mb] = hexToRGB(currentMenuHex);
+    const [tr, tg, tb] = hexToRGB(currentTextHex);
+    const menuY = apcaY(mr, mg, mb);
+    const absLc = Math.abs(apcaLc(apcaY(tr, tg, tb), menuY)) * 100;
+    // Base: high contrast (Lc≈106) → 5%; low contrast (Lc≈0) → 20%
+    let mix = 20 - (absLc / 106) * 15;
+    // Dark menus need more mixing to produce a visible shift
+    mix += (1 - Math.min(menuY * 4, 1)) * 12;
+    navRoot.style.setProperty('--band-mix', `${Math.round(Math.max(5, Math.min(30, mix)))}%`);
+  }
+
   function setColor(target: 'menu' | 'text', value: ColorValue): void {
     navRoot.style.setProperty(target === 'menu' ? '--menu-color' : '--text-color', value);
+    if (target === 'menu') currentMenuHex = value;
+    else currentTextHex = value;
+    syncBandMix();
   }
+
+  syncBandMix();
 
   let currentNavItemCount = 4;
 

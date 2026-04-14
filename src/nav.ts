@@ -113,11 +113,12 @@ function syncTopInlineState(root: HTMLElement): void {
     cart.getBoundingClientRect().width;
   const linkWidth = getInlineNavWidth(list);
 
-  let availableWidth = contentWidth - fixedWidth - gap * 3;
   if (root.dataset.alignment === 'center') {
-    availableWidth = (contentWidth - fixedWidth - gap * 4) / 2;
+    root.dataset.topInline = 'false';
+    return;
   }
 
+  const availableWidth = contentWidth - fixedWidth - gap * 3;
   root.dataset.topInline = availableWidth >= linkWidth ? 'true' : 'false';
 }
 

@@ -240,13 +240,12 @@ test('moves top variant links into the masthead as soon as they fit', async ({ p
 
   await page.getByRole('button', { name: '1280' }).click();
   await setAlignment('center');
-  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('false');
 
   const centeredLogo = await readLayout();
   expect(centeredLogo.alignment).toBe('center');
-  expect(centeredLogo.listJustifyContent).toBe('flex-end');
-  expect(centeredLogo.primaryRect?.left).toBeGreaterThanOrEqual(centeredLogo.searchRect?.right ?? 0);
-  expect(centeredLogo.primaryRect?.right).toBeLessThanOrEqual(centeredLogo.logoRect?.left ?? Number.MAX_SAFE_INTEGER);
+  expect(centeredLogo.topInline).toBe('false');
+  expect(centeredLogo.primaryRect?.top).toBeGreaterThan(centeredLogo.logoRect?.bottom ?? 0);
 
   await setAlignment('right');
   await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
