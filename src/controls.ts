@@ -8,6 +8,7 @@ import { resetEphemeralState } from './nav';
 const HIDDEN_CONTROLS: Partial<Record<Variant, string[]>> = {
   top: ['button-style'],
   sidebar: ['inset'],
+  tile: ['inset', 'logo-style', 'alignment', 'button-style'],
 };
 
 // Color display names for labels
@@ -45,7 +46,7 @@ export function initControls(navRoot: HTMLElement): () => void {
   function setControl<K extends keyof ControlMap>(key: K, value: ControlMap[K]): void {
     if (key === 'variant') {
       resetEphemeralState(navRoot);
-      if (value === 'top') navRoot.dataset.open = 'false';
+      if (value === 'top' || value === 'tile') navRoot.dataset.open = 'false';
     }
     navRoot.dataset[key] = value;
     if (key === 'inset') {
@@ -266,6 +267,7 @@ export function initControls(navRoot: HTMLElement): () => void {
       fullscreen: `<svg viewBox="0 0 56 36" fill="none"><rect width="56" height="36" rx="1.5" fill="currentColor" opacity=".1"/><rect x="14" y="11" width="28" height="3.5" rx=".5" fill="currentColor" opacity=".3"/><rect x="17" y="18" width="22" height="3" rx=".5" fill="currentColor" opacity=".22"/><rect x="20" y="24" width="16" height="3" rx=".5" fill="currentColor" opacity=".15"/></svg>`,
       sidebar: `<svg viewBox="0 0 56 36" fill="none"><rect width="56" height="7" rx="1" fill="currentColor" opacity=".3"/><rect y="7" width="20" height="29" fill="currentColor" opacity=".1"/><rect x="3" y="11" width="14" height="2" rx=".5" fill="currentColor" opacity=".22"/><rect x="3" y="16" width="11" height="2" rx=".5" fill="currentColor" opacity=".18"/><rect x="3" y="21" width="13" height="2" rx=".5" fill="currentColor" opacity=".15"/></svg>`,
       top: `<svg viewBox="0 0 56 36" fill="none"><rect width="56" height="9" rx="1" fill="currentColor" opacity=".3"/><rect x="2" y="2.5" width="8" height="4" rx=".5" fill="currentColor" opacity=".35"/><rect x="12" y="3" width="8" height="3" rx=".5" fill="currentColor" opacity=".18"/><rect x="22" y="3" width="10" height="3" rx=".5" fill="currentColor" opacity=".18"/><rect x="34" y="3" width="7" height="3" rx=".5" fill="currentColor" opacity=".18"/><rect x="43" y="3" width="11" height="3" rx=".5" fill="currentColor" opacity=".18"/></svg>`,
+      tile: `<svg viewBox="0 0 56 36" fill="none"><rect width="56" height="7" rx="1" fill="currentColor" opacity=".3"/><rect x="2" y="10" width="25" height="11" rx="1" fill="currentColor" opacity=".22"/><rect x="29" y="10" width="25" height="11" rx="1" fill="currentColor" opacity=".22"/><rect x="2" y="23" width="25" height="11" rx="1" fill="currentColor" opacity=".15"/><rect x="29" y="23" width="25" height="11" rx="1" fill="currentColor" opacity=".15"/></svg>`,
     };
 
     for (const v of VARIANTS) {

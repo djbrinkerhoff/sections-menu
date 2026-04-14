@@ -263,10 +263,10 @@ function openMenu(root: HTMLElement): void {
   }
 
   const variant = root.dataset.variant;
-  if (variant === 'simple' || variant === 'fullscreen' || variant === 'sidebar') {
+  if (variant === 'simple' || variant === 'fullscreen' || variant === 'sidebar' || variant === 'tile') {
     inertPush();
   }
-  if (variant === 'simple' || variant === 'fullscreen') {
+  if (variant === 'simple' || variant === 'fullscreen' || variant === 'tile') {
     lockPreviewScroll();
   }
   if (variant === 'fullscreen') {
@@ -298,10 +298,10 @@ function closeMenu(root: HTMLElement): void {
 
   if (wasOpen) {
     const variant = root.dataset.variant;
-    if (variant === 'simple' || variant === 'fullscreen' || variant === 'sidebar') {
+    if (variant === 'simple' || variant === 'fullscreen' || variant === 'sidebar' || variant === 'tile') {
       inertPop();
     }
-    if (variant === 'simple' || variant === 'fullscreen') {
+    if (variant === 'simple' || variant === 'fullscreen' || variant === 'tile') {
       unlockPreviewScroll();
     }
     if (variant === 'fullscreen') {

@@ -1,4 +1,4 @@
-export const VARIANTS = ['simple', 'fullscreen', 'sidebar', 'top'] as const;
+export const VARIANTS = ['simple', 'fullscreen', 'sidebar', 'top', 'tile'] as const;
 export const BUTTON_STYLES = ['hamburger', 'plus', 'text'] as const;
 export const ALIGNMENTS = ['left', 'center', 'right'] as const;
 export const CAPITALIZATIONS = ['normal', 'lowercase', 'uppercase'] as const;
