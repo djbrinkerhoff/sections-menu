@@ -66,6 +66,119 @@ test('preserves existing Escape behavior for cart and menu', async ({ page }) =>
   await expect(menuToggle).toBeFocused();
 });
 
+test('auto-opens fullscreen search on mobile and desktop', async ({ page }) => {
+  const setFullscreenVariant = async () => {
+    await page.locator('input[name="variant"][value="fullscreen"]').evaluate((input) => {
+      if (!(input instanceof HTMLInputElement)) throw new Error('Expected fullscreen variant input');
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  };
+
+  for (const viewportLabel of ['375', '1280']) {
+    await page.getByRole('button', { name: viewportLabel }).click();
+    await setFullscreenVariant();
+
+    const menuToggle = page.locator('.nav__menu-toggle');
+    const searchForm = page.locator('.nav__search');
+    const searchToggle = page.locator('.nav__search-toggle');
+    const searchInput = page.locator('.nav__search-input');
+    const navRoot = page.locator('.nav');
+
+    await menuToggle.click();
+
+    await expect(navRoot).toHaveAttribute('data-open', 'true');
+    await expect(searchForm).toHaveAttribute('data-search-open', 'true');
+    await expect(searchToggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(searchInput).not.toBeFocused();
+    await expect(menuToggle).toBeFocused();
+
+    await expect
+      .poll(async () => searchInput.evaluate((input) => getComputedStyle(input).transitionDuration))
+      .toBe('0s');
+
+    await page.keyboard.press('Escape');
+
+    await expect(navRoot).toHaveAttribute('data-open', 'false');
+    await expect(menuToggle).toBeFocused();
+  }
+});
+
+test('renders the simple mobile menu like the Figma frame when open', async ({ page }) => {
+  const closedLogo = await page.locator('.nav__logo').evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { left: rect.left, width: rect.width };
+  });
+
+  await page.locator('.nav__menu-toggle').click();
+
+  const layout = await page.evaluate(() => {
+    const actions = document.querySelector('.nav__actions');
+    const primary = document.querySelector('.nav__primary');
+    const list = document.querySelector('.nav__list');
+    const firstLink = document.querySelector('.nav__item .nav__link');
+    const dropdownLink = document.querySelector('.nav__item--has-submenu > .nav__link');
+    const firstItem = document.querySelector('.nav__item');
+    const logo = document.querySelector('.nav__logo');
+    const logoRect = logo?.getBoundingClientRect();
+
+    return {
+      actionsDisplay: actions ? getComputedStyle(actions).display : null,
+      primaryDisplay: primary ? getComputedStyle(primary).display : null,
+      listDirection: list ? getComputedStyle(list).flexDirection : null,
+      firstLinkFontSize: firstLink ? getComputedStyle(firstLink).fontSize : null,
+      firstLinkPaddingTop: firstLink ? getComputedStyle(firstLink).paddingTop : null,
+      dropdownJustify: dropdownLink ? getComputedStyle(dropdownLink).justifyContent : null,
+      firstItemBorderBottomWidth: firstItem ? getComputedStyle(firstItem).borderBottomWidth : null,
+      logoLeft: logoRect?.left ?? null,
+      logoWidth: logoRect?.width ?? null,
+    };
+  });
+
+  expect(layout.actionsDisplay).toBe('none');
+  expect(layout.primaryDisplay).toBe('block');
+  expect(layout.listDirection).toBe('column');
+  expect(layout.firstLinkFontSize).toBe('20px');
+  expect(layout.firstLinkPaddingTop).toBe('20px');
+  expect(layout.dropdownJustify).toBe('space-between');
+  expect(layout.firstItemBorderBottomWidth).toBe('1px');
+  expect(layout.logoLeft).toBeCloseTo(closedLogo.left, 0);
+  expect(layout.logoWidth).toBeCloseTo(closedLogo.width, 0);
+});
+
+test('shows simple variant links inline in the desktop nav bar', async ({ page }) => {
+  await page.getByRole('button', { name: '1280' }).click();
+
+  const layout = await page.evaluate(() => {
+    const nav = document.querySelector('.nav');
+    const logo = document.querySelector('.nav__logo');
+    const primary = document.querySelector('.nav__primary');
+    const actions = document.querySelector('.nav__actions');
+    const list = document.querySelector('.nav__list');
+    const toggle = document.querySelector('.nav__menu-toggle');
+    const rect = (element: Element | null) => element?.getBoundingClientRect() ?? null;
+
+    return {
+      variant: nav instanceof HTMLElement ? nav.dataset.variant : null,
+      primaryDisplay: primary ? getComputedStyle(primary).display : null,
+      listDirection: list ? getComputedStyle(list).flexDirection : null,
+      listJustifyContent: list ? getComputedStyle(list).justifyContent : null,
+      toggleDisplay: toggle ? getComputedStyle(toggle).display : null,
+      logoRect: rect(logo),
+      primaryRect: rect(primary),
+      actionsRect: rect(actions),
+    };
+  });
+
+  expect(layout.variant).toBe('simple');
+  expect(layout.primaryDisplay).toBe('block');
+  expect(layout.listDirection).toBe('row');
+  expect(layout.listJustifyContent).toBe('center');
+  expect(layout.toggleDisplay).toBe('none');
+  expect(layout.primaryRect?.left).toBeGreaterThanOrEqual(layout.logoRect?.right ?? 0);
+  expect(layout.primaryRect?.right).toBeLessThanOrEqual(layout.actionsRect?.left ?? Number.MAX_SAFE_INTEGER);
+});
+
 test('lets nav__list scroll on desktop and toggles the sidebar logo per Figma', async ({ page }) => {
   await page.getByRole('button', { name: '1280' }).click();
 

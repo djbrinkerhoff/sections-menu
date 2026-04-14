@@ -56,6 +56,22 @@ function closeSearch(root: HTMLElement, { restoreFocus = false }: { restoreFocus
   }
 }
 
+function openSearch(root: HTMLElement, { focusInput = true }: { focusInput?: boolean } = {}): void {
+  const searchBtn = root.querySelector<HTMLButtonElement>('.nav__search-toggle');
+  const searchForm = root.querySelector<HTMLFormElement>('.nav__search');
+  const searchInput = root.querySelector<HTMLInputElement>('.nav__search-input');
+
+  if (searchBtn) {
+    searchBtn.setAttribute('aria-expanded', 'true');
+    searchBtn.setAttribute('aria-label', 'Close search');
+  }
+  if (searchForm) searchForm.setAttribute('data-search-open', 'true');
+
+  if (focusInput) {
+    searchInput?.focus();
+  }
+}
+
 function closeShopSubmenu(root: HTMLElement, { restoreFocus = false }: { restoreFocus?: boolean } = {}): void {
   const shopBtn = root.querySelector<HTMLButtonElement>('[aria-controls="shop-submenu"]');
   const shopSubmenu = root.querySelector<HTMLElement>('#shop-submenu');
@@ -202,6 +218,7 @@ function openMenu(root: HTMLElement): void {
   }
   if (variant === 'fullscreen') {
     lockPreviewScroll();
+    openSearch(root, { focusInput: false });
   }
   if (variant === 'sidebar') {
     installSidebarOutsideClose(root);
@@ -231,6 +248,7 @@ function closeMenu(root: HTMLElement): void {
       inertPop();
     }
     if (variant === 'fullscreen') {
+      closeSearch(root);
       unlockPreviewScroll();
     }
     removeSidebarHandler();
@@ -271,19 +289,25 @@ export function initNavBehavior(root: HTMLElement): () => void {
 
   if (searchToggle && searchInput && searchForm) {
     searchToggle.addEventListener('click', () => {
+      if (root.dataset.variant === 'fullscreen' && root.dataset.open === 'true') {
+        openSearch(root);
+        return;
+      }
+
       const isOpen = searchToggle.getAttribute('aria-expanded') === 'true';
       if (isOpen) {
         closeSearch(root);
       } else {
-        searchToggle.setAttribute('aria-expanded', 'true');
-        searchToggle.setAttribute('aria-label', 'Close search');
-        searchForm.setAttribute('data-search-open', 'true');
-        searchInput.focus();
+        openSearch(root);
       }
     }, { signal });
 
     // Click-outside to close search
     document.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (root.dataset.variant === 'fullscreen' && root.dataset.open === 'true') {
+        return;
+      }
+
       if (
         searchToggle.getAttribute('aria-expanded') === 'true' &&
         !e.composedPath().includes(searchForm)
@@ -340,7 +364,13 @@ export function initNavBehavior(root: HTMLElement): () => void {
   // Escape key handler: search, cart, submenu, then fullscreen/sidebar/simple menu
   document.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      if (searchToggle?.getAttribute('aria-expanded') === 'true') {
+      if (root.dataset.variant === 'fullscreen' && root.dataset.open === 'true') {
+        if (cartDialog?.open) {
+          closeCartDrawer();
+        } else {
+          closeMenu(root);
+        }
+      } else if (searchToggle?.getAttribute('aria-expanded') === 'true') {
         closeSearch(root, { restoreFocus: true });
       } else if (cartDialog?.open) {
         closeCartDrawer();
