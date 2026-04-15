@@ -580,24 +580,33 @@ test.describe('social links', () => {
     expect(geometry.socialTop).toBeGreaterThanOrEqual(geometry.listBottom - 1);
   });
 
-  test('mobile top: social group renders inline with the link row', async ({ page }) => {
+  test('mobile top: social group renders in the masthead next to cart', async ({ page }) => {
     await page.getByRole('button', { name: '375' }).click();
     await setVariant(page, 'top');
     await toggleSocialLinks(page, 'true');
 
     const geometry = await page.evaluate(() => {
+      const logo = document.querySelector('.nav__logo')!.getBoundingClientRect();
       const list = document.querySelector('.nav__list')!.getBoundingClientRect();
-      const social = document.querySelector('.nav__social')!.getBoundingClientRect();
+      const cart = document.querySelector('.nav__cart')!.getBoundingClientRect();
+      const socialEl = document.querySelector('.nav__social') as HTMLElement;
+      const social = socialEl.getBoundingClientRect();
       return {
+        logoTop: logo.top,
         listTop: list.top,
         socialTop: social.top,
-        socialVisible: (document.querySelector('.nav__social') as HTMLElement).offsetHeight > 0,
+        socialLeft: social.left,
+        cartLeft: cart.left,
+        socialVisible: socialEl.offsetHeight > 0,
       };
     });
 
     expect(geometry.socialVisible).toBe(true);
-    // Inline with the list row: vertical centers within ~8px of each other.
-    expect(Math.abs(geometry.listTop - geometry.socialTop)).toBeLessThan(24);
+    // Social shares the masthead row with the logo (not the link row below).
+    expect(Math.abs(geometry.logoTop - geometry.socialTop)).toBeLessThan(24);
+    expect(geometry.listTop).toBeGreaterThan(geometry.socialTop + 10);
+    // Social sits to the left of the cart (trailing side of the masthead).
+    expect(geometry.socialLeft).toBeLessThan(geometry.cartLeft);
   });
 
   test('mobile tile: social group renders as a 3-column grid in the open menu', async ({ page }) => {
