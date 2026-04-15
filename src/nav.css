@@ -2026,14 +2026,16 @@
 
 /* ─── Hide social group while the search field is open ───
    Top (all viewports) and simple desktop both show the social group in
-   the masthead; when the search input expands it needs room. */
+   the masthead; when the search input expands it overlaps. Use
+   visibility: hidden so the grid cell keeps its reserved width — no
+   layout shift on open/close. */
 .nav[data-variant="top"][data-social-links="true"]:has(.nav__search[data-search-open="true"]) .nav__social {
-  display: none;
+  visibility: hidden;
 }
 
 @container (min-width: 768px) {
   .nav[data-variant="simple"][data-social-links="true"]:has(.nav__search[data-search-open="true"]) .nav__social {
-    display: none;
+    visibility: hidden;
   }
 }
 
