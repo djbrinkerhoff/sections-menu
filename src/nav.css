@@ -2024,6 +2024,19 @@
   justify-self: end;
 }
 
+/* ─── Hide social group while the search field is open ───
+   Top (all viewports) and simple desktop both show the social group in
+   the masthead; when the search input expands it needs room. */
+.nav[data-variant="top"][data-social-links="true"]:has(.nav__search[data-search-open="true"]) .nav__social {
+  display: none;
+}
+
+@container (min-width: 768px) {
+  .nav[data-variant="simple"][data-social-links="true"]:has(.nav__search[data-search-open="true"]) .nav__social {
+    display: none;
+  }
+}
+
 /* ─── Tile: social placement ─── */
 
 /* Tile mobile open: three square tiles spanning the full width in a 3-col grid */
