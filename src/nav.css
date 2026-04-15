@@ -1231,8 +1231,7 @@
   }
 
   .nav[data-variant="tile"] .nav__primary {
-    display: flex;
-    align-items: center;
+    display: block;
     grid-column: 2;
     grid-row: 1;
     align-self: center;
