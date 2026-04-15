@@ -681,3 +681,74 @@ test.describe('social links', () => {
     await expect(page.locator('.nav__social-link')).toHaveCount(3);
   });
 });
+
+test.describe('edge case: many nav items', () => {
+  type Combo = {
+    variant: 'simple' | 'fullscreen' | 'sidebar' | 'top' | 'tile';
+    viewport: '375' | '1280';
+    openMenu: boolean;
+    // Which element hosts the overflow (scrollbar or wrap) we care about.
+    overflowHost: '.nav__list' | '.nav__primary';
+    // Direction that should be scrollable/wrapping when items overflow.
+    overflow: 'vertical' | 'horizontal' | 'wrap';
+  };
+
+  const COUNT = 15;
+  const combos: Combo[] = [
+    { variant: 'simple',     viewport: '375',  openMenu: true,  overflowHost: '.nav__primary', overflow: 'vertical'   },
+    { variant: 'simple',     viewport: '1280', openMenu: false, overflowHost: '.nav__primary', overflow: 'horizontal' },
+    { variant: 'fullscreen', viewport: '375',  openMenu: true,  overflowHost: '.nav__list',    overflow: 'vertical'   },
+    { variant: 'fullscreen', viewport: '1280', openMenu: true,  overflowHost: '.nav__list',    overflow: 'vertical'   },
+    { variant: 'sidebar',    viewport: '375',  openMenu: true,  overflowHost: '.nav__list',    overflow: 'vertical'   },
+    { variant: 'sidebar',    viewport: '1280', openMenu: true,  overflowHost: '.nav__list',    overflow: 'vertical'   },
+    { variant: 'top',        viewport: '375',  openMenu: false, overflowHost: '.nav__primary', overflow: 'horizontal' },
+    { variant: 'top',        viewport: '1280', openMenu: false, overflowHost: '.nav__primary', overflow: 'horizontal' },
+    { variant: 'tile',       viewport: '375',  openMenu: true,  overflowHost: '.nav__primary', overflow: 'vertical'   },
+    { variant: 'tile',       viewport: '1280', openMenu: false, overflowHost: '.nav__primary', overflow: 'wrap'       },
+  ];
+
+  for (const combo of combos) {
+    test(`${combo.variant} @ ${combo.viewport}px renders ${COUNT} items without breaking layout`, async ({ page }) => {
+      await page.getByRole('button', { name: combo.viewport }).click();
+      await setVariant(page, combo.variant);
+
+      // Set many items BEFORE opening menu (setNavItemCount resets ephemeral state).
+      await page.getByRole('spinbutton', { name: 'Nav items' }).fill(String(COUNT));
+
+      if (combo.openMenu) {
+        await page.locator('.nav__menu-toggle').click();
+        await expect(page.locator('.nav')).toHaveAttribute('data-open', 'true');
+        // Sidebar desktop transitions visibility over 200ms — wait for the panel
+        // to actually be visible before measuring item geometry.
+        await page.locator('.nav__primary').first().waitFor({ state: 'visible' });
+      }
+
+      // All items rendered in the DOM.
+      await expect(page.locator('.nav__item')).toHaveCount(COUNT);
+
+      // Every item has a non-zero box — nothing collapsed to 0 width/height.
+      const itemDims = await page.locator('.nav__item').evaluateAll((els) =>
+        els.map((el) => {
+          const r = el.getBoundingClientRect();
+          return { w: r.width, h: r.height };
+        }),
+      );
+      expect(itemDims).toHaveLength(COUNT);
+      for (const dim of itemDims) {
+        expect(dim.w).toBeGreaterThan(0);
+        expect(dim.h).toBeGreaterThan(0);
+      }
+
+      // Variant-specific: verify the host truly overflows where it should.
+      // tile desktop inherently shrinks tiles instead of scrolling, so skip that check there.
+      if (combo.overflow === 'horizontal' || combo.overflow === 'vertical') {
+        const overflows = await page.locator(combo.overflowHost).evaluate((el, direction) => {
+          return direction === 'horizontal'
+            ? el.scrollWidth > el.clientWidth + 1
+            : el.scrollHeight > el.clientHeight + 1;
+        }, combo.overflow);
+        expect(overflows).toBe(true);
+      }
+    });
+  }
+});
