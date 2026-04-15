@@ -91,13 +91,6 @@ function syncTopInlineState(root: HTMLElement): void {
     return;
   }
 
-  // Social icons live in the masthead when the toggle is on — inline promotion
-  // of the link row would double-claim that space, so keep links on their own row.
-  if (root.dataset.socialLinks === 'true') {
-    if (root.dataset.topInline !== 'false') root.dataset.topInline = 'false';
-    return;
-  }
-
   const inner = root.querySelector<HTMLElement>('.nav__inner');
   const primary = root.querySelector<HTMLElement>('.nav__primary');
   const list = root.querySelector<HTMLElement>('.nav__list');
@@ -121,13 +114,19 @@ function syncTopInlineState(root: HTMLElement): void {
     search.getBoundingClientRect().width +
     cart.getBoundingClientRect().width;
   const linkWidth = getInlineNavWidth(list);
+  const social = root.querySelector<HTMLElement>('.nav__social');
+  const socialWidth =
+    social && root.dataset.socialLinks === 'true'
+      ? social.getBoundingClientRect().width
+      : 0;
+  const socialGap = socialWidth > 0 ? 16 : 0;
 
   if (root.dataset.alignment === 'center') {
     root.dataset.topInline = 'false';
     return;
   }
 
-  const availableWidth = contentWidth - fixedWidth - gap * 3;
+  const availableWidth = contentWidth - fixedWidth - socialWidth - socialGap - gap * 3;
   const wasInline = root.dataset.topInline === 'true';
   // Hysteresis only on entry: require extra clearance before promoting the
   // links into the masthead row, but collapse immediately once they stop fitting.

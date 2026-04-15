@@ -1904,10 +1904,10 @@
   }
 }
 
-/* ─── Top: social in the masthead next to search + cart ───
-   Primary dissolves so the link row stays in grid-row 2 while
-   social icons escape into the masthead alongside search and cart.
-   nav.ts forces top-inline=false whenever social-links is on. */
+/* ─── Top: social clusters with search in the masthead ───
+   Primary dissolves so the link row can still live in grid-row 2 (or be
+   promoted to grid-row 1 via [data-top-inline="true"] when the links fit).
+   Social sits immediately *before* search so the two form one cluster. */
 [data-variant="top"][data-social-links="true"] .nav__primary {
   display: contents;
 }
@@ -1927,6 +1927,16 @@
   display: none;
 }
 
+/* Inline state: links promoted into the masthead row — drop the band. */
+[data-variant="top"][data-top-inline="true"][data-social-links="true"] .nav__list {
+  grid-row: 1;
+  width: auto;
+  margin-inline: 0;
+  padding: 0;
+  background: transparent;
+  overflow-x: visible;
+}
+
 [data-variant="top"][data-social-links="true"] .nav__social {
   grid-row: 1;
   display: inline-flex;
@@ -1941,47 +1951,68 @@
   min-height: 20px;
 }
 
-/* Default (center) alignment — 4 cols: search | logo | social | cart */
+/* Default (center) alignment — masthead cluster on the left:
+   [social][search] <1fr> [logo] <1fr> [cart] */
 [data-variant="top"][data-social-links="true"] .nav__inner {
-  grid-template-columns: minmax(48px, 1fr) auto auto minmax(48px, 1fr);
+  grid-template-columns: auto auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
 }
 [data-variant="top"][data-social-links="true"] .nav__social {
-  grid-column: 3;
-  justify-self: end;
+  grid-column: 1;
+  justify-self: start;
+}
+[data-variant="top"][data-social-links="true"] .nav__search {
+  grid-column: 2;
+  justify-self: start;
+}
+[data-variant="top"][data-social-links="true"] .nav__logo {
+  grid-column: 4;
+  justify-self: center;
 }
 [data-variant="top"][data-social-links="true"] .nav__cart {
-  grid-column: 4;
+  grid-column: 6;
+  justify-self: end;
 }
 
-/* Left alignment — 4 cols: logo | search | social | cart */
+/* Left alignment — [logo] <1fr> [social][search][cart] (non-inline)
+                    [logo][links] [social][search][cart] (inline) */
 [data-variant="top"][data-alignment="left"][data-social-links="true"] .nav__inner {
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
 }
-[data-variant="top"][data-alignment="left"][data-social-links="true"] .nav__search {
-  grid-column: 2;
-  justify-self: end;
+[data-variant="top"][data-alignment="left"][data-social-links="true"] .nav__logo {
+  grid-column: 1;
+  justify-self: start;
 }
 [data-variant="top"][data-alignment="left"][data-social-links="true"] .nav__social {
   grid-column: 3;
   justify-self: end;
 }
-[data-variant="top"][data-alignment="left"][data-social-links="true"] .nav__cart {
+[data-variant="top"][data-alignment="left"][data-social-links="true"] .nav__search {
   grid-column: 4;
+  justify-self: end;
 }
-
-/* Right alignment — 5 cols: search | cart | social | <gap> | logo */
-[data-variant="top"][data-alignment="right"][data-social-links="true"] .nav__inner {
-  grid-template-columns: auto auto auto minmax(0, 1fr) auto;
+[data-variant="top"][data-alignment="left"][data-social-links="true"] .nav__cart {
+  grid-column: 5;
+  justify-self: end;
 }
-[data-variant="top"][data-alignment="right"][data-social-links="true"] .nav__search {
-  grid-column: 1;
-  justify-self: start;
-}
-[data-variant="top"][data-alignment="right"][data-social-links="true"] .nav__cart {
+/* Links slot into col 2 when promoted inline */
+[data-variant="top"][data-alignment="left"][data-top-inline="true"][data-social-links="true"] .nav__list {
   grid-column: 2;
   justify-self: start;
 }
+
+/* Right alignment — [social][search][cart] <1fr> [logo] */
+[data-variant="top"][data-alignment="right"][data-social-links="true"] .nav__inner {
+  grid-template-columns: auto auto auto minmax(0, 1fr) auto;
+}
 [data-variant="top"][data-alignment="right"][data-social-links="true"] .nav__social {
+  grid-column: 1;
+  justify-self: start;
+}
+[data-variant="top"][data-alignment="right"][data-social-links="true"] .nav__search {
+  grid-column: 2;
+  justify-self: start;
+}
+[data-variant="top"][data-alignment="right"][data-social-links="true"] .nav__cart {
   grid-column: 3;
   justify-self: start;
 }
