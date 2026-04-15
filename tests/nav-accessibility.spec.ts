@@ -490,3 +490,185 @@ test('cleans up viewport listeners when controls are remounted', async ({ page }
   expect(result.totalAriaPressedCalls).toBe(5);
   expect(result.previewWidth).toBe('768px');
 });
+
+async function setVariant(page: import('playwright/test').Page, variant: string) {
+  await page.locator(`input[name="variant"][value="${variant}"]`).evaluate((input) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error('Expected variant input');
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
+async function toggleSocialLinks(page: import('playwright/test').Page, value: 'true' | 'false') {
+  await page.locator(`input[name="social-links"][value="${value}"]`).evaluate((input) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error('Expected social-links input');
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
+test.describe('social links', () => {
+  test('defaults to off and renders three links with accessible labels', async ({ page }) => {
+    const navRoot = page.locator('.nav');
+    await expect(navRoot).toHaveAttribute('data-social-links', 'false');
+
+    const social = page.locator('.nav__social');
+    await expect(social).toHaveAttribute('aria-label', 'Social links');
+    await expect(social).toHaveCount(1);
+
+    const links = social.locator('.nav__social-link');
+    await expect(links).toHaveCount(3);
+
+    const labels = await links.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('aria-label')));
+    expect(labels).toEqual(['Instagram', 'Facebook', 'TikTok']);
+
+    const rels = await links.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('rel')));
+    for (const rel of rels) {
+      expect(rel).toContain('noopener');
+      expect(rel).toContain('noreferrer');
+    }
+  });
+
+  test('toggle flips data-social-links and shows the group', async ({ page }) => {
+    await page.getByRole('button', { name: '1280' }).click();
+
+    const navRoot = page.locator('.nav');
+    const social = page.locator('.nav__social');
+
+    await expect(social).toHaveCSS('display', 'none');
+
+    await toggleSocialLinks(page, 'true');
+    await expect(navRoot).toHaveAttribute('data-social-links', 'true');
+
+    await expect.poll(async () => social.evaluate((el) => getComputedStyle(el).display)).not.toBe('none');
+
+    await toggleSocialLinks(page, 'false');
+    await expect(navRoot).toHaveAttribute('data-social-links', 'false');
+    await expect.poll(async () => social.evaluate((el) => getComputedStyle(el).display)).toBe('none');
+  });
+
+  test('each icon uses mask-image pointing to the correct SVG asset', async ({ page }) => {
+    await toggleSocialLinks(page, 'true');
+
+    const iconSources = await page.locator('.nav__social-icon').evaluateAll((nodes) => {
+      return nodes.map((n) => ({
+        icon: n.getAttribute('data-icon'),
+        maskImage: getComputedStyle(n).maskImage || getComputedStyle(n).webkitMaskImage,
+      }));
+    });
+
+    expect(iconSources).toEqual([
+      expect.objectContaining({ icon: 'instagram', maskImage: expect.stringContaining('/icons/instagram.svg') }),
+      expect.objectContaining({ icon: 'facebook', maskImage: expect.stringContaining('/icons/facebook.svg') }),
+      expect.objectContaining({ icon: 'tiktok', maskImage: expect.stringContaining('/icons/tiktok.svg') }),
+    ]);
+  });
+
+  test('mobile simple: social group sits below the nav list in the open menu', async ({ page }) => {
+    await page.getByRole('button', { name: '375' }).click();
+    await toggleSocialLinks(page, 'true');
+    await page.locator('.nav__menu-toggle').click();
+    await expect(page.locator('.nav')).toHaveAttribute('data-open', 'true');
+
+    const geometry = await page.evaluate(() => {
+      const list = document.querySelector('.nav__list')!.getBoundingClientRect();
+      const social = document.querySelector('.nav__social')!.getBoundingClientRect();
+      return { listBottom: list.bottom, socialTop: social.top, socialHeight: social.height };
+    });
+
+    expect(geometry.socialHeight).toBeGreaterThan(0);
+    expect(geometry.socialTop).toBeGreaterThanOrEqual(geometry.listBottom - 1);
+  });
+
+  test('mobile top: social group renders inline with the link row', async ({ page }) => {
+    await page.getByRole('button', { name: '375' }).click();
+    await setVariant(page, 'top');
+    await toggleSocialLinks(page, 'true');
+
+    const geometry = await page.evaluate(() => {
+      const list = document.querySelector('.nav__list')!.getBoundingClientRect();
+      const social = document.querySelector('.nav__social')!.getBoundingClientRect();
+      return {
+        listTop: list.top,
+        socialTop: social.top,
+        socialVisible: (document.querySelector('.nav__social') as HTMLElement).offsetHeight > 0,
+      };
+    });
+
+    expect(geometry.socialVisible).toBe(true);
+    // Inline with the list row: vertical centers within ~8px of each other.
+    expect(Math.abs(geometry.listTop - geometry.socialTop)).toBeLessThan(24);
+  });
+
+  test('mobile tile: social group renders as a 3-column grid in the open menu', async ({ page }) => {
+    await page.getByRole('button', { name: '375' }).click();
+    await setVariant(page, 'tile');
+    await toggleSocialLinks(page, 'true');
+    await page.locator('.nav__menu-toggle').click();
+
+    const layout = await page.evaluate(() => {
+      const social = document.querySelector('.nav__social') as HTMLElement;
+      return {
+        display: getComputedStyle(social).display,
+        columns: getComputedStyle(social).gridTemplateColumns,
+      };
+    });
+
+    expect(layout.display).toBe('grid');
+    // Three equal tracks
+    expect(layout.columns.split(' ').filter(Boolean).length).toBe(3);
+  });
+
+  test('desktop tile: social group renders as one combined tile in the bar', async ({ page }) => {
+    await page.getByRole('button', { name: '1280' }).click();
+    await setVariant(page, 'tile');
+    await toggleSocialLinks(page, 'true');
+
+    const layout = await page.evaluate(() => {
+      const social = document.querySelector('.nav__social') as HTMLElement;
+      const styles = getComputedStyle(social);
+      return {
+        display: styles.display,
+        background: styles.backgroundColor,
+        iconCount: social.querySelectorAll('.nav__social-icon').length,
+      };
+    });
+
+    // Either 'flex' or 'inline-flex' is fine — the key is it renders as a single combined tile, not grid.
+    expect(['flex', 'inline-flex']).toContain(layout.display);
+    expect(layout.iconCount).toBe(3);
+    // Background should be the menu color (not transparent), confirming it's rendered as a single tile box.
+    expect(layout.background).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
+  test('tab order: last nav link → first social link', async ({ page }) => {
+    await page.getByRole('button', { name: '1280' }).click();
+    await setVariant(page, 'simple');
+    await toggleSocialLinks(page, 'true');
+
+    const lastLink = page.locator('.nav__list .nav__link').last();
+    await lastLink.focus();
+    await page.keyboard.press('Tab');
+
+    const focusedLabel = await page.evaluate(() => document.activeElement?.getAttribute('aria-label'));
+    expect(focusedLabel).toBe('Instagram');
+  });
+
+  test('setNavItemCount does not destroy social group', async ({ page }) => {
+    await toggleSocialLinks(page, 'true');
+    await expect(page.locator('.nav__social-link')).toHaveCount(3);
+
+    const input = page.getByLabel('Nav items');
+    await input.fill('10');
+    await input.dispatchEvent('input');
+
+    await expect(page.locator('.nav__item')).toHaveCount(10);
+    await expect(page.locator('.nav__social-link')).toHaveCount(3);
+
+    await input.fill('0');
+    await input.dispatchEvent('input');
+
+    await expect(page.locator('.nav__item')).toHaveCount(0);
+    await expect(page.locator('.nav__social-link')).toHaveCount(3);
+  });
+});

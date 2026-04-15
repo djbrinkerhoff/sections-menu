@@ -34,4 +34,5 @@ export type ControlMap = {
   logoStyle: LogoStyle;
   inset: 'true' | 'false';
   borderRadius: '0' | '1' | '2' | '3' | '4';
+  socialLinks: 'true' | 'false';
 };

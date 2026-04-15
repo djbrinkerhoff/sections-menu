@@ -1740,3 +1740,228 @@
     justify-content: flex-end;
   }
 }
+
+/* ─── Social links ───
+   Rendered as a <ul class="nav__social"> inside .nav__primary.
+   Hidden by default; per-variant rules light it up when
+   [data-social-links="true"] is on the nav root. */
+
+.nav__social {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav__social-item {
+  list-style: none;
+}
+
+.nav__social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  color: currentColor;
+  text-decoration: none;
+}
+
+.nav__social-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.nav__social-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.nav__social-icon[data-icon="instagram"] {
+  -webkit-mask-image: url('/icons/instagram.svg');
+  mask-image: url('/icons/instagram.svg');
+}
+
+.nav__social-icon[data-icon="facebook"] {
+  -webkit-mask-image: url('/icons/facebook.svg');
+  mask-image: url('/icons/facebook.svg');
+}
+
+.nav__social-icon[data-icon="tiktok"] {
+  -webkit-mask-image: url('/icons/tiktok.svg');
+  mask-image: url('/icons/tiktok.svg');
+}
+
+/* ─── Simple: social placement ─── */
+@container (max-width: 767px) {
+  [data-variant="simple"][data-open="true"][data-social-links="true"] .nav__social {
+    display: flex;
+    gap: 16px;
+    padding: 24px 16px 8px;
+    justify-content: flex-start;
+  }
+}
+
+@container (min-width: 768px) {
+  .nav[data-variant="simple"][data-social-links="true"] .nav__primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  .nav[data-variant="simple"][data-social-links="true"] .nav__list {
+    min-width: 0;
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .nav[data-variant="simple"][data-social-links="true"] .nav__social {
+    display: inline-flex;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+
+  .nav[data-variant="simple"][data-social-links="true"] .nav__social-link {
+    min-width: 28px;
+    min-height: 28px;
+  }
+}
+
+/* ─── Fullscreen: social placement (same on all viewports) ─── */
+[data-variant="fullscreen"][data-open="true"][data-social-links="true"] .nav__primary {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+[data-variant="fullscreen"][data-open="true"][data-social-links="true"] .nav__social {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  padding: 24px 0 8px;
+  flex-shrink: 0;
+}
+
+/* ─── Sidebar: social placement (mobile + desktop panel) ─── */
+[data-variant="sidebar"][data-open="true"][data-social-links="true"] .nav__social {
+  display: flex;
+  gap: 24px;
+  padding: 20px 32px;
+  border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  flex-shrink: 0;
+}
+
+@container (min-width: 768px) {
+  .nav[data-variant="sidebar"][data-open="true"][data-social-links="true"] .nav__social {
+    padding: 24px 48px 32px;
+  }
+}
+
+/* ─── Top: social placement (inline with link row) ─── */
+[data-variant="top"][data-social-links="true"] .nav__primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+[data-variant="top"][data-social-links="true"] .nav__primary .nav__list {
+  min-width: 0;
+  width: auto;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+[data-variant="top"][data-social-links="true"] .nav__social {
+  display: inline-flex;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+[data-variant="top"][data-social-links="true"] .nav__social-link {
+  min-width: 32px;
+  min-height: 32px;
+}
+
+/* ─── Tile: social placement ─── */
+
+/* Tile mobile open: three square tiles spanning the full width in a 3-col grid */
+@container (max-width: 767px) {
+  [data-variant="tile"][data-open="true"][data-social-links="true"] .nav__social {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 0;
+  }
+
+  [data-variant="tile"][data-open="true"][data-social-links="true"] .nav__social-item {
+    display: block;
+  }
+
+  [data-variant="tile"][data-open="true"][data-social-links="true"] .nav__social-link {
+    width: 100%;
+    aspect-ratio: 1;
+    min-height: 0;
+    background: var(--text-color);
+    color: var(--menu-color);
+    border-radius: min(var(--border-radius, 0px), 16px);
+  }
+
+  [data-variant="tile"][data-open="true"][data-social-links="true"] .nav__social-icon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Tile desktop: one combined tile holding all three icons at the end of the bar */
+@container (min-width: 768px) {
+  .nav[data-variant="tile"][data-social-links="true"] .nav__primary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav[data-variant="tile"][data-social-links="true"] .nav__list {
+    flex: 1 1 0%;
+    min-width: 0;
+  }
+
+  .nav[data-variant="tile"][data-social-links="true"] .nav__social {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex: 0 0 auto;
+    height: 48px;
+    padding: 0 20px;
+    background: var(--menu-color);
+    color: var(--text-color);
+    border-radius: var(--border-radius, 0px);
+  }
+
+  .nav[data-variant="tile"][data-social-links="true"] .nav__social-link {
+    min-width: 24px;
+    min-height: 24px;
+    padding: 0;
+  }
+}
+
+/* ─── Alignment overrides for social groups in a flex row ─── */
+@container (max-width: 767px) {
+  [data-variant="simple"][data-open="true"][data-social-links="true"][data-alignment="center"] .nav__social {
+    justify-content: center;
+  }
+  [data-variant="simple"][data-open="true"][data-social-links="true"][data-alignment="right"] .nav__social {
+    justify-content: flex-end;
+  }
+}
+

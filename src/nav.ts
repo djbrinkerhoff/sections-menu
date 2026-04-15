@@ -114,6 +114,12 @@ function syncTopInlineState(root: HTMLElement): void {
     search.getBoundingClientRect().width +
     cart.getBoundingClientRect().width;
   const linkWidth = getInlineNavWidth(list);
+  const social = root.querySelector<HTMLElement>('.nav__social');
+  const socialWidth =
+    social && root.dataset.socialLinks === 'true'
+      ? social.getBoundingClientRect().width
+      : 0;
+  const socialGap = socialWidth > 0 ? 16 : 0;
 
   if (root.dataset.alignment === 'center') {
     root.dataset.topInline = 'false';
@@ -121,12 +127,13 @@ function syncTopInlineState(root: HTMLElement): void {
   }
 
   const availableWidth = contentWidth - fixedWidth - gap * 3;
+  const totalLinkWidth = linkWidth + socialWidth + socialGap;
   const wasInline = root.dataset.topInline === 'true';
   // Hysteresis only on entry: require extra clearance before promoting the
   // links into the masthead row, but collapse immediately once they stop fitting.
   const newInline = wasInline
-    ? availableWidth >= linkWidth
-    : availableWidth >= linkWidth + 16;
+    ? availableWidth >= totalLinkWidth
+    : availableWidth >= totalLinkWidth + 16;
   const newValue = newInline ? 'true' : 'false';
   if (root.dataset.topInline !== newValue) {
     root.dataset.topInline = newValue;
@@ -475,7 +482,7 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
 
   topInlineMutationObserver.observe(root, {
     attributes: true,
-    attributeFilter: ['data-variant', 'data-alignment', 'data-logo-style', 'data-cart-count'],
+    attributeFilter: ['data-variant', 'data-alignment', 'data-logo-style', 'data-cart-count', 'data-social-links'],
   });
 
   if (primary) {

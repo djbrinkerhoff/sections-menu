@@ -208,6 +208,13 @@ export function initControls(navRoot: HTMLElement): () => void {
     'inset',
   ));
 
+  // 7b. Social links
+  wrapper.appendChild(createSegmentedGroup(
+    'social-links', 'Social links', ['false', 'true'] as const,
+    { false: 'Off', true: 'On' },
+    'socialLinks',
+  ));
+
   // 8. Border radius
   wrapper.appendChild(createRangeGroup(
     'border-radius', 'Border radius', BORDER_RADIUS_STEPS,
