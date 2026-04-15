@@ -333,6 +333,15 @@
   margin: 0 auto;
 }
 
+/* Mobile: overflow only off the right edge, never center-pad both sides. */
+@container (max-width: 767px) {
+  [data-variant="top"] .nav__primary .nav__list {
+    justify-content: flex-start;
+    min-width: 0;
+    margin: 0;
+  }
+}
+
 [data-variant="top"] .nav__link {
   @apply text-sm font-medium;
   padding: 0;
