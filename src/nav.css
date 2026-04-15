@@ -1994,10 +1994,13 @@
   grid-column: 5;
   justify-self: end;
 }
-/* Links slot into col 2 when promoted inline */
+/* Links slot into col 2 when promoted inline — centered in the 1fr space */
 [data-variant="top"][data-alignment="left"][data-top-inline="true"][data-social-links="true"] .nav__list {
   grid-column: 2;
-  justify-self: start;
+  justify-self: center;
+  min-width: 0;
+  width: auto;
+  margin: 0;
 }
 
 /* Right alignment — [social][search][cart] <1fr> [logo] */
