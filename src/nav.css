@@ -174,6 +174,10 @@
   @apply relative flex items-center;
 }
 
+[data-search="false"] .nav__search {
+  display: none;
+}
+
 .nav__search-toggle {
   @apply bg-transparent border-0 cursor-pointer p-1 flex items-center;
   color: var(--text-color);
@@ -1612,6 +1616,49 @@
   .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__cart,
   .nav[data-variant="tile"][data-tile-inline="false"] .nav__menu-toggle {
     border-radius: var(--border-radius, 0px);
+  }
+
+  /* Desktop collapsed open: submenu item should match regular link tiles,
+     not the mobile 1:1 square. Style goes on the LINK (like regular tiles),
+     not the item wrapper. Reset the absolute-positioned dropdown to inline. */
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="true"] .nav__item--has-submenu {
+    aspect-ratio: auto;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="true"] .nav__item--has-submenu > .nav__link {
+    background: var(--text-color);
+    color: var(--menu-color);
+    height: 56px;
+    aspect-ratio: auto;
+    padding: 20px 16px;
+    border-radius: min(var(--border-radius, 0px), 16px);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.4px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="true"] .nav__submenu {
+    position: static;
+    min-width: 0;
+    padding: 8px 16px 12px;
+    background: var(--text-color);
+    border: none;
+    border-radius: 0 0 min(var(--border-radius, 0px), 16px) min(var(--border-radius, 0px), 16px);
+    z-index: auto;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="true"] .nav__submenu-link {
+    font-size: 0.875rem;
+    color: var(--menu-color);
+    padding: 4px 0;
+    white-space: normal;
   }
 }
 

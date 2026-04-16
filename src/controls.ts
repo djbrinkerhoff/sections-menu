@@ -229,7 +229,14 @@ export function initControls(navRoot: HTMLElement): () => void {
     'inset',
   ));
 
-  // 7b. Social links
+  // 7b. Search
+  wrapper.appendChild(createSegmentedGroup(
+    'search', 'Search', ['true', 'false'] as const,
+    { true: 'On', false: 'Off' },
+    'search',
+  ));
+
+  // 7c. Social links
   wrapper.appendChild(createSegmentedGroup(
     'social-links', 'Social links', ['false', 'true'] as const,
     { false: 'Off', true: 'On' },

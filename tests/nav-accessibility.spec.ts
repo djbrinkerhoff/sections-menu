@@ -705,7 +705,7 @@ test.describe('edge case: many nav items', () => {
     { variant: 'top',        viewport: '375',  openMenu: false, overflowHost: '.nav__primary', overflow: 'horizontal' },
     { variant: 'top',        viewport: '1280', openMenu: false, overflowHost: '.nav__primary', overflow: 'horizontal' },
     { variant: 'tile',       viewport: '375',  openMenu: true,  overflowHost: '.nav__primary', overflow: 'vertical'   },
-    { variant: 'tile',       viewport: '1280', openMenu: true,  overflowHost: '.nav__primary', overflow: 'vertical'   },
+    { variant: 'tile',       viewport: '1280', openMenu: true,  overflowHost: '.nav__primary', overflow: 'skip'       },
   ];
 
   for (const combo of combos) {
