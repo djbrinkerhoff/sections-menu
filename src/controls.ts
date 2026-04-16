@@ -39,7 +39,8 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
     const variant = (navRoot.dataset.variant ?? 'simple') as Variant;
     const hidden = HIDDEN_CONTROLS[variant] ?? [];
     for (const el of wrapper.querySelectorAll<HTMLFieldSetElement>('[data-control]')) {
-      el.hidden = hidden.includes(el.dataset.control!);
+      const controlName = el.dataset.control;
+      if (controlName) el.hidden = hidden.includes(controlName);
     }
   }
 

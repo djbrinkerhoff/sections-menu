@@ -1,5 +1,5 @@
 import type { Section, MountedSection } from './shell';
-import { getStateCache, setOnViewportChange } from './shell';
+import { getSavedState, setOnViewportChange } from './shell';
 import navHtml from './nav.partial.html?raw';
 import { initNavBehavior, resetEphemeralState, resetNavModuleState } from './nav';
 import { initControls } from './controls';
@@ -21,7 +21,7 @@ export const navSection: Section = {
     const controls = initControls(navRoot, controlsContainer);
 
     // Restore custom keys (navItemCount, cartCount) that need JS logic
-    const saved = getStateCache().get('nav');
+    const saved = getSavedState('nav');
     if (saved) {
       const navItems = saved['custom:navItemCount'];
       if (navItems !== undefined) {
