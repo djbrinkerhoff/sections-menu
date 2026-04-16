@@ -8,7 +8,7 @@ import { resetEphemeralState } from './nav';
 // Controls hidden per variant (extensible — add entries as needed)
 const HIDDEN_CONTROLS: Partial<Record<Variant, string[]>> = {
   top: ['button-style'],
-  sidebar: ['inset', 'border-radius'],
+  sidebar: ['inset', 'border-radius', 'alignment'],
   tile: ['inset', 'logo-style', 'alignment', 'button-style'],
 };
 
@@ -55,7 +55,14 @@ export function initControls(navRoot: HTMLElement): () => void {
       const on = value === 'true';
       navRoot.style.setProperty('--nav-inset', on ? '16px' : '0px');
     }
-    if (key === 'variant') syncControlVisibility();
+    if (key === 'variant') {
+      syncControlVisibility();
+      if (value === 'sidebar' || value === 'tile') {
+        navRoot.dataset.alignment = 'left';
+        const radio = container!.querySelector<HTMLInputElement>('input[name="alignment"][value="left"]');
+        if (radio) radio.checked = true;
+      }
+    }
   }
 
   // APCA-based band mix: tint the link-row band toward the text color,

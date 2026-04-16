@@ -116,12 +116,12 @@
 
 .nav__submenu-link {
   @apply text-xs no-underline px-2 py-1;
-  color: color-mix(in oklch, var(--text-color), var(--menu-color) 30%);
+  color: var(--text-color);
   transition: color 150ms ease;
 }
 
 .nav__submenu-link:hover {
-  color: var(--text-color);
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
 }
 
 /* ─── Submenu toggle icon ─── */
@@ -221,6 +221,28 @@
 .nav__search-input:focus,
 .nav__search[data-search-open="true"] .nav__search-input {
   @apply w-40 opacity-100 border-b border-current px-1 py-1;
+}
+
+.nav__search-input:focus {
+  outline: none;
+}
+
+/* Simple + top: boxed search input with border and radius */
+:is([data-variant="simple"], [data-variant="top"]) .nav__search-input:focus,
+:is([data-variant="simple"], [data-variant="top"]) .nav__search[data-search-open="true"] .nav__search-input {
+  @apply border border-current px-3 py-2;
+  border-radius: var(--border-radius, 0px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@container (max-width: 767px) {
+  :is([data-variant="simple"], [data-variant="top"]) .nav__search-input:focus,
+  :is([data-variant="simple"], [data-variant="top"]) .nav__search[data-search-open="true"] .nav__search-input {
+    width: 60cqi;
+    top: 50%;
+    transform: translateY(-50%);
+  }
 }
 
 .nav__cart {
@@ -431,13 +453,8 @@
 
 [data-variant="top"] > .nav__inner > .nav__submenu .nav__submenu-link {
   @apply text-sm no-underline;
-  color: color-mix(in oklch, var(--text-color), var(--menu-color) 30%);
   padding: 0;
   white-space: nowrap;
-}
-
-[data-variant="top"] > .nav__inner > .nav__submenu .nav__submenu-link:hover {
-  color: var(--text-color);
 }
 
 /* Mobile: overflow only off the right edge, never center-pad both sides. */
@@ -551,10 +568,12 @@
   transform: none;
 }
 
-/* Hide cart when search expands toward it (right alignment, top center/right) */
+/* Hide cart when search expands toward it (right alignment, top center/right).
+   Use visibility: hidden so the grid cell keeps its width — no layout shift. */
 [data-alignment="right"] .nav__search[data-search-open="true"] ~ .nav__cart,
 [data-variant="top"]:not([data-alignment="left"]) .nav__search[data-search-open="true"] ~ .nav__cart {
-  display: none;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* ─── Shared closed-state layout (CSS grid) ─── */
@@ -600,98 +619,93 @@
   background-color: transparent;
 }
 
-@container (max-width: 767px) {
-  [data-variant="simple"][data-open="true"] .nav__inner {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto 1fr;
-    align-items: center;
-    row-gap: 0;
-    max-height: 100%;
-    overflow: hidden;
-    background-color: var(--menu-color);
-  }
+/* Simple open inner layout — applies on mobile and desktop collapsed */
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__inner {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto 1fr;
+  align-items: center;
+  row-gap: 0;
+  max-height: 100%;
+  overflow: hidden;
+  background-color: var(--menu-color);
+}
 
-  [data-variant="simple"][data-open="true"] .nav__logo {
-    grid-column: 1;
-    justify-self: start;
-    align-self: center;
-    width: max-content;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__logo {
+  grid-column: 1;
+  justify-self: start;
+  align-self: center;
+  width: max-content;
+}
 
-  [data-variant="simple"][data-open="true"] .nav__menu-toggle {
-    grid-column: 2;
-    grid-row: 1;
-    justify-self: end;
-    align-self: center;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__menu-toggle {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+}
 
-  [data-variant="simple"][data-open="true"] .nav__actions {
-    display: none;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__actions {
+  display: none;
+}
 
-  [data-variant="simple"][data-open="true"] .nav__primary {
-    @apply block;
-    grid-column: 1 / -1;
-    grid-row: 2;
-    align-self: stretch;
-    padding: 26px 16px 38px;
-    overflow-y: auto;
-    min-height: 0;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__primary {
+  @apply block;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-self: stretch;
+  padding: 26px 16px 38px;
+  overflow-y: auto;
+  overflow-x: visible;
+  min-height: 0;
+}
 
-  [data-variant="simple"][data-open="true"] .nav__list {
-    @apply flex flex-col;
-    gap: 0;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__list {
+  @apply flex flex-col;
+  gap: 0;
+}
 
-  [data-variant="simple"][data-open="true"] .nav__item {
-    border-bottom: 1px solid currentColor;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__item {
+  border-bottom: 1px solid currentColor;
+}
 
-  [data-variant="simple"][data-open="true"] .nav__link {
-    @apply text-left font-normal;
-    display: block;
-    width: 100%;
-    padding: 20px 16px;
-    font-size: 1.25rem;
-    line-height: 1.2;
-    letter-spacing: 0.02em;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__link {
+  @apply text-left font-normal;
+  display: block;
+  width: 100%;
+  padding: 20px 16px;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
 
-  [data-variant="simple"][data-open="true"] .nav__item--has-submenu > .nav__link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__item--has-submenu > .nav__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
 
-  /* Submenu icon sizing for simple mobile */
-  [data-variant="simple"][data-open="true"] .nav__submenu-icon svg {
-    width: 16px;
-    height: 16px;
-  }
+/* Submenu icon sizing for simple open */
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__submenu-icon svg {
+  width: 16px;
+  height: 16px;
+}
 
-  [data-variant="simple"][data-open="true"] .nav__submenu {
-    @apply pl-0;
-    gap: 0;
-    padding: 0 16px 20px 16px;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__submenu {
+  @apply pl-0;
+  gap: 0;
+  padding: 0 16px 20px 16px;
+}
 
-  [data-variant="simple"][data-open="true"] .nav__submenu li + li {
-    margin-top: 16px;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__submenu li + li {
+  margin-top: 16px;
+}
 
-  [data-variant="simple"][data-open="true"] .nav__submenu-link {
-    @apply block no-underline;
-    color: var(--text-color);
-    padding: 0;
-    font-size: 1rem;
-    line-height: 1.25;
-  }
-
-  [data-variant="simple"][data-open="true"] .nav__submenu-link:hover {
-    color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__submenu-link {
+  @apply block no-underline;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1.25;
 }
 
 /* Fullscreen closed: hide search icon (search lives in the overlay).
@@ -813,12 +827,7 @@
 
 [data-variant="fullscreen"][data-open="true"] .nav__submenu-link {
   @apply block no-underline text-base;
-  color: color-mix(in oklch, var(--text-color), var(--menu-color) 30%);
   padding: 0;
-}
-
-[data-variant="fullscreen"][data-open="true"] .nav__submenu-link:hover {
-  color: var(--text-color);
 }
 
 /* Cart: centered column at bottom */
@@ -903,16 +912,11 @@
 
 [data-variant="sidebar"][data-open="true"] .nav__submenu-link {
   @apply no-underline;
-  color: var(--text-color);
   display: block;
   padding: 0;
   font-size: clamp(1.875rem, 6cqi, 2.25rem);
   font-weight: 500;
   line-height: 1.3;
-}
-
-[data-variant="sidebar"][data-open="true"] .nav__submenu-link:hover {
-  color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
 }
 
 /* Regular nav items: top border separators */
@@ -1167,7 +1171,7 @@
   }
 }
 
-/* Tile mobile open: overlay with 16px margin around it */
+/* Tile open: overlay with 16px margin around it */
 [data-variant="tile"][data-open="true"] {
   position: absolute;
   inset: 16px;
@@ -1177,148 +1181,144 @@
   border-radius: min(var(--border-radius, 0px), 16px);
 }
 
-@container (max-width: 767px) {
-  [data-variant="tile"][data-open="true"] .nav__inner {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto 1fr;
-    gap: 0;
-    padding: 0;
-    height: 100%;
-  }
+/* Tile open inner layout — applies on mobile (CQ) and desktop collapsed
+   (data-tile-inline="false"). Scoped to the attribute so desktop inline
+   styles in the ≥768 block aren't fighting. */
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto 1fr;
+  gap: 0;
+  padding: 0;
+  height: 100%;
+}
 
-  /* Logo matches closed-state box: flush top-left of overlay, same size.
-     Closed-state grid compresses logo to 163px; mirror that here so the
-     mark renders at the same size and nothing shifts. */
-  [data-variant="tile"][data-open="true"] .nav__logo {
-    grid-column: 1;
-    grid-row: 1;
-    padding: 16px;
-    min-height: 56px;
-    max-width: 163px;
-    display: flex;
-    align-items: center;
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__logo {
+  grid-column: 1;
+  grid-row: 1;
+  padding: 16px;
+  min-height: 56px;
+  max-width: 163px;
+  display: flex;
+  align-items: center;
+}
 
-  /* Close button matches closed-state icon box: flush top-right */
-  [data-variant="tile"][data-open="true"] .nav__menu-toggle {
-    grid-column: 2;
-    grid-row: 1;
-    width: 56px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__menu-toggle {
+  grid-column: 2;
+  grid-row: 1;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
 
-  [data-variant="tile"][data-open="true"] .nav__actions {
-    display: none;
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__actions {
+  display: none;
+}
 
-  [data-variant="tile"][data-open="true"] .nav__primary {
-    @apply block;
-    grid-column: 1 / -1;
-    grid-row: 2;
-    align-self: stretch;
-    padding: 24px 16px 16px;
-    overflow-y: auto;
-    min-height: 0;
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__primary {
+  @apply block;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-self: stretch;
+  padding: 24px 16px 16px;
+  overflow-y: auto;
+  min-height: 0;
+}
 
-  /* 2-column tile grid */
-  [data-variant="tile"][data-open="true"] .nav__list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-    gap: 8px;
-    padding: 0;
-  }
+/* 2-column tile grid */
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: 8px;
+  padding: 0;
+}
 
-  /* Each link becomes a square tile card */
-  [data-variant="tile"][data-open="true"] .nav__link {
-    display: flex;
-    align-items: center;
-    aspect-ratio: 1;
-    padding: 20px 16px;
-    background: var(--text-color);
-    color: var(--menu-color);
-    font-size: 1.25rem;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: 0.4px;
-    border-radius: min(var(--border-radius, 0px), 16px);
-  }
+/* Each link becomes a square tile card */
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__link {
+  display: flex;
+  align-items: center;
+  aspect-ratio: 1;
+  padding: 20px 16px;
+  background: var(--text-color);
+  color: var(--menu-color);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.4px;
+  border-radius: min(var(--border-radius, 0px), 16px);
+}
 
-  /* Tile mobile open hover: inverted colors, bg shift + suppress text hover */
-  [data-variant="tile"][data-open="true"] .nav__link:hover {
-    background-color: color-mix(in oklab, var(--text-color), var(--menu-color) 15%);
-    color: var(--menu-color);
-  }
+/* Tile open hover: inverted colors, bg shift + suppress text hover */
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__link:hover {
+  background-color: color-mix(in oklab, var(--text-color), var(--menu-color) 15%);
+  color: var(--menu-color);
+}
 
-  /* Submenu tile: the entire nav__item is the white tile block, so the button
-     and expanded submenu appear as one continuous white area. */
-  [data-variant="tile"][data-open="true"] .nav__item--has-submenu {
-    background: var(--text-color);
-    color: var(--menu-color);
-    aspect-ratio: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 20px 16px;
-    border-radius: min(var(--border-radius, 0px), 16px);
-  }
+/* Submenu tile: the entire nav__item is the white tile block */
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__item--has-submenu {
+  background: var(--text-color);
+  color: var(--menu-color);
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px 16px;
+  border-radius: min(var(--border-radius, 0px), 16px);
+}
 
-  [data-variant="tile"][data-open="true"] .nav__item--has-submenu > .nav__link {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 8px;
-    background: transparent;
-    color: inherit;
-    aspect-ratio: auto;
-    padding: 0;
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__item--has-submenu > .nav__link {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  background: transparent;
+  color: inherit;
+  aspect-ratio: auto;
+  padding: 0;
+}
 
-  /* When expanded: drop the 1:1 ratio so the tile grows for sub-items */
-  [data-variant="tile"][data-open="true"] .nav__item--has-submenu:has(> .nav__link[aria-expanded="true"]) {
-    aspect-ratio: auto;
-    justify-content: flex-start;
-  }
+/* When expanded: drop the 1:1 ratio so the tile grows for sub-items */
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__item--has-submenu:has(> .nav__link[aria-expanded="true"]) {
+  aspect-ratio: auto;
+  justify-content: flex-start;
+}
 
-  [data-variant="tile"][data-open="true"] .nav__item--has-submenu > .nav__link[aria-expanded="true"] {
-    min-height: 0;
-    padding-bottom: 0;
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__item--has-submenu > .nav__link[aria-expanded="true"] {
+  min-height: 0;
+  padding-bottom: 0;
+}
 
-  /* Expanded submenu: inside the tile cell, continuous white background */
-  [data-variant="tile"][data-open="true"] .nav__submenu {
-    @apply pl-0;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 20px 0 0;
-    background: transparent;
-    color: var(--menu-color);
-  }
+/* Expanded submenu: inside the tile cell, continuous white background */
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__submenu {
+  @apply pl-0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 0 0;
+  background: transparent;
+  color: var(--menu-color);
+}
 
-  [data-variant="tile"][data-open="true"] .nav__submenu li + li {
-    margin-top: 0;
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__submenu li + li {
+  margin-top: 0;
+}
 
-  [data-variant="tile"][data-open="true"] .nav__submenu-link {
-    @apply block no-underline;
-    color: var(--menu-color);
-    padding: 0;
-    font-size: 1.25rem;
-    font-weight: 400;
-    line-height: 1;
-    letter-spacing: 0.4px;
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__submenu-link {
+  @apply block no-underline;
+  color: var(--menu-color);
+  padding: 0;
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.4px;
+}
 
-  [data-variant="tile"][data-open="true"] .nav__submenu-link:hover {
-    color: color-mix(in oklch, var(--menu-color), var(--text-color) var(--hover-mix));
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__submenu-link:hover {
+  color: color-mix(in oklch, var(--menu-color), var(--text-color) var(--hover-mix));
 }
 
 /* ─── Tile: desktop horizontal tile bar ─── */
@@ -1344,7 +1344,7 @@
     align-self: center;
     background: var(--menu-color);
     padding: 16px;
-    height: 48px;
+    height: 56px;
     display: flex;
     align-items: center;
     border-radius: var(--border-radius, 0px);
@@ -1380,7 +1380,7 @@
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
-    height: 48px;
+    height: 56px;
     background: var(--menu-color);
     color: var(--text-color);
     font-size: 1rem;
@@ -1407,13 +1407,8 @@
 
   .nav[data-variant="tile"] .nav__submenu-link {
     @apply block text-sm;
-    color: var(--text-color);
     padding: 6px 16px;
     white-space: nowrap;
-  }
-
-  .nav[data-variant="tile"] .nav__submenu-link:hover {
-    color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
   }
 
   /* Search + cart: individual black boxes, fixed size */
@@ -1430,7 +1425,7 @@
     background: var(--menu-color);
     color: var(--text-color);
     width: 56px;
-    height: 48px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1466,7 +1461,7 @@
   .nav[data-variant="tile"] .nav__search[data-search-open="true"] {
     flex: 1;
     min-width: 0;
-    height: 48px;
+    height: 56px;
     padding: 12px 16px;
     gap: 12px;
     background: var(--menu-color);
@@ -1559,6 +1554,65 @@
     grid-column: 3;
     justify-self: end;
   }
+
+  /* ─── Tile desktop collapsed (mirrors mobile closed) ─── */
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__inner {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 4px;
+    padding: 16px;
+    background: transparent;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__primary {
+    display: none;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__logo {
+    background: var(--menu-color);
+    padding: 16px;
+    min-height: 56px;
+    height: auto;
+    display: flex;
+    align-items: center;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__actions {
+    grid-column: 2;
+    gap: 4px;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__search-toggle,
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__cart {
+    background: var(--menu-color);
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__search-toggle + .nav__search-input {
+    display: none;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"] .nav__menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    grid-column: 3;
+    background: var(--menu-color);
+    width: 56px;
+    height: 56px;
+    padding: 0;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__logo,
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__search-toggle,
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__cart,
+  .nav[data-variant="tile"][data-tile-inline="false"] .nav__menu-toggle {
+    border-radius: var(--border-radius, 0px);
+  }
 }
 
 /* ─── Capitalization ─── */
@@ -1645,13 +1699,8 @@
 
   .nav[data-variant="simple"] .nav__submenu-link {
     @apply block text-sm;
-    color: var(--text-color);
     padding: 6px 16px;
     white-space: nowrap;
-  }
-
-  .nav[data-variant="simple"] .nav__submenu-link:hover {
-    color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
   }
 
   .nav[data-variant="simple"][data-alignment="center"] .nav__inner {
@@ -1692,6 +1741,15 @@
   .nav[data-variant="simple"][data-alignment="right"] .nav__logo {
     grid-column: 3;
     justify-self: end;
+  }
+
+  /* ─── Simple desktop collapsed (mirrors mobile closed) ─── */
+  .nav[data-variant="simple"][data-simple-inline="false"] .nav__menu-toggle {
+    display: grid;
+  }
+
+  .nav[data-variant="simple"][data-simple-inline="false"][data-open="false"] .nav__primary {
+    display: none;
   }
 }
 
@@ -1949,13 +2007,11 @@
 }
 
 /* ─── Simple: social placement ─── */
-@container (max-width: 767px) {
-  [data-variant="simple"][data-open="true"][data-social-links="true"] .nav__social {
-    display: flex;
-    gap: 24px;
-    padding: 32px 16px 16px;
-    justify-content: center;
-  }
+[data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"][data-social-links="true"] .nav__social {
+  display: flex;
+  gap: 24px;
+  padding: 32px 16px 16px;
+  justify-content: center;
 }
 
 @container (min-width: 768px) {
@@ -2082,22 +2138,22 @@
   min-height: 20px;
 }
 
-/* Default (center) alignment — masthead cluster on the left:
-   [social][search] <1fr> [logo] <1fr> [cart] */
+/* Default (center) alignment — social left, search+cart right:
+   [social] <1fr> [logo] <1fr> [search][cart] */
 [data-variant="top"][data-social-links="true"] .nav__inner {
-  grid-template-columns: auto auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto auto;
 }
 [data-variant="top"][data-social-links="true"] .nav__social {
   grid-column: 1;
   justify-self: start;
 }
-[data-variant="top"][data-social-links="true"] .nav__search {
-  grid-column: 2;
-  justify-self: start;
-}
 [data-variant="top"][data-social-links="true"] .nav__logo {
-  grid-column: 4;
+  grid-column: 3;
   justify-self: center;
+}
+[data-variant="top"][data-social-links="true"] .nav__search {
+  grid-column: 5;
+  justify-self: end;
 }
 [data-variant="top"][data-social-links="true"] .nav__cart {
   grid-column: 6;
@@ -2172,33 +2228,31 @@
 
 /* ─── Tile: social placement ─── */
 
-/* Tile mobile open: three square tiles spanning the full width in a 3-col grid */
-@container (max-width: 767px) {
-  [data-variant="tile"][data-open="true"][data-social-links="true"] .nav__social {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-    margin-top: 8px;
-    padding: 0;
-  }
+/* Tile open social: three square tiles in a 3-col grid (mobile + desktop collapsed) */
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"][data-social-links="true"] .nav__social {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 0;
+}
 
-  [data-variant="tile"][data-open="true"][data-social-links="true"] .nav__social-item {
-    display: block;
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"][data-social-links="true"] .nav__social-item {
+  display: block;
+}
 
-  [data-variant="tile"][data-open="true"][data-social-links="true"] .nav__social-link {
-    width: 100%;
-    aspect-ratio: 1;
-    min-height: 0;
-    background: var(--text-color);
-    color: var(--menu-color);
-    border-radius: min(var(--border-radius, 0px), 16px);
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"][data-social-links="true"] .nav__social-link {
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 0;
+  background: var(--text-color);
+  color: var(--menu-color);
+  border-radius: min(var(--border-radius, 0px), 16px);
+}
 
-  [data-variant="tile"][data-open="true"][data-social-links="true"] .nav__social-icon {
-    width: 28px;
-    height: 28px;
-  }
+[data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"][data-social-links="true"] .nav__social-icon {
+  width: 28px;
+  height: 28px;
 }
 
 /* Tile desktop: one combined tile holding all three icons at the end of the bar */
@@ -2220,7 +2274,7 @@
     justify-content: center;
     gap: 16px;
     flex: 0 0 auto;
-    height: 48px;
+    height: 56px;
     padding: 0 20px;
     background: var(--menu-color);
     color: var(--text-color);
