@@ -6,9 +6,25 @@
   color: var(--gallery-accent, #000000);
   padding: 16px;
   min-height: 100%;
+  position: relative;
 }
 
-/* ─── Grid ─── */
+/* ─── Heading ─── */
+
+.gallery__heading {
+  display: none;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0 0 12px;
+  color: var(--gallery-accent, #000000);
+}
+
+[data-heading="true"] .gallery__heading {
+  display: block;
+}
+
+/* ─── Grid layout (default) ─── */
 
 .gallery__grid {
   display: grid;
@@ -27,6 +43,58 @@
 [data-gap="md"] .gallery__grid { gap: 8px; }
 [data-gap="lg"] .gallery__grid { gap: 16px; }
 
+/* ─── Masonry layout ─── */
+
+[data-layout="masonry"] .gallery__grid {
+  display: block;
+  column-gap: 8px;
+}
+
+[data-layout="masonry"][data-columns="2"] .gallery__grid { column-count: 2; }
+[data-layout="masonry"][data-columns="3"] .gallery__grid { column-count: 3; }
+[data-layout="masonry"][data-columns="4"] .gallery__grid { column-count: 4; }
+
+[data-layout="masonry"][data-gap="none"] .gallery__grid { column-gap: 0; }
+[data-layout="masonry"][data-gap="sm"] .gallery__grid { column-gap: 4px; }
+[data-layout="masonry"][data-gap="md"] .gallery__grid { column-gap: 8px; }
+[data-layout="masonry"][data-gap="lg"] .gallery__grid { column-gap: 16px; }
+
+[data-layout="masonry"] .gallery__item {
+  break-inside: avoid;
+  margin-bottom: 8px;
+}
+
+[data-layout="masonry"][data-gap="none"] .gallery__item { margin-bottom: 0; }
+[data-layout="masonry"][data-gap="sm"] .gallery__item { margin-bottom: 4px; }
+[data-layout="masonry"][data-gap="md"] .gallery__item { margin-bottom: 8px; }
+[data-layout="masonry"][data-gap="lg"] .gallery__item { margin-bottom: 16px; }
+
+/* ─── Slideshow layout ─── */
+
+[data-layout="slideshow"] .gallery__grid {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+[data-layout="slideshow"] .gallery__grid::-webkit-scrollbar {
+  display: none;
+}
+
+[data-layout="slideshow"] .gallery__item {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-layout="slideshow"] .gallery__grid {
+    scroll-behavior: auto;
+  }
+}
+
 /* ─── Items ─── */
 
 .gallery__item {
@@ -35,15 +103,22 @@
 }
 
 .gallery__image {
+  display: block;
   width: 100%;
   aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
 }
 
 /* Aspect ratio via data-attribute */
 [data-aspect="square"] .gallery__image { aspect-ratio: 1 / 1; }
 [data-aspect="landscape"] .gallery__image { aspect-ratio: 4 / 3; }
 [data-aspect="portrait"] .gallery__image { aspect-ratio: 3 / 4; }
-[data-aspect="auto"] .gallery__image { aspect-ratio: auto; min-height: 80px; }
+[data-aspect="auto"] .gallery__image { aspect-ratio: auto; }
+
+/* Fill behavior via data-attribute */
+[data-fit="cover"] .gallery__image { object-fit: cover; }
+[data-fit="contain"] .gallery__image { object-fit: contain; }
 
 /* ─── Captions ─── */
 
@@ -60,6 +135,136 @@
   display: block;
 }
 
+/* ─── Slideshow nav buttons ─── */
+
+.gallery__prev,
+.gallery__next {
+  display: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  color: #000;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: opacity 0.15s, background-color 0.15s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.gallery__prev { left: 8px; }
+.gallery__next { right: 8px; }
+
+.gallery__prev:hover,
+.gallery__next:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+.gallery__prev:focus-visible,
+.gallery__next:focus-visible {
+  outline: 2px solid var(--gallery-accent, #000);
+  outline-offset: 2px;
+}
+
+[data-layout="slideshow"] .gallery__prev,
+[data-layout="slideshow"] .gallery__next {
+  display: flex;
+}
+
+/* ─── Pagination ─── */
+
+.gallery__pagination {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0 0;
+}
+
+[data-layout="slideshow"] .gallery__pagination {
+  display: flex;
+}
+
+[data-layout="slideshow"][data-pagination="counter"] .gallery__pagination {
+  display: none;
+}
+
+.gallery__indicator-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.gallery__indicator-btn:focus-visible {
+  outline: 2px solid var(--gallery-accent, #000);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Dot indicators */
+.gallery__indicator {
+  background: var(--gallery-accent, #000000);
+  opacity: 0.25;
+  transition: opacity 0.15s;
+}
+
+[data-pagination="dots"] .gallery__indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+[data-pagination="dashes"] .gallery__indicator {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+/* Thumbnail indicators */
+[data-pagination="thumbnails"] .gallery__indicator {
+  width: 32px;
+  height: 24px;
+  border-radius: 3px;
+  background-color: var(--gallery-accent, #000000);
+  background-size: cover;
+  background-position: center;
+}
+
+[data-pagination="thumbnails"] .gallery__pagination {
+  gap: 4px;
+}
+
+/* Active state */
+.gallery__indicator-btn[aria-selected="true"] .gallery__indicator {
+  opacity: 1;
+}
+
+/* ─── Counter ─── */
+
+.gallery__counter {
+  display: none;
+  text-align: center;
+  padding: 12px 0 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gallery-accent, #000000);
+  opacity: 0.6;
+}
+
+[data-layout="slideshow"][data-pagination="counter"] .gallery__counter {
+  display: block;
+}
+
 /* ─── Container query: responsive columns ─── */
 
 @container (max-width: 300px) {
@@ -67,10 +272,19 @@
   [data-columns="4"] .gallery__grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  [data-layout="masonry"][data-columns="3"] .gallery__grid,
+  [data-layout="masonry"][data-columns="4"] .gallery__grid {
+    column-count: 2;
+  }
 }
 
 @container (max-width: 200px) {
   .gallery__grid {
     grid-template-columns: 1fr !important;
+  }
+
+  [data-layout="masonry"] .gallery__grid {
+    column-count: 1 !important;
   }
 }

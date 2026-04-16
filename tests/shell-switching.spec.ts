@@ -41,10 +41,13 @@ test('gallery controls update data attributes', async ({ page }) => {
 
   const gallery = page.locator('.gallery');
 
-  // Default state
+  // Default state — includes new attributes
+  await expect(gallery).toHaveAttribute('data-layout', 'grid');
   await expect(gallery).toHaveAttribute('data-columns', '3');
   await expect(gallery).toHaveAttribute('data-gap', 'md');
   await expect(gallery).toHaveAttribute('data-aspect', 'square');
+  await expect(gallery).toHaveAttribute('data-fit', 'cover');
+  await expect(gallery).toHaveAttribute('data-heading', 'false');
 
   // Change columns to 2
   await checkRadio(page, 'columns', '2');
@@ -62,6 +65,15 @@ test('gallery controls update data attributes', async ({ page }) => {
   await checkRadio(page, 'captions', 'true');
   await expect(gallery).toHaveAttribute('data-captions', 'true');
   await expect(page.locator('.gallery__caption').first()).toBeVisible();
+
+  // Toggle heading on
+  await checkRadio(page, 'heading', 'true');
+  await expect(gallery).toHaveAttribute('data-heading', 'true');
+  await expect(page.locator('.gallery__heading')).toBeVisible();
+
+  // Change fill to contain
+  await checkRadio(page, 'fit', 'contain');
+  await expect(gallery).toHaveAttribute('data-fit', 'contain');
 });
 
 test('state round-trip: configure nav → gallery → nav → verify state', async ({ page }) => {
@@ -87,9 +99,10 @@ test('gallery state persists across switches', async ({ page }) => {
   // Switch to gallery
   await page.locator('.controls__picker').selectOption('gallery');
 
-  // Configure: 4 columns, lg gap
+  // Configure: 4 columns, lg gap, masonry layout
   await checkRadio(page, 'columns', '4');
   await checkRadio(page, 'gap', 'lg');
+  await checkRadio(page, 'layout', 'masonry');
 
   // Switch to nav
   await page.locator('.controls__picker').selectOption('nav');
@@ -101,6 +114,135 @@ test('gallery state persists across switches', async ({ page }) => {
   // Gallery state should be restored
   await expect(page.locator('.gallery')).toHaveAttribute('data-columns', '4');
   await expect(page.locator('.gallery')).toHaveAttribute('data-gap', 'lg');
+  await expect(page.locator('.gallery')).toHaveAttribute('data-layout', 'masonry');
+});
+
+test('layout picker switches between grid, slideshow, masonry', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  const gallery = page.locator('.gallery');
+
+  // Default is grid
+  await expect(gallery).toHaveAttribute('data-layout', 'grid');
+
+  // Switch to slideshow
+  await checkRadio(page, 'layout', 'slideshow');
+  await expect(gallery).toHaveAttribute('data-layout', 'slideshow');
+
+  // Slideshow nav buttons should be visible
+  await expect(page.locator('.gallery__prev')).toBeVisible();
+  await expect(page.locator('.gallery__next')).toBeVisible();
+
+  // Switch to masonry
+  await checkRadio(page, 'layout', 'masonry');
+  await expect(gallery).toHaveAttribute('data-layout', 'masonry');
+
+  // Slideshow nav buttons should be hidden
+  await expect(page.locator('.gallery__prev')).not.toBeVisible();
+
+  // Switch back to grid
+  await checkRadio(page, 'layout', 'grid');
+  await expect(gallery).toHaveAttribute('data-layout', 'grid');
+});
+
+test('controls show/hide correctly per layout', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+
+  // Grid: columns and gap visible, autoplay hidden
+  const columnsControl = page.locator('[data-control="columns"]');
+  const gapControl = page.locator('[data-control="gap"]');
+  const autoplayControl = page.locator('[data-control="autoplay"]');
+  const paginationControl = page.locator('[data-control="pagination"]');
+
+  await expect(columnsControl).toBeVisible();
+  await expect(gapControl).toBeVisible();
+  await expect(autoplayControl).toBeHidden();
+  await expect(paginationControl).toBeHidden();
+
+  // Switch to slideshow: columns and gap hidden, autoplay and pagination visible
+  await checkRadio(page, 'layout', 'slideshow');
+  await expect(columnsControl).toBeHidden();
+  await expect(gapControl).toBeHidden();
+  await expect(autoplayControl).toBeVisible();
+  await expect(paginationControl).toBeVisible();
+
+  // Switch to masonry: columns and gap visible, autoplay hidden
+  await checkRadio(page, 'layout', 'masonry');
+  await expect(columnsControl).toBeVisible();
+  await expect(gapControl).toBeVisible();
+  await expect(autoplayControl).toBeHidden();
+  await expect(paginationControl).toBeHidden();
+});
+
+test('slideshow pagination indicators render and track active slide', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+
+  // Pagination should have indicators (one per slide)
+  const indicators = page.locator('.gallery__pagination [role="tab"]');
+  await expect(indicators).toHaveCount(12);
+
+  // First should be selected
+  await expect(indicators.nth(0)).toHaveAttribute('aria-selected', 'true');
+  await expect(indicators.nth(1)).toHaveAttribute('aria-selected', 'false');
+});
+
+test('slideshow prev/next buttons navigate slides', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+
+  // Click next
+  await page.locator('.gallery__next').click();
+  // Wait for scroll to complete and observer to fire
+  await page.waitForTimeout(500);
+
+  // Second indicator should now be selected
+  const indicators = page.locator('.gallery__pagination [role="tab"]');
+  await expect(indicators.nth(1)).toHaveAttribute('aria-selected', 'true');
+});
+
+test('slideshow counter shows correct text', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+  await checkRadio(page, 'pagination', 'counter');
+
+  const counter = page.locator('.gallery__counter');
+  await expect(counter).toBeVisible();
+  await expect(counter).toHaveText('1 of 12');
+});
+
+test('slideshow state persists: layout + pagination across section switches', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+
+  // Configure slideshow with counter pagination
+  await checkRadio(page, 'layout', 'slideshow');
+  await checkRadio(page, 'pagination', 'counter');
+
+  // Switch to nav and back
+  await page.locator('.controls__picker').selectOption('nav');
+  await page.locator('.controls__picker').selectOption('gallery');
+
+  // State should be restored
+  await expect(page.locator('.gallery')).toHaveAttribute('data-layout', 'slideshow');
+  await expect(page.locator('.gallery')).toHaveAttribute('data-pagination', 'counter');
+  await expect(page.locator('.gallery__counter')).toBeVisible();
+});
+
+test('timing control visibility depends on autoplay toggle', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+
+  const timingControl = page.locator('[data-control="timing"]');
+
+  // Autoplay off → timing hidden
+  await expect(timingControl).toBeHidden();
+
+  // Turn on autoplay → timing visible
+  await checkRadio(page, 'autoplay', 'true');
+  await expect(timingControl).toBeVisible();
+
+  // Turn off autoplay → timing hidden again
+  await checkRadio(page, 'autoplay', 'false');
+  await expect(timingControl).toBeHidden();
 });
 
 test('viewport width persists across component switches', async ({ page }) => {
