@@ -225,8 +225,8 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
 
   // 7b. Search
   wrapper.appendChild(createSegmentedGroup(
-    'search', 'Search', ['true', 'false'] as const,
-    { true: 'On', false: 'Off' },
+    'search', 'Search', ['false', 'true'] as const,
+    { false: 'Off', true: 'On' },
     'search',
   ));
 
