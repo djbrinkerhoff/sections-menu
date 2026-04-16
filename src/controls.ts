@@ -18,7 +18,8 @@ const COLOR_LABELS: Record<ColorName, string> = {
   black: 'Black',
   yellow: 'Yellow',
   pink: 'Pink',
-  lightBlue: 'Light Blue',
+  red: 'Red',
+  blue: 'Blue',
   transparent: 'Transparent',
 };
 
@@ -129,7 +130,20 @@ export function initControls(navRoot: HTMLElement): () => void {
         // Shop submenu item
         li.className = 'nav__item nav__item--has-submenu';
         li.innerHTML = `
-          <button class="nav__link" aria-expanded="false" aria-controls="shop-submenu">Shop</button>
+          <button class="nav__link" aria-expanded="false" aria-controls="shop-submenu">
+            Shop
+            <span class="nav__submenu-icon" data-glyph="chevron" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="2.5,4.5 6,8 9.5,4.5"/>
+              </svg>
+            </span>
+            <span class="nav__submenu-icon" data-glyph="plus" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <line x1="6" y1="2" x2="6" y2="10"/>
+                <line x1="2" y1="6" x2="10" y2="6"/>
+              </svg>
+            </span>
+          </button>
           <ul id="shop-submenu" class="nav__submenu" hidden>
             <li><a class="nav__submenu-link" href="#">Category One</a></li>
             <li><a class="nav__submenu-link" href="#">Category Two</a></li>
