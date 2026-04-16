@@ -314,13 +314,18 @@ function closeShopSubmenu(root: HTMLElement, { restoreFocus = false }: { restore
 
 // ─── Rapid double-click guard ───
 let animating = false;
+let animatingTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function guardedToggle(fn: () => void): void {
   if (animating) return;
   animating = true;
   fn();
   // Clear after transition duration (200ms) + buffer
-  setTimeout(() => { animating = false; }, 250);
+  if (animatingTimeout !== null) clearTimeout(animatingTimeout);
+  animatingTimeout = setTimeout(() => {
+    animating = false;
+    animatingTimeout = null;
+  }, 250);
 }
 
 // ─── Ephemeral state reset ───
@@ -350,6 +355,10 @@ export function resetEphemeralState(root: HTMLElement): void {
 
   // Clear animation guard
   animating = false;
+  if (animatingTimeout !== null) {
+    clearTimeout(animatingTimeout);
+    animatingTimeout = null;
+  }
 
   // Unlock scroll
   unlockPreviewScroll();
@@ -491,6 +500,21 @@ function closeMenu(root: HTMLElement): void {
   }
 
   closeShopSubmenu(root);
+}
+
+// ─── Module-level state reset (for multi-component shell unmount) ───
+export function resetNavModuleState(): void {
+  previewEl = null;
+  inertDepth = 0;
+  submenuOriginalParent = null;
+  animating = false;
+  if (animatingTimeout !== null) {
+    clearTimeout(animatingTimeout);
+    animatingTimeout = null;
+  }
+  previousMenuFocus = null;
+  previousCartFocus = null;
+  removeSidebarHandler();
 }
 
 // ─── Init ───

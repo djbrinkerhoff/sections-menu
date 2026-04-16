@@ -28,7 +28,8 @@
     </div>
     <!-- Controls panel (right) -->
     <div id="controls-root" class="w-80 shrink-0 overflow-y-auto border-l border-zinc-800 bg-zinc-900">
-      <!-- controls.ts renders here -->
+      <!-- shell.ts renders the picker here, then controls go in #controls-container -->
+      <div id="controls-container"></div>
     </div>
   </div>
   <script type="module" src="/src/main.ts"></script>

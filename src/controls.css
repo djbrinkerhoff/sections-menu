@@ -20,7 +20,24 @@
 }
 
 .controls__header {
-  @apply pb-4;
+  @apply sticky top-0 z-10 p-5 pb-4;
+  background: #111113;
+  border-bottom: 1px solid #27272a;
+}
+
+.controls__picker {
+  @apply w-full text-sm font-semibold tracking-tight rounded-lg px-3 py-2 cursor-pointer;
+  background-color: #09090b;
+  color: #f4f4f5;
+  border: 1px solid #27272a;
+  color-scheme: dark;
+  appearance: auto;
+}
+
+.controls__picker:focus-visible {
+  border-color: #F4D923;
+  box-shadow: 0 0 0 1px #F4D923;
+  outline: none;
 }
 
 .controls__title {

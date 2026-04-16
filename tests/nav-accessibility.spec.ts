@@ -414,82 +414,39 @@ test('keeps the desktop sidebar logo container in sync with menu color', async (
   expect(colors.railBackground).toBe(colors.logoBackground);
 });
 
-test('cleans up viewport listeners when controls are remounted', async ({ page }) => {
+test('cleans up controls DOM when controls handle is destroyed', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const { initControls } = await import('/src/controls.ts');
 
-    const originalControlsRoot = document.getElementById('controls-root');
-    const originalPreviewRoot = document.getElementById('preview-root');
-    const originalViewportButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-viewport]'));
-    if (!originalControlsRoot || !originalPreviewRoot) {
-      throw new Error('Missing application roots');
-    }
-
-    const originalViewportValues = originalViewportButtons.map((button) => button.dataset.viewport ?? '');
-    originalViewportButtons.forEach((button) => button.removeAttribute('data-viewport'));
-    originalControlsRoot.id = 'controls-root-original';
-    originalPreviewRoot.id = 'preview-root-original';
-
-    const sandboxControls = document.createElement('div');
-    sandboxControls.id = 'controls-root';
-    document.body.appendChild(sandboxControls);
-
-    const sandboxPreview = document.createElement('div');
-    sandboxPreview.id = 'preview-root';
-    document.body.appendChild(sandboxPreview);
+    const sandboxContainer = document.createElement('div');
+    document.body.appendChild(sandboxContainer);
 
     const navRoot = document.querySelector('.nav')?.cloneNode(true) as HTMLElement | null;
     if (!navRoot) {
       throw new Error('Missing nav root');
     }
-    sandboxPreview.appendChild(navRoot);
 
-    const sandboxViewportBar = document.createElement('div');
-    document.body.appendChild(sandboxViewportBar);
+    // Mount controls into sandbox
+    const handle = initControls(navRoot, sandboxContainer);
+    const childCountAfterMount = sandboxContainer.children.length;
 
-    const trackedButtons = ['375', '768', '1280', 'fluid'].map((value) => {
-      const button = document.createElement('button');
-      button.dataset.viewport = value;
-      let ariaPressedCalls = 0;
-      const originalSetAttribute = button.setAttribute.bind(button);
-      button.setAttribute = ((name: string, val: string) => {
-        if (name === 'aria-pressed') ariaPressedCalls += 1;
-        originalSetAttribute(name, val);
-      }) as typeof button.setAttribute;
-      sandboxViewportBar.appendChild(button);
+    // Cleanup should remove all children
+    handle.cleanup();
+    const childCountAfterCleanup = sandboxContainer.children.length;
 
-      return {
-        button,
-        getCalls: () => ariaPressedCalls,
-        reset: () => { ariaPressedCalls = 0; },
-      };
-    });
+    // Remount — should work without errors
+    const handle2 = initControls(navRoot, sandboxContainer);
+    const childCountAfterRemount = sandboxContainer.children.length;
+    handle2.cleanup();
 
-    const cleanupFirst = initControls(navRoot);
-    cleanupFirst();
-    const cleanupSecond = initControls(navRoot);
+    sandboxContainer.remove();
 
-    trackedButtons.forEach((entry) => entry.reset());
-    trackedButtons[1].button.click();
-
-    const totalAriaPressedCalls = trackedButtons.reduce((total, entry) => total + entry.getCalls(), 0);
-    const previewWidth = sandboxPreview.style.width;
-
-    cleanupSecond();
-    sandboxViewportBar.remove();
-    sandboxControls.remove();
-    sandboxPreview.remove();
-    originalControlsRoot.id = 'controls-root';
-    originalPreviewRoot.id = 'preview-root';
-    originalViewportButtons.forEach((button, index) => {
-      button.dataset.viewport = originalViewportValues[index];
-    });
-
-    return { totalAriaPressedCalls, previewWidth };
+    return { childCountAfterMount, childCountAfterCleanup, childCountAfterRemount };
   });
 
-  expect(result.totalAriaPressedCalls).toBe(5);
-  expect(result.previewWidth).toBe('768px');
+  expect(result.childCountAfterMount).toBe(1);
+  expect(result.childCountAfterCleanup).toBe(0);
+  expect(result.childCountAfterRemount).toBe(1);
 });
 
 async function setVariant(page: import('playwright/test').Page, variant: string) {

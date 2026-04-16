@@ -23,9 +23,7 @@ const COLOR_LABELS: Record<ColorName, string> = {
   transparent: 'Transparent',
 };
 
-export function initControls(navRoot: HTMLElement): () => void {
-  const container = document.getElementById('controls-root');
-  if (!container) throw new Error('Missing #controls-root');
+export function initControls(navRoot: HTMLElement, container: HTMLElement) {
   const abortController = new AbortController();
   const { signal } = abortController;
   const cartButton = navRoot.querySelector<HTMLButtonElement>('.nav__cart');
@@ -59,7 +57,7 @@ export function initControls(navRoot: HTMLElement): () => void {
       syncControlVisibility();
       if (value === 'sidebar' || value === 'tile') {
         navRoot.dataset.alignment = 'left';
-        const radio = container!.querySelector<HTMLInputElement>('input[name="alignment"][value="left"]');
+        const radio = wrapper.querySelector<HTMLInputElement>('input[name="alignment"][value="left"]');
         if (radio) radio.checked = true;
       }
     }
@@ -119,7 +117,8 @@ export function initControls(navRoot: HTMLElement): () => void {
 
   syncBandMix();
 
-  let currentNavItemCount = 4;
+  const navList = navRoot.querySelector<HTMLUListElement>('.nav__list');
+  let currentNavItemCount = navList ? navList.children.length : 4;
 
   function setNavItemCount(rawValue: number): void {
     const count = Number.isFinite(rawValue) ? Math.max(0, Math.min(20, Math.trunc(rawValue))) : 4;
@@ -187,12 +186,6 @@ export function initControls(navRoot: HTMLElement): () => void {
   }
 
   // ─── Render ───
-  // Header
-  wrapper.innerHTML = `
-    <div class="controls__header">
-      <h2 class="controls__title">Navigation</h2>
-    </div>
-  `;
 
   // 1. Style (variant) — 2x2 thumbnail grid (hero section)
   wrapper.appendChild(createVariantGroup());
@@ -237,6 +230,7 @@ export function initControls(navRoot: HTMLElement): () => void {
   ));
 
   // 8. Border radius
+  const initialBorderRadius = Number.parseInt(navRoot.dataset.borderRadius ?? '0', 10) || 0;
   wrapper.appendChild(createRangeGroup(
     'border-radius', 'Border radius', BORDER_RADIUS_STEPS,
     (stepIndex) => {
@@ -246,6 +240,7 @@ export function initControls(navRoot: HTMLElement): () => void {
         navRoot.dataset.borderRadius = String(stepIndex);
       }
     },
+    initialBorderRadius,
   ));
 
   // 9. Capitalization
@@ -266,31 +261,11 @@ export function initControls(navRoot: HTMLElement): () => void {
   wrapper.appendChild(createNumberInputGroup('cart-count', 'Cart count', initialCartCount, setCartCount, () => navRoot.dataset.cartCount ?? '0'));
 
   // 10. Nav item count
-  wrapper.appendChild(createNumberInputGroup('nav-items', 'Nav items', 4, setNavItemCount, () => String(currentNavItemCount)));
+  wrapper.appendChild(createNumberInputGroup('nav-items', 'Nav items', currentNavItemCount, setNavItemCount, () => String(currentNavItemCount)));
 
   container.appendChild(wrapper);
   setCartCount(initialCartCount);
   syncControlVisibility();
-
-  // ─── Wire viewport buttons ───
-  const viewportBtns = document.querySelectorAll<HTMLButtonElement>('[data-viewport]');
-  const preview = document.getElementById('preview-root');
-  viewportBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const w = btn.dataset.viewport!;
-      if (preview) {
-        preview.style.width = w === 'fluid' ? '100%' : `${w}px`;
-      }
-      resetEphemeralState(navRoot);
-      // Update pressed state
-      viewportBtns.forEach(b => b.setAttribute('aria-pressed', 'false'));
-      btn.setAttribute('aria-pressed', 'true');
-    }, { signal });
-  });
-  // Set initial viewport state
-  viewportBtns.forEach(b => {
-    b.setAttribute('aria-pressed', b.dataset.viewport === '375' ? 'true' : 'false');
-  });
 
   // ─── Helpers: create control groups ───
 
@@ -318,7 +293,7 @@ export function initControls(navRoot: HTMLElement): () => void {
       input.type = 'radio';
       input.name = 'variant';
       input.value = v;
-      input.checked = v === 'simple';
+      input.checked = v === (navRoot.dataset.variant ?? 'simple');
       input.addEventListener('change', () => setControl('variant', v), { signal });
 
       const preview = document.createElement('span');
@@ -352,7 +327,9 @@ export function initControls(navRoot: HTMLElement): () => void {
     const options = document.createElement('div');
     options.className = 'control-group__options--swatches';
 
-    const defaultColor: ColorName = target === 'menu' ? 'black' : 'white';
+    const currentValue = navRoot.style.getPropertyValue(
+      target === 'menu' ? '--menu-color' : '--text-color',
+    ).trim().toUpperCase() || (target === 'menu' ? '#000000' : '#FFFFFF');
     const colorEntries = Object.entries(COLORS).filter(([colorName]) => {
       return !(target === 'text' && colorName === 'transparent');
     }) as [ColorName, ColorValue][];
@@ -371,7 +348,7 @@ export function initControls(navRoot: HTMLElement): () => void {
       input.type = 'radio';
       input.name = name;
       input.value = colorValue;
-      input.checked = colorName === defaultColor;
+      input.checked = colorValue.toUpperCase() === currentValue;
       input.ariaLabel = COLOR_LABELS[colorName];
       input.addEventListener('change', () => setColor(target, colorValue), { signal });
 
@@ -406,7 +383,7 @@ export function initControls(navRoot: HTMLElement): () => void {
       input.type = 'radio';
       input.name = name;
       input.value = v;
-      input.checked = v === values[0];
+      input.checked = v === (navRoot.dataset[controlKey] ?? values[0]);
       input.addEventListener('change', () => {
         setControl(controlKey, v as ControlMap[typeof controlKey]);
       }, { signal });
@@ -465,6 +442,7 @@ export function initControls(navRoot: HTMLElement): () => void {
     label: string,
     steps: readonly string[],
     onInput: (stepIndex: number) => void,
+    initialIndex = 0,
   ): HTMLFieldSetElement {
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'control-group';
@@ -478,7 +456,7 @@ export function initControls(navRoot: HTMLElement): () => void {
     range.min = '0';
     range.max = String(steps.length - 1);
     range.step = '1';
-    range.value = '0';
+    range.value = String(initialIndex);
     range.ariaLabel = label;
     range.addEventListener('input', () => {
       onInput(Number.parseInt(range.value, 10));
@@ -523,8 +501,15 @@ export function initControls(navRoot: HTMLElement): () => void {
     return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`;
   }
 
-  return () => {
-    abortController.abort();
-    wrapper.remove();
+  return {
+    cleanup() {
+      abortController.abort();
+      wrapper.remove();
+    },
+    setNavItemCount,
+    setCartCount,
+    get navItemCount() { return currentNavItemCount; },
   };
 }
+
+export type ControlsHandle = ReturnType<typeof initControls>;
