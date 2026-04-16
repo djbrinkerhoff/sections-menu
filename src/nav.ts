@@ -139,6 +139,66 @@ function syncTopInlineState(root: HTMLElement): void {
   }
 }
 
+function syncSimpleInlineState(root: HTMLElement): void {
+  if (root.dataset.variant !== 'simple') {
+    delete root.dataset.simpleInline;
+    return;
+  }
+
+  // Don't recalculate while the overlay is open
+  if (root.dataset.open === 'true') return;
+
+  // On narrow containers the desktop CQ styles don't match — always collapse.
+  if (root.clientWidth < 768) {
+    root.dataset.simpleInline = 'false';
+    return;
+  }
+
+  const inner = root.querySelector<HTMLElement>('.nav__inner');
+  const list = root.querySelector<HTMLElement>('.nav__list');
+  const logo = root.querySelector<HTMLElement>('.nav__logo');
+  const search = root.querySelector<HTMLElement>('.nav__search');
+  const cart = root.querySelector<HTMLElement>('.nav__cart');
+
+  if (!inner || !list || !logo || !search || !cart) {
+    root.dataset.simpleInline = 'false';
+    return;
+  }
+
+  // Force inline state so links are visible and measurable
+  const prev = root.dataset.simpleInline;
+  root.dataset.simpleInline = 'true';
+
+  // Simple links are flex: 0 0 auto — natural widths, no override needed
+  const styles = getComputedStyle(inner);
+  const paddingInline =
+    (Number.parseFloat(styles.paddingLeft) || 0) +
+    (Number.parseFloat(styles.paddingRight) || 0);
+  const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+  const contentWidth = inner.clientWidth - paddingInline;
+  const fixedWidth =
+    logo.getBoundingClientRect().width +
+    search.getBoundingClientRect().width +
+    cart.getBoundingClientRect().width;
+  const linkWidth = getInlineNavWidth(list);
+  const social = root.querySelector<HTMLElement>('.nav__social');
+  const socialWidth =
+    social && root.dataset.socialLinks === 'true'
+      ? social.getBoundingClientRect().width
+      : 0;
+  const socialGap = socialWidth > 0 ? gap : 0;
+
+  // When inline: grid is logo | primary | actions → 2 gaps
+  const availableWidth =
+    contentWidth - fixedWidth - socialWidth - socialGap - gap * 2;
+  const wasInline = prev === 'true';
+  const newInline = wasInline
+    ? availableWidth >= linkWidth
+    : availableWidth >= linkWidth + 16;
+
+  root.dataset.simpleInline = newInline ? 'true' : 'false';
+}
+
 function syncTileInlineState(root: HTMLElement): void {
   if (root.dataset.variant !== 'tile') {
     delete root.dataset.tileInline;
@@ -440,6 +500,7 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
   const { signal } = abortController;
   let topInlineFrame = 0;
   let tileInlineFrame = 0;
+  let simpleInlineFrame = 0;
 
   const scheduleTopInlineSync = () => {
     if (topInlineFrame) cancelAnimationFrame(topInlineFrame);
@@ -454,6 +515,14 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
     tileInlineFrame = requestAnimationFrame(() => {
       tileInlineFrame = 0;
       syncTileInlineState(root);
+    });
+  };
+
+  const scheduleSimpleInlineSync = () => {
+    if (simpleInlineFrame) cancelAnimationFrame(simpleInlineFrame);
+    simpleInlineFrame = requestAnimationFrame(() => {
+      simpleInlineFrame = 0;
+      syncSimpleInlineState(root);
     });
   };
 
@@ -585,12 +654,14 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
   const inlineResizeObserver = new ResizeObserver(() => {
     scheduleTopInlineSync();
     scheduleTileInlineSync();
+    scheduleSimpleInlineSync();
   });
   inlineResizeObserver.observe(root);
 
   const inlineMutationObserver = new MutationObserver(() => {
     scheduleTopInlineSync();
     scheduleTileInlineSync();
+    scheduleSimpleInlineSync();
   });
 
   inlineMutationObserver.observe(root, {
@@ -607,11 +678,13 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
 
   scheduleTopInlineSync();
   scheduleTileInlineSync();
+  scheduleSimpleInlineSync();
 
   return () => {
     abortController.abort();
     if (topInlineFrame) cancelAnimationFrame(topInlineFrame);
     if (tileInlineFrame) cancelAnimationFrame(tileInlineFrame);
+    if (simpleInlineFrame) cancelAnimationFrame(simpleInlineFrame);
     inlineResizeObserver.disconnect();
     inlineMutationObserver.disconnect();
     removeSidebarHandler();

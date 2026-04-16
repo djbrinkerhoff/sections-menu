@@ -148,6 +148,7 @@ test('renders the simple mobile menu like the Figma frame when open', async ({ p
 
 test('shows simple variant links inline in the desktop nav bar', async ({ page }) => {
   await page.getByRole('button', { name: '1280' }).click();
+  await expect(page.locator('.nav')).toHaveAttribute('data-simple-inline', 'true');
 
   const layout = await page.evaluate(() => {
     const nav = document.querySelector('.nav');
@@ -696,7 +697,7 @@ test.describe('edge case: many nav items', () => {
   const COUNT = 15;
   const combos: Combo[] = [
     { variant: 'simple',     viewport: '375',  openMenu: true,  overflowHost: '.nav__primary', overflow: 'vertical'   },
-    { variant: 'simple',     viewport: '1280', openMenu: false, overflowHost: '.nav__primary', overflow: 'horizontal' },
+    { variant: 'simple',     viewport: '1280', openMenu: true,  overflowHost: '.nav__primary', overflow: 'vertical'   },
     { variant: 'fullscreen', viewport: '375',  openMenu: true,  overflowHost: '.nav__list',    overflow: 'vertical'   },
     { variant: 'fullscreen', viewport: '1280', openMenu: true,  overflowHost: '.nav__list',    overflow: 'vertical'   },
     { variant: 'sidebar',    viewport: '375',  openMenu: true,  overflowHost: '.nav__list',    overflow: 'vertical'   },
