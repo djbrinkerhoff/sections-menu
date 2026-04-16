@@ -11,7 +11,8 @@ export const COLORS = {
   black: '#000000',
   yellow: '#F4D923',
   pink: '#F8B4D0',
-  lightBlue: '#BEE8F0',
+  red: '#ED1818',
+  blue: '#1841D4',
   transparent: 'transparent',
 } as const;
 

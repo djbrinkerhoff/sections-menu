@@ -139,6 +139,26 @@ function syncTopInlineState(root: HTMLElement): void {
   }
 }
 
+// ─── Submenu relocation for top variant ───
+// The top variant needs the submenu as a direct child of nav__inner
+// to render it as a full-width horizontal row below the link strip.
+// (Inside nav__primary it would be clipped by overflow-x: auto.)
+let submenuOriginalParent: HTMLElement | null = null;
+
+function relocateSubmenuForTop(root: HTMLElement, submenu: HTMLElement): void {
+  const inner = root.querySelector<HTMLElement>('.nav__inner');
+  if (!inner || submenu.parentElement === inner) return;
+  submenuOriginalParent = submenu.parentElement;
+  inner.appendChild(submenu);
+}
+
+function restoreSubmenuPosition(submenu: HTMLElement): void {
+  if (submenuOriginalParent && submenu.parentElement !== submenuOriginalParent) {
+    submenuOriginalParent.appendChild(submenu);
+  }
+  submenuOriginalParent = null;
+}
+
 function closeShopSubmenu(root: HTMLElement, { restoreFocus = false }: { restoreFocus?: boolean } = {}): void {
   const shopBtn = root.querySelector<HTMLButtonElement>('[aria-controls="shop-submenu"]');
   const shopSubmenu = root.querySelector<HTMLElement>('#shop-submenu');
@@ -146,7 +166,10 @@ function closeShopSubmenu(root: HTMLElement, { restoreFocus = false }: { restore
   if (shopBtn) {
     shopBtn.setAttribute('aria-expanded', 'false');
   }
-  shopSubmenu?.setAttribute('hidden', '');
+  if (shopSubmenu) {
+    shopSubmenu.setAttribute('hidden', '');
+    restoreSubmenuPosition(shopSubmenu);
+  }
 
   if (restoreFocus && shopBtn) {
     shopBtn.focus();
@@ -422,6 +445,10 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
     } else {
       btn.setAttribute('aria-expanded', 'true');
       submenu.removeAttribute('hidden');
+      // Top variant: relocate submenu to nav__inner for full-width row
+      if (root.dataset.variant === 'top') {
+        relocateSubmenuForTop(root, submenu);
+      }
     }
   }, { signal });
 

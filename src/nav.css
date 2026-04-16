@@ -9,6 +9,7 @@
   --sidebar-rail-width: 88px;
   --sidebar-panel-width: 425px;
   --sidebar-logo-box-width: 168px;
+  --hover-mix: 15%;
 }
 
 /* ─── Inset (simple, fullscreen, top only) ─── */
@@ -40,7 +41,11 @@
 .nav__logo {
   @apply flex items-center gap-2 no-underline;
   color: var(--text-color);
-  transition: opacity 150ms ease;
+  transition: color 150ms ease, opacity 150ms ease;
+}
+
+.nav__logo:hover {
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
 }
 
 @container (max-width: 767px) {
@@ -89,10 +94,11 @@
   color: var(--text-color);
   font: inherit;
   vertical-align: middle;
+  transition: color 150ms ease, background-color 150ms ease;
 }
 
 .nav__link:hover {
-  @apply opacity-70;
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
 }
 
 .nav__link:focus-visible {
@@ -110,12 +116,53 @@
 
 .nav__submenu-link {
   @apply text-xs no-underline px-2 py-1;
-  color: var(--text-color);
-  opacity: 0.7;
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) 30%);
+  transition: color 150ms ease;
 }
 
 .nav__submenu-link:hover {
-  opacity: 1;
+  color: var(--text-color);
+}
+
+/* ─── Submenu toggle icon ─── */
+.nav__submenu-icon {
+  display: none;
+  line-height: 0;
+  flex-shrink: 0;
+  transition: transform 150ms ease;
+}
+
+/* Show chevron for hamburger and text button styles */
+[data-button-style="hamburger"] .nav__submenu-icon[data-glyph="chevron"],
+[data-button-style="text"] .nav__submenu-icon[data-glyph="chevron"] {
+  display: inline-flex;
+}
+
+/* Show plus for plus button style */
+[data-button-style="plus"] .nav__submenu-icon[data-glyph="plus"] {
+  display: inline-flex;
+}
+
+/* Chevron: flip up when expanded */
+.nav__link[aria-expanded="true"] > .nav__submenu-icon[data-glyph="chevron"] {
+  transform: rotate(180deg);
+}
+
+/* Plus: rotate to X when expanded */
+.nav__link[aria-expanded="true"] > .nav__submenu-icon[data-glyph="plus"] {
+  transform: rotate(45deg);
+}
+
+/* Submenu trigger: flex for icon alignment (base) */
+.nav__item--has-submenu > .nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Sidebar: hide submenu icon (submenu always open, button is non-interactive) */
+[data-variant="sidebar"] .nav__submenu-icon {
+  display: none !important;
 }
 
 /* ─── Actions (search + cart) ─── */
@@ -130,6 +177,11 @@
 .nav__search-toggle {
   @apply bg-transparent border-0 cursor-pointer p-1 flex items-center;
   color: var(--text-color);
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.nav__search-toggle:hover {
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
 }
 
 .nav__search-toggle:focus-visible {
@@ -174,6 +226,11 @@
 .nav__cart {
   @apply relative bg-transparent border-0 cursor-pointer p-1 flex items-center;
   color: var(--text-color);
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.nav__cart:hover {
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
 }
 
 .nav__cart:focus-visible {
@@ -204,9 +261,14 @@
 .nav__menu-toggle {
   @apply bg-transparent border-0 cursor-pointer p-1;
   color: var(--text-color);
+  transition: color 150ms ease;
   display: grid;
   min-block-size: 28px;
   place-items: center;
+}
+
+.nav__menu-toggle:hover {
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
 }
 
 .nav__menu-toggle:focus-visible {
@@ -333,12 +395,61 @@
   margin: 0 auto;
 }
 
+/* Top submenu: full-width horizontal row (JS-relocated to nav__inner) */
+[data-variant="top"] > .nav__inner > .nav__submenu {
+  @apply list-none m-0 pl-0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  grid-column: 1 / -1;
+  margin-top: -16px;
+  margin-left: -16px;
+  margin-right: -16px;
+  width: calc(100% + 32px);
+  padding: 10px 16px;
+  background-color: color-mix(in oklch, var(--menu-color), var(--text-color) var(--band-mix, 10%));
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
+}
+
+/* Inline: no row-gap to absorb, so reset negative margin and eat bottom padding */
+[data-variant="top"][data-top-inline="true"] > .nav__inner > .nav__submenu {
+  margin-top: 0;
+}
+
+[data-variant="top"][data-top-inline="true"]:has(> .nav__inner > .nav__submenu:not([hidden])) > .nav__inner {
+  padding-bottom: 0;
+}
+
+[data-variant="top"] > .nav__inner > .nav__submenu::-webkit-scrollbar {
+  display: none;
+}
+
+[data-variant="top"] > .nav__inner > .nav__submenu .nav__submenu-link {
+  @apply text-sm no-underline;
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) 30%);
+  padding: 0;
+  white-space: nowrap;
+}
+
+[data-variant="top"] > .nav__inner > .nav__submenu .nav__submenu-link:hover {
+  color: var(--text-color);
+}
+
 /* Mobile: overflow only off the right edge, never center-pad both sides. */
 @container (max-width: 767px) {
   [data-variant="top"] .nav__primary .nav__list {
     justify-content: flex-start;
     min-width: 0;
     margin: 0;
+  }
+
+  [data-variant="top"] > .nav__inner > .nav__submenu {
+    justify-content: flex-start;
   }
 }
 
@@ -369,27 +480,8 @@
   margin: 0;
 }
 
-[data-variant="top"][data-top-inline="true"] .nav__item {
-  position: relative;
-}
-
-[data-variant="top"][data-top-inline="true"] .nav__submenu {
-  position: absolute;
-  top: calc(100% + 12px);
-  left: 0;
-  min-width: 12rem;
-  padding: 12px 0;
-  background-color: var(--menu-color);
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  z-index: 30;
-}
-
-[data-variant="top"][data-top-inline="true"] .nav__submenu-link {
-  @apply block text-sm;
-  opacity: 1;
-  padding: 6px 16px;
-  white-space: nowrap;
-}
+/* Top inline: submenu is JS-relocated to nav__inner, same styles apply via
+   [data-variant="top"] > .nav__inner > .nav__submenu above */
 
 [data-variant="top"][data-top-inline="true"][data-alignment="left"] .nav__inner {
   grid-template-columns: auto minmax(0, 1fr) auto auto;
@@ -505,7 +597,7 @@
   position: absolute;
   inset: 0;
   z-index: 40;
-  overflow: hidden;
+  background-color: transparent;
 }
 
 @container (max-width: 767px) {
@@ -514,7 +606,9 @@
     grid-template-rows: auto 1fr;
     align-items: center;
     row-gap: 0;
-    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    background-color: var(--menu-color);
   }
 
   [data-variant="simple"][data-open="true"] .nav__logo {
@@ -571,36 +665,32 @@
     gap: 16px;
   }
 
-  [data-variant="simple"][data-open="true"] .nav__item--has-submenu > .nav__link::after {
-    content: "";
-    inline-size: 0.65rem;
-    block-size: 0.65rem;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: translateY(-0.15rem) rotate(45deg);
-    transition: transform 150ms ease;
-  }
-
-  [data-variant="simple"][data-open="true"] .nav__item--has-submenu > .nav__link[aria-expanded="true"]::after {
-    transform: translateY(0.1rem) rotate(-135deg);
+  /* Submenu icon sizing for simple mobile */
+  [data-variant="simple"][data-open="true"] .nav__submenu-icon svg {
+    width: 16px;
+    height: 16px;
   }
 
   [data-variant="simple"][data-open="true"] .nav__submenu {
     @apply pl-0;
     gap: 0;
-    padding: 0 16px 16px 32px;
+    padding: 0 16px 20px 16px;
   }
 
   [data-variant="simple"][data-open="true"] .nav__submenu li + li {
-    margin-top: 12px;
+    margin-top: 16px;
   }
 
   [data-variant="simple"][data-open="true"] .nav__submenu-link {
     @apply block no-underline;
-    opacity: 1;
+    color: var(--text-color);
     padding: 0;
     font-size: 1rem;
     line-height: 1.25;
+  }
+
+  [data-variant="simple"][data-open="true"] .nav__submenu-link:hover {
+    color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
   }
 }
 
@@ -688,14 +778,47 @@
 [data-variant="fullscreen"][data-open="true"] .nav__list {
   @apply flex flex-col items-center;
   gap: 32px;
+  width: 100%;
   max-height: 100%;
   margin-block: auto;
+  padding-bottom: 48px;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+[data-variant="fullscreen"][data-open="true"] .nav__list::-webkit-scrollbar {
+  display: none;
 }
 
 [data-variant="fullscreen"][data-open="true"] .nav__link {
   @apply text-xl font-bold uppercase;
+}
+
+/* Fullscreen submenu */
+[data-variant="fullscreen"][data-open="true"] .nav__item--has-submenu > .nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-variant="fullscreen"][data-open="true"] .nav__submenu {
+  @apply pl-0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-top: 16px;
+}
+
+[data-variant="fullscreen"][data-open="true"] .nav__submenu-link {
+  @apply block no-underline text-base;
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) 30%);
+  padding: 0;
+}
+
+[data-variant="fullscreen"][data-open="true"] .nav__submenu-link:hover {
+  color: var(--text-color);
 }
 
 /* Cart: centered column at bottom */
@@ -780,12 +903,16 @@
 
 [data-variant="sidebar"][data-open="true"] .nav__submenu-link {
   @apply no-underline;
-  opacity: 1;
+  color: var(--text-color);
   display: block;
   padding: 0;
   font-size: clamp(1.875rem, 6cqi, 2.25rem);
   font-weight: 500;
   line-height: 1.3;
+}
+
+[data-variant="sidebar"][data-open="true"] .nav__submenu-link:hover {
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
 }
 
 /* Regular nav items: top border separators */
@@ -1123,6 +1250,12 @@
     border-radius: min(var(--border-radius, 0px), 16px);
   }
 
+  /* Tile mobile open hover: inverted colors, bg shift + suppress text hover */
+  [data-variant="tile"][data-open="true"] .nav__link:hover {
+    background-color: color-mix(in oklab, var(--text-color), var(--menu-color) 15%);
+    color: var(--menu-color);
+  }
+
   /* Submenu tile: the entire nav__item is the white tile block, so the button
      and expanded submenu appear as one continuous white area. */
   [data-variant="tile"][data-open="true"] .nav__item--has-submenu {
@@ -1158,22 +1291,6 @@
     padding-bottom: 0;
   }
 
-  [data-variant="tile"][data-open="true"] .nav__item--has-submenu > .nav__link::after {
-    content: "";
-    inline-size: 0.5rem;
-    block-size: 0.5rem;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: translateY(-0.1rem) rotate(45deg);
-    transition: transform 150ms ease;
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  [data-variant="tile"][data-open="true"] .nav__item--has-submenu > .nav__link[aria-expanded="true"]::after {
-    transform: translateY(0.1rem) rotate(-135deg);
-  }
-
   /* Expanded submenu: inside the tile cell, continuous white background */
   [data-variant="tile"][data-open="true"] .nav__submenu {
     @apply pl-0;
@@ -1191,13 +1308,16 @@
 
   [data-variant="tile"][data-open="true"] .nav__submenu-link {
     @apply block no-underline;
-    opacity: 1;
+    color: var(--menu-color);
     padding: 0;
     font-size: 1.25rem;
     font-weight: 400;
     line-height: 1;
     letter-spacing: 0.4px;
-    color: var(--menu-color);
+  }
+
+  [data-variant="tile"][data-open="true"] .nav__submenu-link:hover {
+    color: color-mix(in oklch, var(--menu-color), var(--text-color) var(--hover-mix));
   }
 }
 
@@ -1271,12 +1391,13 @@
     border-radius: var(--border-radius, 0px);
   }
 
-  /* Desktop submenu: dropdown below tile, same width as parent */
+  /* Desktop submenu: dropdown below tile, matches parent width unless content is wider */
   .nav[data-variant="tile"] .nav__submenu {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
+    min-width: max-content;
     padding: 12px 0;
     background-color: var(--menu-color);
     border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
@@ -1286,26 +1407,13 @@
 
   .nav[data-variant="tile"] .nav__submenu-link {
     @apply block text-sm;
-    opacity: 1;
+    color: var(--text-color);
     padding: 6px 16px;
     white-space: nowrap;
   }
 
-  /* Submenu chevron on desktop */
-  .nav[data-variant="tile"] .nav__item--has-submenu > .nav__link::after {
-    content: "";
-    inline-size: 0.45rem;
-    block-size: 0.45rem;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: translateY(-0.1rem) rotate(45deg);
-    transition: transform 150ms ease;
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  .nav[data-variant="tile"] .nav__item--has-submenu > .nav__link[aria-expanded="true"]::after {
-    transform: translateY(0.1rem) rotate(-135deg);
+  .nav[data-variant="tile"] .nav__submenu-link:hover {
+    color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
   }
 
   /* Search + cart: individual black boxes, fixed size */
@@ -1330,13 +1438,19 @@
     border-radius: var(--border-radius, 0px);
   }
 
-  /* Kill transitions on tile desktop to prevent icons flying during search toggle */
+  /* Kill layout transitions on tile desktop to prevent icons flying during search toggle */
   .nav[data-variant="tile"] .nav__search-input,
-  .nav[data-variant="tile"] .nav__search-glyph,
-  .nav[data-variant="tile"] .nav__search-toggle,
-  .nav[data-variant="tile"] .nav__cart,
-  .nav[data-variant="tile"] .nav__logo {
+  .nav[data-variant="tile"] .nav__search-glyph {
     transition: none;
+  }
+
+  /* Tile desktop hover: background shifts, suppress text color hover */
+  .nav[data-variant="tile"] .nav__link:hover,
+  .nav[data-variant="tile"] .nav__logo:hover,
+  .nav[data-variant="tile"] .nav__search-toggle:hover,
+  .nav[data-variant="tile"] .nav__cart:hover {
+    background-color: color-mix(in oklab, var(--menu-color), var(--text-color) 15%);
+    color: var(--text-color);
   }
 
   /* Desktop search: hide tiles, search becomes a single black box filling the middle */
@@ -1496,13 +1610,8 @@
     grid-row: 1;
     min-width: 0;
     padding-top: 0;
-    overflow-x: auto;
+    overflow-x: clip;
     overflow-y: visible;
-    scrollbar-width: none;
-  }
-
-  .nav[data-variant="simple"] .nav__primary::-webkit-scrollbar {
-    display: none;
   }
 
   .nav[data-variant="simple"] .nav__list {
@@ -1527,19 +1636,22 @@
   .nav[data-variant="simple"] .nav__submenu {
     position: absolute;
     top: calc(100% + 12px);
-    left: 0;
+    left: -16px;
     min-width: 12rem;
     padding: 12px 0;
     background-color: var(--menu-color);
-    border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
     z-index: 30;
   }
 
   .nav[data-variant="simple"] .nav__submenu-link {
     @apply block text-sm;
-    opacity: 1;
+    color: var(--text-color);
     padding: 6px 16px;
     white-space: nowrap;
+  }
+
+  .nav[data-variant="simple"] .nav__submenu-link:hover {
+    color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
   }
 
   .nav[data-variant="simple"][data-alignment="center"] .nav__inner {
@@ -1796,6 +1908,11 @@
   min-height: 44px;
   color: currentColor;
   text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.nav__social-link:hover {
+  color: color-mix(in oklch, var(--text-color), var(--menu-color) var(--hover-mix));
 }
 
 .nav__social-link:focus-visible {
@@ -1883,9 +2000,15 @@
 }
 
 /* ─── Fullscreen: social placement (same on all viewports) ─── */
+/* Move gradient from primary to list so social icons stay crisp */
 [data-variant="fullscreen"][data-open="true"][data-social-links="true"] .nav__primary {
   -webkit-mask-image: none;
   mask-image: none;
+}
+
+[data-variant="fullscreen"][data-open="true"][data-social-links="true"] .nav__list {
+  mask-image: linear-gradient(to bottom, black calc(100% - 48px), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 48px), transparent);
 }
 
 [data-variant="fullscreen"][data-open="true"][data-social-links="true"] .nav__social {
