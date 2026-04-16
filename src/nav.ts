@@ -139,6 +139,82 @@ function syncTopInlineState(root: HTMLElement): void {
   }
 }
 
+function syncTileInlineState(root: HTMLElement): void {
+  if (root.dataset.variant !== 'tile') {
+    delete root.dataset.tileInline;
+    return;
+  }
+
+  // Don't recalculate while the overlay is open
+  if (root.dataset.open === 'true') return;
+
+  // On narrow containers the desktop CQ styles that show the tile bar
+  // don't match, so links are invisible and unmeasurable — always collapse.
+  if (root.clientWidth < 768) {
+    root.dataset.tileInline = 'false';
+    return;
+  }
+
+  const inner = root.querySelector<HTMLElement>('.nav__inner');
+  const list = root.querySelector<HTMLElement>('.nav__list');
+  const logo = root.querySelector<HTMLElement>('.nav__logo');
+  const search = root.querySelector<HTMLElement>('.nav__search');
+  const cart = root.querySelector<HTMLElement>('.nav__cart');
+
+  if (!inner || !list || !logo || !search || !cart) {
+    root.dataset.tileInline = 'false';
+    return;
+  }
+
+  // Force inline state so primary/links are visible and measurable
+  const prev = root.dataset.tileInline;
+  root.dataset.tileInline = 'true';
+
+  // Temporarily remove flex-equal constraint on tile items
+  // so getInlineNavWidth returns natural content widths, not the
+  // equal-distribution widths imposed by flex: 1 1 0%.
+  const items = Array.from(list.children) as HTMLElement[];
+  const savedFlex = items.map(item => item.style.flex);
+  items.forEach(item => { item.style.flex = '0 0 auto'; });
+
+  // Measure (forces one synchronous reflow with inline + auto styles)
+  const styles = getComputedStyle(inner);
+  const paddingInline =
+    (Number.parseFloat(styles.paddingLeft) || 0) +
+    (Number.parseFloat(styles.paddingRight) || 0);
+  const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+  const contentWidth = inner.clientWidth - paddingInline;
+  const fixedWidth =
+    logo.getBoundingClientRect().width +
+    search.getBoundingClientRect().width +
+    cart.getBoundingClientRect().width;
+  const linkWidth = getInlineNavWidth(list);
+  const social = root.querySelector<HTMLElement>('.nav__social');
+  const socialWidth =
+    social && root.dataset.socialLinks === 'true'
+      ? social.getBoundingClientRect().width
+      : 0;
+  const primaryStyles = getComputedStyle(
+    root.querySelector<HTMLElement>('.nav__primary')!,
+  );
+  const primaryGap =
+    Number.parseFloat(primaryStyles.columnGap || primaryStyles.gap || '0') || 0;
+  const socialGap = socialWidth > 0 ? primaryGap : 0;
+
+  // Restore flex
+  items.forEach((item, i) => { item.style.flex = savedFlex[i] ?? ''; });
+
+  const availableWidth =
+    contentWidth - fixedWidth - socialWidth - socialGap - gap * 2;
+  const wasInline = prev === 'true';
+  // Hysteresis: require extra clearance to promote, collapse immediately
+  const newInline = wasInline
+    ? availableWidth >= linkWidth
+    : availableWidth >= linkWidth + 16;
+
+  root.dataset.tileInline = newInline ? 'true' : 'false';
+}
+
 // ─── Submenu relocation for top variant ───
 // The top variant needs the submenu as a direct child of nav__inner
 // to render it as a full-width horizontal row below the link strip.
@@ -363,12 +439,21 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
   const abortController = new AbortController();
   const { signal } = abortController;
   let topInlineFrame = 0;
+  let tileInlineFrame = 0;
 
   const scheduleTopInlineSync = () => {
     if (topInlineFrame) cancelAnimationFrame(topInlineFrame);
     topInlineFrame = requestAnimationFrame(() => {
       topInlineFrame = 0;
       syncTopInlineState(root);
+    });
+  };
+
+  const scheduleTileInlineSync = () => {
+    if (tileInlineFrame) cancelAnimationFrame(tileInlineFrame);
+    tileInlineFrame = requestAnimationFrame(() => {
+      tileInlineFrame = 0;
+      syncTileInlineState(root);
     });
   };
 
@@ -497,34 +582,38 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
     primary.setAttribute('role', 'region');
   }
 
-  const topInlineResizeObserver = new ResizeObserver(() => {
+  const inlineResizeObserver = new ResizeObserver(() => {
     scheduleTopInlineSync();
+    scheduleTileInlineSync();
   });
-  topInlineResizeObserver.observe(root);
+  inlineResizeObserver.observe(root);
 
-  const topInlineMutationObserver = new MutationObserver(() => {
+  const inlineMutationObserver = new MutationObserver(() => {
     scheduleTopInlineSync();
+    scheduleTileInlineSync();
   });
 
-  topInlineMutationObserver.observe(root, {
+  inlineMutationObserver.observe(root, {
     attributes: true,
-    attributeFilter: ['data-variant', 'data-alignment', 'data-logo-style', 'data-cart-count', 'data-social-links'],
+    attributeFilter: ['data-variant', 'data-alignment', 'data-logo-style', 'data-cart-count', 'data-social-links', 'data-open'],
   });
 
   if (primary) {
-    topInlineMutationObserver.observe(primary, {
+    inlineMutationObserver.observe(primary, {
       childList: true,
       subtree: true,
     });
   }
 
   scheduleTopInlineSync();
+  scheduleTileInlineSync();
 
   return () => {
     abortController.abort();
     if (topInlineFrame) cancelAnimationFrame(topInlineFrame);
-    topInlineResizeObserver.disconnect();
-    topInlineMutationObserver.disconnect();
+    if (tileInlineFrame) cancelAnimationFrame(tileInlineFrame);
+    inlineResizeObserver.disconnect();
+    inlineMutationObserver.disconnect();
     removeSidebarHandler();
     inertReset();
   };
