@@ -47,7 +47,7 @@ test('gallery controls update data attributes', async ({ page }) => {
   await expect(gallery).toHaveAttribute('data-gap', 'md');
   await expect(gallery).toHaveAttribute('data-aspect', 'square');
   await expect(gallery).toHaveAttribute('data-fit', 'cover');
-  await expect(gallery).toHaveAttribute('data-heading', 'false');
+  await expect(gallery).toHaveAttribute('data-heading', '');
 
   // Change columns to 2
   await checkRadio(page, 'columns', '2');
@@ -66,10 +66,17 @@ test('gallery controls update data attributes', async ({ page }) => {
   await expect(gallery).toHaveAttribute('data-captions', 'true');
   await expect(page.locator('.gallery__caption').first()).toBeVisible();
 
-  // Toggle heading on
-  await checkRadio(page, 'heading', 'true');
-  await expect(gallery).toHaveAttribute('data-heading', 'true');
+  // Type a heading — shows the heading element
+  const headingInput = page.locator('input[name="heading"]');
+  await headingInput.fill('My Gallery');
+  await expect(gallery).toHaveAttribute('data-heading', 'My Gallery');
   await expect(page.locator('.gallery__heading')).toBeVisible();
+  await expect(page.locator('.gallery__heading')).toHaveText('My Gallery');
+
+  // Clear heading — hides it
+  await headingInput.fill('');
+  await expect(gallery).toHaveAttribute('data-heading', '');
+  await expect(page.locator('.gallery__heading')).not.toBeVisible();
 
   // Change fill to contain
   await checkRadio(page, 'fit', 'contain');

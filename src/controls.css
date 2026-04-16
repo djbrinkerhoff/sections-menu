@@ -57,6 +57,11 @@
   color: #71717a;
 }
 
+.control-group__desc {
+  @apply text-[10px] leading-snug m-0;
+  color: #52525b;
+}
+
 /* ─── Style section — hero treatment ─── */
 .control-group--style {
   @apply pt-0 pb-5;

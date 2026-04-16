@@ -1,5 +1,7 @@
 import { initSlideshow } from './gallery.slideshow';
 import type { SlideshowHandle } from './gallery.slideshow';
+import { COLORS } from './nav.schema';
+import type { ColorName, ColorValue } from './nav.schema';
 
 // Gallery control schema
 const LAYOUTS = ['grid', 'slideshow', 'masonry'] as const;
@@ -11,13 +13,13 @@ const TIMINGS = ['2', '4', '6', '8'] as const;
 const PAGINATIONS = ['dots', 'dashes', 'counter', 'thumbnails'] as const;
 
 type Layout = (typeof LAYOUTS)[number];
-type GalleryControlKey = 'layout' | 'columns' | 'gap' | 'aspect' | 'fit' | 'captions' | 'heading' | 'autoplay' | 'timing' | 'pagination';
+type GalleryControlKey = 'layout' | 'columns' | 'gap' | 'aspect' | 'fit' | 'captions' | 'autoplay' | 'timing' | 'pagination';
 
 // Controls hidden per layout
 const HIDDEN_CONTROLS: Record<Layout, string[]> = {
   grid: ['autoplay', 'timing', 'pagination'],
   slideshow: ['columns', 'gap'],
-  masonry: ['autoplay', 'timing', 'pagination'],
+  masonry: ['autoplay', 'timing', 'pagination', 'aspect', 'fit'],
 };
 
 export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLElement) {
@@ -171,11 +173,19 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     values: readonly string[],
     labels: Record<string, string>,
     controlKey: GalleryControlKey,
+    description?: string,
   ): HTMLFieldSetElement {
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'control-group';
     fieldset.dataset.control = name;
     fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
+
+    if (description) {
+      const desc = document.createElement('p');
+      desc.className = 'control-group__desc';
+      desc.textContent = description;
+      fieldset.appendChild(desc);
+    }
 
     const options = document.createElement('div');
     options.className = 'control-group__options--segmented';
@@ -245,6 +255,57 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     return fieldset;
   }
 
+  // ─── Builder: color swatch group ───
+
+  const COLOR_LABELS: Record<ColorName, string> = {
+    white: 'White',
+    black: 'Black',
+    yellow: 'Yellow',
+    pink: 'Pink',
+    red: 'Red',
+    blue: 'Blue',
+    transparent: 'Transparent',
+  };
+
+  function createColorGroup(name: string, label: string, cssProp: string, defaultValue: string): HTMLFieldSetElement {
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'control-group';
+    fieldset.dataset.control = name;
+    fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
+
+    const options = document.createElement('div');
+    options.className = 'control-group__options--swatches';
+
+    const currentValue = galleryRoot.style.getPropertyValue(cssProp).trim().toUpperCase() || defaultValue;
+    const colorEntries = (Object.entries(COLORS) as [ColorName, ColorValue][]).filter(
+      ([colorName]) => colorName !== 'transparent',
+    );
+
+    for (const [colorName, colorValue] of colorEntries) {
+      const labelEl = document.createElement('label');
+      labelEl.className = 'swatch';
+
+      labelEl.style.backgroundColor = colorValue;
+      labelEl.title = COLOR_LABELS[colorName];
+
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = name;
+      input.value = colorValue;
+      input.checked = colorValue.toUpperCase() === currentValue;
+      input.ariaLabel = COLOR_LABELS[colorName];
+      input.addEventListener('change', () => {
+        galleryRoot.style.setProperty(cssProp, colorValue);
+      }, { signal });
+
+      labelEl.appendChild(input);
+      options.appendChild(labelEl);
+    }
+
+    fieldset.appendChild(options);
+    return fieldset;
+  }
+
   // ─── Render controls ───
 
   // 1. Layout picker
@@ -257,17 +318,38 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
   ));
 
   // 3. Heading
-  wrapper.appendChild(createSegmentedGroup(
-    'heading', 'Heading', ['false', 'true'] as const,
-    { false: 'Off', true: 'On' },
-    'heading',
-  ));
+  {
+    const headingEl = galleryRoot.querySelector<HTMLElement>('.gallery__heading');
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'control-group';
+    fieldset.dataset.control = 'heading';
+    fieldset.innerHTML = `<legend class="control-group__label">Heading</legend>`;
+
+    const input = document.createElement('input');
+    input.className = 'control-group__input';
+    input.type = 'text';
+    input.name = 'heading';
+    input.ariaLabel = 'Heading';
+    input.placeholder = 'Enter a heading…';
+    input.autocomplete = 'off';
+    input.value = galleryRoot.dataset.heading ?? '';
+    if (headingEl) headingEl.textContent = input.value;
+
+    input.addEventListener('input', () => {
+      galleryRoot.dataset.heading = input.value;
+      if (headingEl) headingEl.textContent = input.value;
+    }, { signal });
+
+    fieldset.appendChild(input);
+    wrapper.appendChild(fieldset);
+  }
 
   // 3. Columns
   wrapper.appendChild(createSegmentedGroup(
     'columns', 'Columns', COLUMNS,
     { '2': '2', '3': '3', '4': '4' },
     'columns',
+    'Applies at 768px and above. Smaller screens show 2 columns.',
   ));
 
   // 4. Spacing
@@ -298,7 +380,13 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     'captions',
   ));
 
-  // 8. Auto Play (slideshow only)
+  // 8. Background color
+  wrapper.appendChild(createColorGroup('background-color', 'Background', '--gallery-color', '#FFFFFF'));
+
+  // 9. Text color
+  wrapper.appendChild(createColorGroup('text-color', 'Text color', '--gallery-accent', '#000000'));
+
+  // 10. Auto Play (slideshow only)
   wrapper.appendChild(createSegmentedGroup(
     'autoplay', 'Auto play', ['false', 'true'] as const,
     { false: 'Off', true: 'On' },
