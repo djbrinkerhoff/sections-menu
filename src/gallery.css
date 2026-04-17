@@ -33,7 +33,7 @@
 
 .gallery__grid {
   display: grid;
-  gap: 8px;
+  gap: 16px;
   grid-template-columns: repeat(3, 1fr);
 }
 
@@ -52,14 +52,14 @@
 /* Gap via data-attribute */
 [data-gap="none"] .gallery__grid { gap: 0; }
 [data-gap="sm"] .gallery__grid { gap: 4px; }
-[data-gap="md"] .gallery__grid { gap: 8px; }
-[data-gap="lg"] .gallery__grid { gap: 16px; }
+[data-gap="md"] .gallery__grid { gap: 16px; }
+[data-gap="lg"] .gallery__grid { gap: 32px; }
 
 /* ─── Masonry layout ─── */
 
 [data-layout="masonry"] .gallery__grid {
   display: block;
-  column-gap: 8px;
+  column-gap: 16px;
 }
 
 [data-layout="masonry"][data-columns="2"] .gallery__grid { column-count: 2; }
@@ -73,19 +73,19 @@
 
 [data-layout="masonry"][data-gap="none"] .gallery__grid { column-gap: 0; }
 [data-layout="masonry"][data-gap="sm"] .gallery__grid { column-gap: 4px; }
-[data-layout="masonry"][data-gap="md"] .gallery__grid { column-gap: 8px; }
-[data-layout="masonry"][data-gap="lg"] .gallery__grid { column-gap: 16px; }
+[data-layout="masonry"][data-gap="md"] .gallery__grid { column-gap: 16px; }
+[data-layout="masonry"][data-gap="lg"] .gallery__grid { column-gap: 32px; }
 
 [data-layout="masonry"] .gallery__item {
   break-inside: avoid;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
   overflow: visible;
 }
 
 [data-layout="masonry"][data-gap="none"] .gallery__item { margin-bottom: 0; }
 [data-layout="masonry"][data-gap="sm"] .gallery__item { margin-bottom: 4px; }
-[data-layout="masonry"][data-gap="md"] .gallery__item { margin-bottom: 8px; }
-[data-layout="masonry"][data-gap="lg"] .gallery__item { margin-bottom: 16px; }
+[data-layout="masonry"][data-gap="md"] .gallery__item { margin-bottom: 16px; }
+[data-layout="masonry"][data-gap="lg"] .gallery__item { margin-bottom: 32px; }
 
 /* Masonry: images at natural aspect ratio, no forced box sizing.
    Extra class in selector beats [data-aspect] .gallery__image specificity. */
