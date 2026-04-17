@@ -41,6 +41,26 @@ async function expectLightboxContainedWithinHost(page: import('playwright/test')
     .toBe(true);
 }
 
+async function setRangeValue(page: import('playwright/test').Page, name: string, value: number) {
+  await page.locator(`input[name="${name}"]`).evaluate((input, nextValue) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error('Expected range input');
+    if (typeof nextValue !== 'number') throw new Error('Expected numeric range value');
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }, value);
+}
+
+function galleryTriggers(page: import('playwright/test').Page) {
+  return page.locator('.gallery__item:not([data-gallery-clone]) .gallery__trigger');
+}
+
+async function readBorderRadius(page: import('playwright/test').Page, selector: string) {
+  return page.locator(selector).first().evaluate((element, label) => {
+    if (!(element instanceof HTMLElement)) throw new Error(`Expected HTMLElement for ${label}`);
+    return getComputedStyle(element).borderTopLeftRadius;
+  }, selector);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
@@ -190,6 +210,19 @@ test.describe('standalone mode', () => {
 
     await expect(page.locator('.image-lightbox[open]')).toHaveCount(0);
   });
+
+  test('border radius slider updates the standalone image and lightbox close button', async ({ page }) => {
+    await setRangeValue(page, 'radius', 3);
+
+    await expect(page.locator('.single-image')).toHaveAttribute('data-radius', '16');
+    await expect.poll(async () => readBorderRadius(page, '.single-image__trigger')).toBe('16px');
+    await expect.poll(async () => readBorderRadius(page, '.single-image__image')).toBe('16px');
+
+    await page.locator('.single-image__trigger').click();
+    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
+    await expect.poll(async () => readBorderRadius(page, '.image-lightbox__image')).toBe('16px');
+    await expect.poll(async () => readBorderRadius(page, '.image-lightbox__close')).toBe('9999px');
+  });
 });
 
 // ─── Collection (Gallery) mode ───
@@ -202,7 +235,7 @@ test.describe('gallery collection mode', () => {
   });
 
   test('clicking a gallery image opens the lightbox in collection mode', async ({ page }) => {
-    const triggers = page.locator('.gallery__trigger');
+    const triggers = galleryTriggers(page);
     await triggers.first().click();
 
     const dialog = page.locator('.image-lightbox[open]');
@@ -211,7 +244,7 @@ test.describe('gallery collection mode', () => {
   });
 
   test('prev/next controls are visible in collection mode', async ({ page }) => {
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
 
     const dialog = page.locator('.image-lightbox[open]');
     await expect(dialog.locator('.image-lightbox__nav--prev')).toBeVisible();
@@ -219,21 +252,21 @@ test.describe('gallery collection mode', () => {
   });
 
   test('counter shows correct position text', async ({ page }) => {
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
 
     const counter = page.locator('.image-lightbox__counter');
     await expect(counter).toHaveText('1 of 12');
   });
 
   test('clicking third image opens at index 3', async ({ page }) => {
-    await page.locator('.gallery__trigger').nth(2).click();
+    await galleryTriggers(page).nth(2).click();
 
     const counter = page.locator('.image-lightbox__counter');
     await expect(counter).toHaveText('3 of 12');
   });
 
   test('next button advances to next image', async ({ page }) => {
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox__counter')).toHaveText('1 of 12');
 
     await page.locator('.image-lightbox__nav--next').click();
@@ -241,7 +274,7 @@ test.describe('gallery collection mode', () => {
   });
 
   test('prev button goes to previous image', async ({ page }) => {
-    await page.locator('.gallery__trigger').nth(2).click();
+    await galleryTriggers(page).nth(2).click();
     await expect(page.locator('.image-lightbox__counter')).toHaveText('3 of 12');
 
     await page.locator('.image-lightbox__nav--prev').click();
@@ -250,7 +283,7 @@ test.describe('gallery collection mode', () => {
 
   test('prev and next are never disabled in collection mode', async ({ page }) => {
     // Open first image — both nav buttons enabled (loops)
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
     await expect(page.locator('.image-lightbox__nav--prev')).not.toBeDisabled();
     await expect(page.locator('.image-lightbox__nav--next')).not.toBeDisabled();
@@ -259,14 +292,14 @@ test.describe('gallery collection mode', () => {
     await expect(page.locator('.image-lightbox[open]')).toHaveCount(0);
 
     // Open last image — both still enabled
-    await page.locator('.gallery__trigger').nth(11).click();
+    await galleryTriggers(page).nth(11).click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
     await expect(page.locator('.image-lightbox__nav--next')).not.toBeDisabled();
     await expect(page.locator('.image-lightbox__nav--prev')).not.toBeDisabled();
   });
 
   test('ArrowRight and ArrowLeft navigate images', async ({ page }) => {
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox__counter')).toHaveText('1 of 12');
 
     await page.keyboard.press('ArrowRight');
@@ -280,7 +313,7 @@ test.describe('gallery collection mode', () => {
   });
 
   test('ArrowLeft on first image wraps to last', async ({ page }) => {
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox__counter')).toHaveText('1 of 12');
 
     await page.keyboard.press('ArrowLeft');
@@ -288,7 +321,7 @@ test.describe('gallery collection mode', () => {
   });
 
   test('ArrowRight on last image wraps to first', async ({ page }) => {
-    await page.locator('.gallery__trigger').nth(11).click();
+    await galleryTriggers(page).nth(11).click();
     await expect(page.locator('.image-lightbox__counter')).toHaveText('12 of 12');
 
     await page.keyboard.press('ArrowRight');
@@ -296,7 +329,7 @@ test.describe('gallery collection mode', () => {
   });
 
   test('Escape closes and restores focus to invoking trigger', async ({ page }) => {
-    const trigger = page.locator('.gallery__trigger').nth(2);
+    const trigger = galleryTriggers(page).nth(2);
     await trigger.click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
 
@@ -313,7 +346,7 @@ test.describe('gallery collection mode', () => {
       input.dispatchEvent(new Event('change', { bubbles: true }));
     });
 
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox__counter')).toHaveText('1 of 3');
   });
 
@@ -325,7 +358,7 @@ test.describe('gallery collection mode', () => {
         await expect(page.locator('.gallery__pagination [role="tab"]')).toHaveCount(12);
       }
 
-      await page.locator('.gallery__trigger').first().click();
+      await galleryTriggers(page).first().click();
       await expect(page.locator('.image-lightbox[open]')).toBeVisible();
       await expect(page.locator('.image-lightbox')).toHaveAttribute('data-mode', 'collection');
 
@@ -337,16 +370,55 @@ test.describe('gallery collection mode', () => {
   test('lightbox does not open when toggle is off (default)', async ({ page }) => {
     // Lightbox is off by default — turn it off explicitly to be sure
     await checkRadio(page, 'lightbox', 'false');
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox[open]')).toHaveCount(0);
   });
 
   test('turning lightbox off while open closes it', async ({ page }) => {
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
 
     await checkRadio(page, 'lightbox', 'false');
     await expect(page.locator('.image-lightbox[open]')).toHaveCount(0);
+  });
+
+  test('layout change during a close animation still allows the next lightbox open', async ({ page }) => {
+    for (const index of [0, 2, 5]) {
+      await galleryTriggers(page).nth(index).click();
+      await expect(page.locator('.image-lightbox[open]')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.locator('.image-lightbox[open]')).toHaveCount(0);
+    }
+
+    await galleryTriggers(page).nth(3).click();
+    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
+    await page.locator('.image-lightbox__close').click();
+
+    // Change layout before the close animation completes.
+    await checkRadio(page, 'layout', 'masonry');
+    await expect(page.locator('.gallery')).toHaveAttribute('data-layout', 'masonry');
+    await expect(page.locator('.image-lightbox[open]')).toHaveCount(0);
+
+    await galleryTriggers(page).first().click();
+    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
+    await expect(page.locator('.image-lightbox__counter')).toHaveText('1 of 12');
+  });
+
+  test('border radius slider updates slideshow thumbnails and lightbox chrome', async ({ page }) => {
+    await checkRadio(page, 'layout', 'slideshow');
+    await checkRadio(page, 'pagination', 'thumbnails');
+    await setRangeValue(page, 'radius', 3);
+
+    await expect(page.locator('.gallery')).toHaveAttribute('data-radius', '16');
+    await expect.poll(async () => readBorderRadius(page, '.gallery__item:not([data-gallery-clone]) .gallery__image')).toBe('16px');
+    await expect.poll(async () => readBorderRadius(page, '.gallery__pagination .gallery__indicator')).toBe('16px');
+    await expect.poll(async () => readBorderRadius(page, '.gallery__next')).toBe('9999px');
+
+    await galleryTriggers(page).first().click();
+    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
+    await expect.poll(async () => readBorderRadius(page, '.image-lightbox__image')).toBe('16px');
+    await expect.poll(async () => readBorderRadius(page, '.image-lightbox__close')).toBe('9999px');
+    await expect.poll(async () => readBorderRadius(page, '.image-lightbox__nav--next')).toBe('9999px');
   });
 });
 
@@ -368,7 +440,7 @@ test.describe('slideshow coordination', () => {
     await waitForSelectedSlideshowIndex(page, 2);
 
     // Open lightbox from the active slide's trigger
-    await page.locator('.gallery__trigger').nth(2).click();
+    await galleryTriggers(page).nth(2).click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
 
     // Close lightbox
@@ -382,7 +454,7 @@ test.describe('slideshow coordination', () => {
   test('navigating inside the lightbox keeps the inline slideshow in sync before close', async ({ page }) => {
     const indicators = page.locator('.gallery__pagination [role="tab"]');
 
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
 
     await page.locator('.image-lightbox__nav--next').click();
@@ -392,7 +464,7 @@ test.describe('slideshow coordination', () => {
   });
 
   test('changing layout while lightbox is open closes it cleanly', async ({ page }) => {
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
 
     // Switch to grid layout
@@ -401,7 +473,7 @@ test.describe('slideshow coordination', () => {
   });
 
   test('changing image count while lightbox is open closes it', async ({ page }) => {
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
 
     // Reduce image count
@@ -422,7 +494,7 @@ test.describe('lifecycle and section switching', () => {
     // Open lightbox in gallery
     await page.locator('.controls__picker').selectOption('gallery');
     await checkRadio(page, 'lightbox', 'true');
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
 
     // Switch to nav
@@ -448,7 +520,7 @@ test.describe('lifecycle and section switching', () => {
   test('inert state is cleaned up after section switch', async ({ page }) => {
     await page.locator('.controls__picker').selectOption('gallery');
     await checkRadio(page, 'lightbox', 'true');
-    await page.locator('.gallery__trigger').first().click();
+    await galleryTriggers(page).first().click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
 
     // Switch away destroys cleanly
@@ -509,7 +581,7 @@ test.describe('viewport containment', () => {
         await page.locator('.controls__picker').selectOption('gallery');
         await checkRadio(page, 'lightbox', 'true');
         await page.locator('[data-viewport="768"]').click();
-        await page.locator('.gallery__trigger').nth(1).click();
+        await galleryTriggers(page).nth(1).click();
       },
     },
     {
@@ -518,7 +590,7 @@ test.describe('viewport containment', () => {
         await page.locator('.controls__picker').selectOption('gallery');
         await checkRadio(page, 'lightbox', 'true');
         await page.locator('[data-viewport="1280"]').click();
-        await page.locator('.gallery__trigger').first().click();
+        await galleryTriggers(page).first().click();
       },
     },
   ] satisfies Array<{

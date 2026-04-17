@@ -17,6 +17,15 @@ async function getSearchParams(page: import('playwright/test').Page) {
   return page.evaluate(() => Object.fromEntries(new URLSearchParams(window.location.search).entries()));
 }
 
+async function setRangeValue(page: import('playwright/test').Page, name: string, value: number) {
+  await page.locator(`input[name="${name}"]`).evaluate((input, nextValue) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error('Expected range input');
+    if (typeof nextValue !== 'number') throw new Error('Expected numeric range value');
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }, value);
+}
+
 async function selectedSlideshowIndex(page: import('playwright/test').Page) {
   return page.locator('.gallery__pagination [role="tab"]').evaluateAll((tabs) =>
     tabs.findIndex((tab) => tab.getAttribute('aria-selected') === 'true'),
@@ -44,7 +53,7 @@ async function readSlideshowArrowTops(page: import('playwright/test').Page) {
 
 async function readAutoAspectSpacing(page: import('playwright/test').Page) {
   return page.evaluate(() => {
-    const item = document.querySelector('.gallery__item');
+    const item = document.querySelector('.gallery__item:not([data-gallery-clone])');
     const image = item?.querySelector('.gallery__image');
     if (!(item instanceof HTMLElement) || !(image instanceof HTMLElement)) {
       throw new Error('Expected slideshow item and image');
@@ -56,6 +65,38 @@ async function readAutoAspectSpacing(page: import('playwright/test').Page) {
     return {
       topGap: imageRect.top - itemRect.top,
       bottomGap: itemRect.bottom - imageRect.bottom,
+    };
+  });
+}
+
+async function readVisibleSlideshowSlide(page: import('playwright/test').Page) {
+  return page.evaluate(() => {
+    const grid = document.querySelector('.gallery__grid');
+    if (!(grid instanceof HTMLElement)) {
+      throw new Error('Expected .gallery__grid to be an HTMLElement');
+    }
+
+    const slides = Array.from(grid.querySelectorAll<HTMLElement>('.gallery__item:not([hidden])'));
+    const currentLeft = grid.scrollLeft;
+
+    let currentSlide: HTMLElement | null = null;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    for (const slide of slides) {
+      const distance = Math.abs(slide.offsetLeft - currentLeft);
+      if (distance < closestDistance) {
+        currentSlide = slide;
+        closestDistance = distance;
+      }
+    }
+
+    if (!currentSlide) {
+      throw new Error('Expected at least one visible slideshow slide');
+    }
+
+    return {
+      isClone: currentSlide.hasAttribute('data-gallery-clone'),
+      clonePosition: currentSlide.getAttribute('data-gallery-clone'),
     };
   });
 }
@@ -172,6 +213,21 @@ test('gallery state persists across switches', async ({ page }) => {
   await expect(page.locator('.gallery')).toHaveAttribute('data-layout', 'masonry');
 });
 
+test('single-image border radius persists across section switches', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('single-image');
+  await expect(page.locator('.single-image')).toBeVisible();
+
+  await setRangeValue(page, 'radius', 3);
+  await expect(page.locator('.single-image')).toHaveAttribute('data-radius', '16');
+
+  await page.locator('.controls__picker').selectOption('nav');
+  await expect(page.locator('.nav')).toBeVisible();
+
+  await page.locator('.controls__picker').selectOption('single-image');
+  await expect(page.locator('.single-image')).toHaveAttribute('data-radius', '16');
+  await expect(page.locator('input[name="radius"]')).toHaveValue('3');
+});
+
 test('layout picker switches between grid, slideshow, masonry', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('gallery');
   const gallery = page.locator('.gallery');
@@ -252,24 +308,61 @@ test('slideshow prev/next buttons navigate slides', async ({ page }) => {
   await waitForSelectedSlideshowIndex(page, 1);
 });
 
-test('slideshow wraps from the last slide back to the first without animating through the strip', async ({ page }) => {
+test('slideshow next button wraps from the last slide back to the first and settles on the real slide', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('gallery');
   await checkRadio(page, 'layout', 'slideshow');
 
   const indicators = page.locator('.gallery__pagination [role="tab"]');
-  const grid = page.locator('.gallery__grid');
 
   await indicators.nth(11).click();
   await waitForSelectedSlideshowIndex(page, 11);
 
   await page.locator('.gallery__next').click();
-  await expect.poll(async () =>
-    grid.evaluate((node) => {
-      if (!(node instanceof HTMLElement)) throw new Error('Expected .gallery__grid to be an HTMLElement');
-      return node.scrollLeft;
-    }),
-  ).toBeLessThan(5);
   await waitForSelectedSlideshowIndex(page, 0);
+  await expect.poll(async () => readVisibleSlideshowSlide(page)).toEqual({
+    isClone: false,
+    clonePosition: null,
+  });
+});
+
+test('slideshow arrow keys wrap from the first slide to the last and settle on the real slide', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+
+  await page.locator('.gallery__prev').focus();
+  await page.keyboard.press('ArrowLeft');
+
+  await waitForSelectedSlideshowIndex(page, 11);
+  await expect.poll(async () => readVisibleSlideshowSlide(page)).toEqual({
+    isClone: false,
+    clonePosition: null,
+  });
+});
+
+test('slideshow scroll wrap from the last slide back to the first settles on the real slide', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+
+  const indicators = page.locator('.gallery__pagination [role="tab"]');
+
+  await indicators.nth(11).click();
+  await waitForSelectedSlideshowIndex(page, 11);
+
+  await page.evaluate(() => {
+    const grid = document.querySelector('.gallery__grid');
+    const appendClone = grid?.querySelector<HTMLElement>('[data-gallery-clone="append"]');
+    if (!(grid instanceof HTMLElement) || !(appendClone instanceof HTMLElement)) {
+      throw new Error('Expected slideshow loop clone');
+    }
+
+    grid.scrollTo({ left: appendClone.offsetLeft, behavior: 'smooth' });
+  });
+
+  await waitForSelectedSlideshowIndex(page, 0);
+  await expect.poll(async () => readVisibleSlideshowSlide(page)).toEqual({
+    isClone: false,
+    clonePosition: null,
+  });
 });
 
 test('slideshow counter shows correct text', async ({ page }) => {
@@ -604,6 +697,23 @@ test('URL state restores the active section, viewport, and both section states o
   await expect(page.locator('input[name="variant"][value="tile"]')).toBeChecked();
   await expect(page.locator('input[name="capitalization"][value="uppercase"]')).toBeChecked();
   await expect(page.locator('[data-control="nav-items"] input[aria-label="Nav items"]')).toHaveValue('5');
+});
+
+test('URL state restores single-image border radius on reload', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('single-image');
+  await setRangeValue(page, 'radius', 0);
+  await page.locator('[data-viewport="768"]').click();
+
+  const params = await getSearchParams(page);
+  expect(params.section).toBe('single-image');
+  expect(params.viewport).toBe('768');
+  expect(params['single-image.radius']).toBe('0');
+
+  await page.goto(page.url());
+
+  await expect(page.locator('.controls__picker')).toHaveValue('single-image');
+  await expect(page.locator('.single-image')).toHaveAttribute('data-radius', '0');
+  await expect(page.locator('input[name="radius"]')).toHaveValue('0');
 });
 
 test('reset clears URL params and restores default shell and section state', async ({ page }) => {

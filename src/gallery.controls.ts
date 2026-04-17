@@ -1,8 +1,10 @@
 import { initSlideshow } from './gallery.slideshow';
 import type { SlideshowHandle } from './gallery.slideshow';
 import { initImageLightbox } from './image.lightbox';
+import { applyImageRadius, getImageRadiusIndex, IMAGE_RADIUS_STOPS } from './image-radius';
 import { COLORS } from './nav.schema';
 import type { ColorName, ColorValue } from './nav.schema';
+import { createLabeledRangeGroup } from './range-control';
 
 // Gallery control schema
 const LAYOUTS = ['grid', 'slideshow', 'masonry'] as const;
@@ -38,6 +40,7 @@ export function initGalleryControls(
 
   const wrapper = document.createElement('div');
   wrapper.className = 'controls';
+  applyImageRadius(galleryRoot, galleryRoot.dataset.radius);
 
   let slideshowHandle: SlideshowHandle | null = null;
   const lightbox = initImageLightbox(galleryRoot, {
@@ -89,6 +92,13 @@ export function initGalleryControls(
       slideshowHandle = initSlideshow(galleryRoot, signal);
     }
 
+    onStateChange();
+  }
+
+  function setRadius(stepIndex: number): void {
+    const stop = IMAGE_RADIUS_STOPS[stepIndex];
+    if (!stop) return;
+    applyImageRadius(galleryRoot, stop.value);
     onStateChange();
   }
 
@@ -482,6 +492,15 @@ export function initGalleryControls(
     { false: 'Off', true: 'On' },
     'lightbox',
   ));
+
+  wrapper.appendChild(createLabeledRangeGroup({
+    name: 'radius',
+    label: 'Border radius',
+    steps: IMAGE_RADIUS_STOPS.map((stop) => stop.label),
+    initialIndex: getImageRadiusIndex(galleryRoot.dataset.radius),
+    onInput: setRadius,
+    signal,
+  }));
 
   // 9. Background color
   wrapper.appendChild(createColorGroup('background-color', 'Background', '--gallery-color', '#FFFFFF'));

@@ -221,6 +221,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   let swipeState: SwipeState | null = null;
   let pendingRenderId = 0;
   let sessionId = 0;
+  let isClosing = false;
   let destroyed = false;
   let hiddenThumbnail: HTMLImageElement | null = null;
   let scrollContainer: HTMLElement | null = null;
@@ -257,7 +258,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   }
 
   function isOpen(): boolean {
-    return activeState !== null && dialog.open;
+    return dialog.open;
   }
 
   function setTriggerExpanded(trigger: HTMLElement, expanded: boolean): void {
@@ -576,30 +577,37 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     } = closeOptions;
     const state = activeState;
     const closeSessionId = sessionId;
-    activeState = null;
-    pendingRenderId += 1;
-    stopScrollClose();
-    swipeState = null;
-    wheelCloseDistance = 0;
+    if (isClosing) {
+      if (animate) return;
+      clearStaleAnimations();
+    } else {
+      isClosing = true;
+      pendingRenderId += 1;
+      stopScrollClose();
+      swipeState = null;
+      wheelCloseDistance = 0;
 
-    setChromeVisible(false);
+      setChromeVisible(false);
 
-    // Measure the thumbnail's actual container rect (cropped box) while scroll is still locked
-    const activeTarget = state.targets[state.activeIndex];
-    const closeTargetRect = activeTarget?.image.isConnected && !activeTarget.image.closest('[hidden]')
-      ? activeTarget.image.getBoundingClientRect()
-      : null;
+      // Measure the thumbnail's actual container rect (cropped box) while scroll is still locked
+      const activeTarget = state.targets[state.activeIndex];
+      const closeTargetRect = activeTarget?.image.isConnected && !activeTarget.image.closest('[hidden]')
+        ? activeTarget.image.getBoundingClientRect()
+        : null;
 
-    // Show the thumbnail before animating so the cropped image is visible underneath
-    showSourceThumbnail();
+      // Show the thumbnail before animating so the cropped image is visible underneath
+      showSourceThumbnail();
 
-    if (animate) {
-      await animateClose(closeTargetRect);
+      if (animate) {
+        await animateClose(closeTargetRect);
+      }
     }
 
     // If a new open() started during the close animation, bail out
-    if (sessionId !== closeSessionId) return;
+    if (sessionId !== closeSessionId || activeState !== state) return;
 
+    activeState = null;
+    isClosing = false;
     if (dialog.open) dialog.close();
     unlockScroll();
     clearInert();
@@ -614,7 +622,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   }
 
   function handleKeyboard(event: KeyboardEvent): void {
-    if (!activeState) return;
+    if (!activeState || isClosing) return;
 
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -653,7 +661,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   }
 
   function onPointerDown(event: PointerEvent): void {
-    if (!activeState || activeState.targets.length <= 1) return;
+    if (!activeState || isClosing || activeState.targets.length <= 1) return;
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
     if (swipeState !== null) return;
 
@@ -665,7 +673,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   }
 
   function onPointerUp(event: PointerEvent): void {
-    if (!activeState || !swipeState) return;
+    if (!activeState || isClosing || !swipeState) return;
     if (swipeState.pointerId !== event.pointerId) return;
 
     const deltaX = event.clientX - swipeState.startX;
@@ -739,6 +747,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
       destroyed = true;
       sessionId += 1;
       pendingRenderId += 1;
+      isClosing = false;
       activeState = null;
       swipeState = null;
       wheelCloseDistance = 0;

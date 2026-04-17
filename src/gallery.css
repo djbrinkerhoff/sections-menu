@@ -148,6 +148,8 @@
 .gallery__trigger {
   display: block;
   inline-size: 100%;
+  overflow: hidden;
+  border-radius: var(--image-radius, 8px);
 }
 
 [data-lightbox="false"] .gallery__trigger {
@@ -160,6 +162,7 @@
   aspect-ratio: 1 / 1;
   object-fit: cover;
   object-position: center;
+  border-radius: var(--image-radius, 8px);
 }
 
 /* Aspect ratio via data-attribute */
@@ -199,7 +202,7 @@
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--image-button-radius, 8px);
   background: rgba(255, 255, 255, 0.85);
   color: #000;
   cursor: pointer;
@@ -280,7 +283,7 @@
 .gallery__indicator {
   background-color: currentColor;
   opacity: 0.25;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s ease;
 }
 
 [data-pagination="dots"] .gallery__indicator {
@@ -310,10 +313,14 @@
   inline-size: min(32px, 100%);
   aspect-ratio: 4 / 3;
   block-size: auto;
-  border-radius: 3px;
+  border-radius: var(--image-radius, 8px);
   background-color: var(--gallery-accent, #000000);
   background-size: cover;
   background-position: center;
+}
+
+[data-pagination="thumbnails"] .gallery__indicator-btn:hover .gallery__indicator {
+  opacity: 0.5;
 }
 
 /* Active state */

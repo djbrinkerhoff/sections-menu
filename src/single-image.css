@@ -46,7 +46,7 @@
 }
 
 .single-image__trigger {
-  border-radius: 20px;
+  border-radius: var(--image-radius, 8px);
   overflow: hidden;
   box-shadow: 0 28px 60px rgba(36, 29, 14, 0.15);
 }
@@ -56,6 +56,7 @@
   inline-size: 100%;
   max-block-size: 70vh;
   object-fit: cover;
+  border-radius: var(--image-radius, 8px);
 }
 
 .single-image__caption {

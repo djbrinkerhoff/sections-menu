@@ -80,7 +80,7 @@
   inline-size: auto;
   block-size: auto;
   object-fit: contain;
-  border-radius: 18px;
+  border-radius: var(--image-radius, 8px);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
   background: rgba(255, 255, 255, 0.85);
 }
@@ -97,7 +97,7 @@
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--image-button-radius, 8px);
   background: rgba(255, 255, 255, 0.14);
   color: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(16px);
@@ -211,7 +211,6 @@
 
   .image-lightbox__image {
     max-inline-size: 100%;
-    border-radius: 14px;
   }
 }
 
