@@ -244,6 +244,50 @@ test('slideshow counter shows correct text', async ({ page }) => {
   await expect(counter).toHaveText('1 of 12');
 });
 
+test('slideshow arrows stay vertically aligned when pagination style changes', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+
+  const prev = page.locator('.gallery__prev');
+  const next = page.locator('.gallery__next');
+
+  const baseline = await page.evaluate(() => {
+    const prev = document.querySelector('.gallery__prev');
+    const next = document.querySelector('.gallery__next');
+    if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
+      throw new Error('Expected slideshow arrows');
+    }
+
+    return {
+      prevTop: prev.getBoundingClientRect().top,
+      nextTop: next.getBoundingClientRect().top,
+    };
+  });
+
+  for (const pagination of ['dots', 'dashes', 'thumbnails', 'counter'] as const) {
+    await checkRadio(page, 'pagination', pagination);
+
+    const current = await page.evaluate(() => {
+      const prev = document.querySelector('.gallery__prev');
+      const next = document.querySelector('.gallery__next');
+      if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
+        throw new Error('Expected slideshow arrows');
+      }
+
+      return {
+        prevTop: prev.getBoundingClientRect().top,
+        nextTop: next.getBoundingClientRect().top,
+      };
+    });
+
+    expect(Math.abs(current.prevTop - baseline.prevTop)).toBeLessThanOrEqual(1);
+    expect(Math.abs(current.nextTop - baseline.nextTop)).toBeLessThanOrEqual(1);
+  }
+
+  await expect(prev).toBeVisible();
+  await expect(next).toBeVisible();
+});
+
 test('slideshow dots, dashes, and counter inherit the gallery text color', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('gallery');
   await checkRadio(page, 'layout', 'slideshow');

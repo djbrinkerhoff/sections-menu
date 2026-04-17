@@ -9,6 +9,10 @@
   position: relative;
 }
 
+.gallery__viewport {
+  position: relative;
+}
+
 /* ─── Heading ─── */
 
 .gallery__heading {
