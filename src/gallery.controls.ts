@@ -15,12 +15,14 @@ const FITS = ['cover', 'contain'] as const;
 const TIMINGS = ['2', '4', '6', '8'] as const;
 const PAGINATIONS = ['dots', 'dashes', 'counter', 'thumbnails'] as const;
 
+const HEADING_ALIGNS = ['left', 'center', 'right'] as const;
+
 // Section width schema
 const BG_WIDTHS = ['full', 'hug'] as const;
 const CONTENT_WIDTHS = ['full', 'wide', 'medium', 'narrow'] as const;
 
 type Layout = (typeof LAYOUTS)[number];
-type GalleryControlKey = 'layout' | 'columns' | 'gap' | 'aspect' | 'fit' | 'captions' | 'lightbox' | 'autoplay' | 'timing' | 'pagination' | 'bgWidth' | 'contentWidth';
+type GalleryControlKey = 'layout' | 'columns' | 'gap' | 'aspect' | 'fit' | 'captions' | 'lightbox' | 'autoplay' | 'timing' | 'pagination' | 'bgWidth' | 'contentWidth' | 'headingAlign';
 
 // Controls hidden per layout
 const HIDDEN_CONTROLS: Record<Layout, string[]> = {
@@ -462,6 +464,40 @@ export function initGalleryControls(
     wrapper.appendChild(fieldset);
   }
 
+  // Subheading
+  {
+    const subheadingEl = galleryRoot.querySelector<HTMLElement>('.gallery__subheading');
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'control-group';
+    fieldset.dataset.control = 'subheading';
+    fieldset.innerHTML = `<legend class="control-group__label">Subheading</legend>`;
+
+    const input = document.createElement('input');
+    input.className = 'control-group__input';
+    input.type = 'text';
+    input.name = 'subheading';
+    input.ariaLabel = 'Subheading';
+    input.placeholder = 'Enter a subheading…';
+    input.autocomplete = 'off';
+    input.value = galleryRoot.dataset.subheading ?? '';
+    if (subheadingEl) subheadingEl.textContent = input.value;
+
+    input.addEventListener('input', () => {
+      galleryRoot.dataset.subheading = input.value;
+      if (subheadingEl) subheadingEl.textContent = input.value;
+      onStateChange();
+    }, { signal });
+
+    fieldset.appendChild(input);
+    wrapper.appendChild(fieldset);
+  }
+
+  wrapper.appendChild(createSegmentedGroup(
+    'headingAlign', 'Heading alignment', HEADING_ALIGNS,
+    { left: 'Left', center: 'Center', right: 'Right' },
+    'headingAlign',
+  ));
+
   wrapper.appendChild(createSegmentedGroup(
     'columns', 'Columns', COLUMNS,
     { '2': '2', '3': '3', '4': '4' },
@@ -485,7 +521,7 @@ export function initGalleryControls(
   // 6. Fill
   wrapper.appendChild(createSegmentedGroup(
     'fit', 'Fill', FITS,
-    { cover: 'Cover', contain: 'Contain' },
+    { cover: 'Crop to Fill', contain: 'Fit Whole Image' },
     'fit',
   ));
 

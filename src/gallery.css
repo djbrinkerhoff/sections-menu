@@ -34,7 +34,7 @@
 
 [data-bg-width="hug"] > .gallery__body {
   background-color: var(--gallery-color, #ffffff);
-  border-radius: var(--section-radius, 12px);
+  border-radius: var(--image-radius, 8px);
   overflow: clip;
 }
 
@@ -71,6 +71,30 @@
 [data-heading]:not([data-heading=""]) .gallery__heading {
   display: block;
 }
+
+.gallery__subheading {
+  display: none;
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 0 0 12px;
+  color: var(--gallery-accent, #000000);
+  opacity: 0.7;
+}
+
+[data-heading]:not([data-heading=""]) + .gallery__subheading {
+  margin-top: -4px;
+}
+
+[data-subheading]:not([data-subheading=""]) .gallery__subheading {
+  display: block;
+}
+
+[data-heading-align="left"] .gallery__heading,
+[data-heading-align="left"] .gallery__subheading { text-align: left; }
+[data-heading-align="center"] .gallery__heading,
+[data-heading-align="center"] .gallery__subheading { text-align: center; }
+[data-heading-align="right"] .gallery__heading,
+[data-heading-align="right"] .gallery__subheading { text-align: right; }
 
 /* ─── Grid layout (default) ─── */
 
