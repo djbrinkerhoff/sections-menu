@@ -1,14 +1,22 @@
 import {
   VARIANTS, BUTTON_STYLES, ALIGNMENTS, CAPITALIZATIONS, CART_ICONS, LOGO_STYLES,
-  BORDER_RADIUS_STEPS,
 } from './nav.schema';
 import type { ControlMap, Variant } from './nav.schema';
 import { COLORS, COLOR_LABELS } from './colors';
 import type { ColorName, ColorValue } from './colors';
 import { createStepperGroup, createSegmentedGroup } from './control-builders';
+import { createLabeledRangeGroup } from './range-control';
 import { resetEphemeralState } from './nav';
 
 // Controls hidden per variant (extensible — add entries as needed)
+const NAV_RADIUS_STOPS = [
+  { value: '0', label: 'Sharp', css: '0px' },
+  { value: '4', label: 'Soft', css: '4px' },
+  { value: '8', label: 'Rounded', css: '8px' },
+  { value: '16', label: 'Very Round', css: '16px' },
+  { value: '9999', label: 'Full', css: '9999px' },
+] as const;
+
 const HIDDEN_CONTROLS: Partial<Record<Variant, string[]>> = {
   top: ['button-style'],
   sidebar: ['inset', 'border-radius', 'alignment'],
@@ -235,19 +243,20 @@ export function initControls(
     signal,
   }));
 
-  const initialBorderRadius = Number.parseInt(navRoot.dataset.borderRadius ?? '0', 10) || 0;
-  wrapper.appendChild(createRangeGroup(
-    'border-radius', 'Border radius', BORDER_RADIUS_STEPS,
-    (stepIndex) => {
-      const value = BORDER_RADIUS_STEPS[stepIndex];
-      if (value !== undefined) {
-        navRoot.style.setProperty('--border-radius', value);
-        navRoot.dataset.borderRadius = String(stepIndex);
-        onStateChange();
-      }
+  wrapper.appendChild(createLabeledRangeGroup({
+    name: 'border-radius',
+    label: 'Border radius',
+    steps: NAV_RADIUS_STOPS.map((stop) => stop.label),
+    initialIndex: Math.max(0, NAV_RADIUS_STOPS.findIndex((s) => s.value === navRoot.dataset.borderRadius)),
+    onInput(stepIndex) {
+      const stop = NAV_RADIUS_STOPS[stepIndex];
+      if (!stop) return;
+      navRoot.style.setProperty('--border-radius', stop.css);
+      navRoot.dataset.borderRadius = stop.value;
+      onStateChange();
     },
-    initialBorderRadius,
-  ));
+    signal,
+  }));
 
   wrapper.appendChild(createSegmentedGroup({
     name: 'search', label: 'Search', values: ['false', 'true'],
@@ -389,40 +398,6 @@ export function initControls(
     }
 
     fieldset.appendChild(options);
-    return fieldset;
-  }
-
-  function createRangeGroup(
-    name: string,
-    label: string,
-    steps: readonly string[],
-    onInput: (stepIndex: number) => void,
-    initialIndex = 0,
-  ): HTMLFieldSetElement {
-    const fieldset = document.createElement('fieldset');
-    fieldset.className = 'control-group';
-    fieldset.dataset.control = name;
-    fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
-
-    const range = document.createElement('input');
-    range.className = 'control-group__range';
-    range.type = 'range';
-    range.name = name;
-    range.min = '0';
-    range.max = String(steps.length - 1);
-    range.step = '1';
-    range.value = String(initialIndex);
-    range.ariaLabel = label;
-    range.addEventListener('input', () => {
-      onInput(Number.parseInt(range.value, 10));
-    }, { signal });
-
-    const labels = document.createElement('div');
-    labels.className = 'control-group__range-labels';
-    labels.innerHTML = `<span>Sharp</span><span>Full</span>`;
-
-    fieldset.appendChild(range);
-    fieldset.appendChild(labels);
     return fieldset;
   }
 

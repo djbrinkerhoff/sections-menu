@@ -1395,6 +1395,11 @@
     border-radius: var(--border-radius, 0px);
   }
 
+  /* When submenu is open: button gets top radius only, dropdown gets bottom radius only */
+  .nav[data-variant="tile"] .nav__link[aria-expanded="true"] {
+    border-radius: min(var(--border-radius, 0px), 16px) min(var(--border-radius, 0px), 16px) 0 0;
+  }
+
   /* Desktop submenu: dropdown below tile, matches parent width unless content is wider */
   .nav[data-variant="tile"] .nav__submenu {
     position: absolute;
@@ -1404,9 +1409,9 @@
     min-width: max-content;
     padding: 12px 0;
     background-color: var(--menu-color);
-    border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+    border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
     z-index: 30;
-    border-radius: var(--border-radius, 0px);
+    border-radius: 0 0 min(var(--border-radius, 0px), 16px) min(var(--border-radius, 0px), 16px);
   }
 
   .nav[data-variant="tile"] .nav__submenu-link {
