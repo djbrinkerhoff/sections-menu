@@ -50,6 +50,7 @@
 .control-group {
   @apply border-0 m-0 p-0 flex flex-col gap-2.5 py-4;
   border-top: 1px solid #27272a;
+  margin-bottom: 16px;
 }
 
 .control-group__label {
@@ -62,18 +63,6 @@
 .control-group__desc {
   @apply text-[10px] leading-snug m-0;
   color: #71717a;
-}
-
-/* ─── Section headings (group dividers) ─── */
-.control-section__heading {
-  font-family: 'Space Mono', monospace;
-  font-size: 9px;
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: #52525b;
-  margin: 24px 0 0;
-  padding: 0;
 }
 
 /* ─── Style section — hero treatment ─── */

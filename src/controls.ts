@@ -198,13 +198,6 @@ export function initControls(
 
   // ─── Helpers ───
 
-  function sectionHeading(text: string): HTMLElement {
-    const el = document.createElement('div');
-    el.className = 'control-section__heading';
-    el.textContent = text;
-    return el;
-  }
-
   function createStepperGroup(
     name: string,
     label: string,
@@ -281,14 +274,8 @@ export function initControls(
   // 1. Style (variant) — 2x2 thumbnail grid (hero section)
   wrapper.appendChild(createVariantGroup());
 
-  // ── Colors ──
-  wrapper.appendChild(sectionHeading('Colors'));
-
   wrapper.appendChild(createColorGroup('menu-color', 'Menu color', 'menu'));
   wrapper.appendChild(createColorGroup('text-color', 'Text color', 'text'));
-
-  // ── Layout ──
-  wrapper.appendChild(sectionHeading('Layout'));
 
   wrapper.appendChild(createSegmentedGroup(
     'logo-style', 'Logo', LOGO_STYLES,
@@ -327,9 +314,6 @@ export function initControls(
     },
     initialBorderRadius,
   ));
-
-  // ── Content ──
-  wrapper.appendChild(sectionHeading('Content'));
 
   wrapper.appendChild(createSegmentedGroup(
     'search', 'Search', ['false', 'true'] as const,

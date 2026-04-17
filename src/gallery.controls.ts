@@ -397,20 +397,10 @@ export function initGalleryControls(
     return fieldset;
   }
 
-  function sectionHeading(text: string): HTMLElement {
-    const el = document.createElement('div');
-    el.className = 'control-section__heading';
-    el.textContent = text;
-    return el;
-  }
-
   // ─── Render controls ───
 
   // 1. Layout picker
   wrapper.appendChild(createLayoutGroup());
-
-  // ── Content ──
-  wrapper.appendChild(sectionHeading('Content'));
 
   // 2. Images
   wrapper.appendChild(createStepperGroup(
@@ -446,9 +436,6 @@ export function initGalleryControls(
     wrapper.appendChild(fieldset);
   }
 
-  // ── Grid ──
-  wrapper.appendChild(sectionHeading('Grid'));
-
   wrapper.appendChild(createSegmentedGroup(
     'columns', 'Columns', COLUMNS,
     { '2': '2', '3': '3', '4': '4' },
@@ -462,9 +449,6 @@ export function initGalleryControls(
     { none: 'None', sm: 'S', md: 'M', lg: 'L' },
     'gap',
   ));
-
-  // ── Appearance ──
-  wrapper.appendChild(sectionHeading('Appearance'));
 
   wrapper.appendChild(createSegmentedGroup(
     'aspect', 'Aspect ratio', ASPECTS,
@@ -507,9 +491,6 @@ export function initGalleryControls(
 
   // 9. Text color
   wrapper.appendChild(createColorGroup('text-color', 'Text color', '--gallery-accent', '#000000'));
-
-  // ── Slideshow ──
-  wrapper.appendChild(sectionHeading('Slideshow'));
 
   wrapper.appendChild(createSegmentedGroup(
     'autoplay', 'Auto play', ['false', 'true'] as const,
