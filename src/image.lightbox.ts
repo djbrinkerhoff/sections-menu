@@ -478,6 +478,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     image.getAnimations().forEach((a) => a.cancel());
     backdrop.getAnimations().forEach((a) => a.cancel());
     image.style.opacity = '';
+    image.style.transform = '';
   }
 
   function animateOpen(sourceRect: DOMRect | null): void {
@@ -530,6 +531,10 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     const targets = resolveZoomCollection(host, trigger);
     const activeIndex = targets.findIndex((target) => target.trigger === trigger);
     if (targets.length === 0 || activeIndex === -1) return;
+
+    // Reset stale close state — a new open cancels any in-progress close
+    isClosing = false;
+    clearStaleAnimations();
 
     sessionId++;
     const openSessionId = sessionId;
@@ -602,6 +607,8 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
 
       if (animate) {
         await animateClose(closeTargetRect);
+      } else {
+        clearStaleAnimations();
       }
     }
 
