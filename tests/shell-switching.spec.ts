@@ -207,6 +207,29 @@ test('slideshow prev/next buttons navigate slides', async ({ page }) => {
   await expect(indicators.nth(1)).toHaveAttribute('aria-selected', 'true');
 });
 
+test('slideshow wraps from the last slide back to the first without animating through the strip', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+
+  const indicators = page.locator('.gallery__pagination [role="tab"]');
+  const grid = page.locator('.gallery__grid');
+
+  await indicators.nth(11).click();
+  await page.waitForTimeout(500);
+  await expect(indicators.nth(11)).toHaveAttribute('aria-selected', 'true');
+
+  await page.locator('.gallery__next').click();
+  await page.waitForTimeout(50);
+
+  const scrollLeft = await grid.evaluate((node) => {
+    if (!(node instanceof HTMLElement)) throw new Error('Expected .gallery__grid to be an HTMLElement');
+    return node.scrollLeft;
+  });
+
+  expect(scrollLeft).toBeLessThan(5);
+  await expect(indicators.nth(0)).toHaveAttribute('aria-selected', 'true');
+});
+
 test('slideshow counter shows correct text', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('gallery');
   await checkRadio(page, 'layout', 'slideshow');
@@ -215,6 +238,136 @@ test('slideshow counter shows correct text', async ({ page }) => {
   const counter = page.locator('.gallery__counter');
   await expect(counter).toBeVisible();
   await expect(counter).toHaveText('1 of 12');
+});
+
+test('slideshow dots, dashes, and counter inherit the gallery text color', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+  await checkRadio(page, 'text-color', '#1841D4');
+
+  const gallery = page.locator('.gallery');
+  const expectedColor = await gallery.evaluate((node) => getComputedStyle(node).color);
+
+  const dotColor = await page.locator('.gallery__pagination .gallery__indicator').first().evaluate(
+    (node) => getComputedStyle(node).backgroundColor,
+  );
+  expect(dotColor).toBe(expectedColor);
+  const dotBackgroundImage = await page.locator('.gallery__pagination .gallery__indicator').first().evaluate(
+    (node) => getComputedStyle(node).backgroundImage,
+  );
+  expect(dotBackgroundImage).toBe('none');
+
+  await checkRadio(page, 'pagination', 'dashes');
+  const dashColor = await page.locator('.gallery__pagination .gallery__indicator').first().evaluate(
+    (node) => getComputedStyle(node).backgroundColor,
+  );
+  expect(dashColor).toBe(expectedColor);
+  const dashBackgroundImage = await page.locator('.gallery__pagination .gallery__indicator').first().evaluate(
+    (node) => getComputedStyle(node).backgroundImage,
+  );
+  expect(dashBackgroundImage).toBe('none');
+
+  await checkRadio(page, 'pagination', 'counter');
+  const counter = page.locator('.gallery__counter');
+  await expect(counter).toBeVisible();
+  const counterColor = await counter.evaluate((node) => getComputedStyle(node).color);
+  expect(counterColor).toBe(expectedColor);
+
+  await checkRadio(page, 'pagination', 'thumbnails');
+  const thumbnailBackgroundImage = await page.locator('.gallery__pagination .gallery__indicator').first().evaluate(
+    (node) => getComputedStyle(node).backgroundImage,
+  );
+  expect(thumbnailBackgroundImage).not.toBe('none');
+});
+
+test('slideshow pagination stays within the image container across styles', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await page.locator('[data-viewport="375"]').click();
+  await checkRadio(page, 'layout', 'slideshow');
+
+  for (const pagination of ['dots', 'dashes', 'thumbnails'] as const) {
+    await checkRadio(page, 'pagination', pagination);
+
+    const metrics = await page.evaluate(() => {
+      const grid = document.querySelector('.gallery__grid');
+      const pagination = document.querySelector('.gallery__pagination');
+      if (!(grid instanceof HTMLElement) || !(pagination instanceof HTMLElement)) {
+        throw new Error('Expected slideshow grid and pagination');
+      }
+
+      return {
+        gridWidth: grid.getBoundingClientRect().width,
+        paginationWidth: pagination.getBoundingClientRect().width,
+        paginationScrollWidth: pagination.scrollWidth,
+        paginationClientWidth: pagination.clientWidth,
+      };
+    });
+
+    expect(metrics.paginationWidth).toBeLessThanOrEqual(metrics.gridWidth + 1);
+    expect(metrics.paginationScrollWidth).toBeLessThanOrEqual(metrics.paginationClientWidth + 1);
+  }
+
+  await checkRadio(page, 'pagination', 'counter');
+  const counterMetrics = await page.evaluate(() => {
+    const grid = document.querySelector('.gallery__grid');
+    const counter = document.querySelector('.gallery__counter');
+    if (!(grid instanceof HTMLElement) || !(counter instanceof HTMLElement)) {
+      throw new Error('Expected slideshow grid and counter');
+    }
+
+    return {
+      gridWidth: grid.getBoundingClientRect().width,
+      counterWidth: counter.getBoundingClientRect().width,
+    };
+  });
+
+  expect(counterMetrics.counterWidth).toBeLessThanOrEqual(counterMetrics.gridWidth + 1);
+});
+
+test('slideshow pagination does not stretch with only a few items', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await page.locator('[data-viewport="375"]').click();
+  await page.locator('input[aria-label="Images"]').evaluate((input) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error('Expected Images input');
+    input.value = '3';
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await checkRadio(page, 'layout', 'slideshow');
+
+  for (const pagination of ['dots', 'dashes', 'thumbnails'] as const) {
+    await checkRadio(page, 'pagination', pagination);
+
+    const metrics = await page.evaluate(() => {
+      const grid = document.querySelector('.gallery__grid');
+      const pagination = document.querySelector('.gallery__pagination');
+      if (!(grid instanceof HTMLElement) || !(pagination instanceof HTMLElement)) {
+        throw new Error('Expected slideshow grid and pagination');
+      }
+
+      return {
+        gridWidth: grid.getBoundingClientRect().width,
+        paginationWidth: pagination.getBoundingClientRect().width,
+      };
+    });
+
+    expect(metrics.paginationWidth).toBeLessThan(metrics.gridWidth - 20);
+  }
+
+  await checkRadio(page, 'pagination', 'counter');
+  const counterMetrics = await page.evaluate(() => {
+    const grid = document.querySelector('.gallery__grid');
+    const counter = document.querySelector('.gallery__counter');
+    if (!(grid instanceof HTMLElement) || !(counter instanceof HTMLElement)) {
+      throw new Error('Expected slideshow grid and counter');
+    }
+
+    return {
+      gridWidth: grid.getBoundingClientRect().width,
+      counterWidth: counter.getBoundingClientRect().width,
+    };
+  });
+
+  expect(counterMetrics.counterWidth).toBeLessThan(counterMetrics.gridWidth - 20);
 });
 
 test('slideshow state persists: layout + pagination across section switches', async ({ page }) => {

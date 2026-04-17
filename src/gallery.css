@@ -201,15 +201,24 @@
 /* ─── Pagination ─── */
 
 .gallery__pagination {
+  --pagination-count: 1;
+  --pagination-gap: 6px;
+  --pagination-slot-size: 8px;
   display: none;
-  justify-content: center;
   align-items: center;
-  gap: 6px;
+  justify-items: center;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--pagination-gap);
   padding: 12px 0 0;
+  color: inherit;
+  inline-size: min(100%, calc(var(--pagination-count) * var(--pagination-slot-size) + (var(--pagination-count) - 1) * var(--pagination-gap)));
+  max-inline-size: 100%;
+  margin-inline: auto;
 }
 
 [data-layout="slideshow"] .gallery__pagination {
-  display: flex;
+  display: grid;
 }
 
 [data-layout="slideshow"][data-pagination="counter"] .gallery__pagination {
@@ -222,7 +231,11 @@
   justify-content: center;
   border: none;
   background: none;
-  padding: 2px;
+  color: inherit;
+  inline-size: 100%;
+  min-inline-size: 0;
+  box-sizing: border-box;
+  padding: 2px 0;
   cursor: pointer;
 }
 
@@ -234,35 +247,42 @@
 
 /* Dot indicators */
 .gallery__indicator {
-  background: var(--gallery-accent, #000000);
+  background-color: currentColor;
   opacity: 0.25;
   transition: opacity 0.15s;
 }
 
 [data-pagination="dots"] .gallery__indicator {
-  width: 8px;
-  height: 8px;
+  inline-size: min(8px, 100%);
+  aspect-ratio: 1;
+  block-size: auto;
   border-radius: 50%;
 }
 
+[data-pagination="dashes"] .gallery__pagination {
+  --pagination-slot-size: 20px;
+}
+
 [data-pagination="dashes"] .gallery__indicator {
-  width: 20px;
-  height: 3px;
+  inline-size: min(20px, 100%);
+  block-size: 3px;
   border-radius: 2px;
 }
 
 /* Thumbnail indicators */
+[data-pagination="thumbnails"] .gallery__pagination {
+  --pagination-gap: 4px;
+  --pagination-slot-size: 32px;
+}
+
 [data-pagination="thumbnails"] .gallery__indicator {
-  width: 32px;
-  height: 24px;
+  inline-size: min(32px, 100%);
+  aspect-ratio: 4 / 3;
+  block-size: auto;
   border-radius: 3px;
   background-color: var(--gallery-accent, #000000);
   background-size: cover;
   background-position: center;
-}
-
-[data-pagination="thumbnails"] .gallery__pagination {
-  gap: 4px;
 }
 
 /* Active state */
@@ -278,8 +298,11 @@
   padding: 12px 0 0;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
-  color: var(--gallery-accent, #000000);
+  color: inherit;
   opacity: 0.6;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  margin-inline: auto;
 }
 
 [data-layout="slideshow"][data-pagination="counter"] .gallery__counter {

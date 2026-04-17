@@ -28,6 +28,8 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
   function buildPagination(): void {
     if (!paginationEl) return;
     paginationEl.innerHTML = '';
+    const usesThumbnailIndicators = galleryRoot.dataset.pagination === 'thumbnails';
+    paginationEl.style.setProperty('--pagination-count', String(totalSlides));
 
     for (let i = 0; i < totalSlides; i++) {
       const btn = document.createElement('button');
@@ -41,7 +43,7 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
 
       // For thumbnails, use the image src as background
       const img = items[i]?.querySelector<HTMLImageElement>('img.gallery__image');
-      if (img) {
+      if (usesThumbnailIndicators && img) {
         indicator.style.backgroundImage = `url(${img.src})`;
       }
 
@@ -82,10 +84,22 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
 
   // ─── Navigation ───
 
-  function goToSlide(index: number): void {
+  function goToSlide(index: number, options?: { immediate?: boolean }): void {
     const clamped = Math.max(0, Math.min(totalSlides - 1, index));
     const target = items[clamped];
     if (!target) return;
+
+    if (options?.immediate) {
+      const previousScrollBehavior = grid.style.scrollBehavior;
+      grid.style.scrollBehavior = 'auto';
+      grid.scrollLeft = target.offsetLeft;
+      updateActiveState(clamped);
+      requestAnimationFrame(() => {
+        grid.style.scrollBehavior = previousScrollBehavior;
+      });
+      resetAutoplay();
+      return;
+    }
 
     const behavior = prefersReducedMotion.matches ? 'auto' as const : 'smooth' as const;
     target.scrollIntoView({ behavior, block: 'nearest', inline: 'start' });
@@ -93,11 +107,13 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
   }
 
   function goNext(): void {
-    goToSlide(activeIndex + 1 >= totalSlides ? 0 : activeIndex + 1);
+    const nextIndex = activeIndex + 1 >= totalSlides ? 0 : activeIndex + 1;
+    goToSlide(nextIndex, { immediate: nextIndex === 0 });
   }
 
   function goPrev(): void {
-    goToSlide(activeIndex - 1 < 0 ? totalSlides - 1 : activeIndex - 1);
+    const prevIndex = activeIndex - 1 < 0 ? totalSlides - 1 : activeIndex - 1;
+    goToSlide(prevIndex, { immediate: prevIndex === totalSlides - 1 });
   }
 
   // ─── Active slide tracking via IntersectionObserver ───
