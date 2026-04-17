@@ -43,8 +43,9 @@ let controlsRoot: HTMLElement;
 let pickerSelect: HTMLSelectElement;
 const VIEWPORTS = ['375', '768', '1280', 'fluid'] as const;
 type ViewportWidth = (typeof VIEWPORTS)[number];
+const DEFAULT_VIEWPORT_WIDTH: ViewportWidth = '375';
 
-let activeViewportWidth: ViewportWidth = '375';
+let activeViewportWidth: ViewportWidth = DEFAULT_VIEWPORT_WIDTH;
 
 // Shell-level AbortController for viewport listeners
 const shellAbort = new AbortController();
@@ -93,6 +94,11 @@ function syncUrlState(): void {
 
   const search = params.toString();
   const nextUrl = `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`;
+  window.history.replaceState(window.history.state, '', nextUrl);
+}
+
+function clearUrlState(): void {
+  const nextUrl = `${window.location.pathname}${window.location.hash}`;
   window.history.replaceState(window.history.state, '', nextUrl);
 }
 
@@ -156,14 +162,25 @@ function applyStateToRoot(root: HTMLElement, state: Record<string, string>): voi
   }
 }
 
-function switchTo(section: Section): void {
-  if (section === currentSection) return;
+function switchTo(
+  section: Section,
+  options: {
+    force?: boolean;
+    saveCurrentState?: boolean;
+    syncUrl?: boolean;
+  } = {},
+): void {
+  const { force = false, saveCurrentState = true, syncUrl = true } = options;
+
+  if (!force && section === currentSection) return;
 
   const previousSection = currentSection;
 
   // Save outgoing state and destroy
   if (currentSection && currentHandle) {
-    stateCache.set(currentSection.id, currentHandle.saveState());
+    if (saveCurrentState) {
+      stateCache.set(currentSection.id, currentHandle.saveState());
+    }
     currentHandle.destroy();
   }
 
@@ -210,7 +227,7 @@ function switchTo(section: Section): void {
   // Reset scroll
   controlsContainer.scrollTop = 0;
 
-  syncUrlState();
+  if (syncUrl) syncUrlState();
 }
 
 // ─── Viewport wiring ───
@@ -231,6 +248,35 @@ function wireViewportButtons(): void {
 
   applyViewportWidth(activeViewportWidth);
   syncViewportButtons();
+}
+
+function resetShellState(): void {
+  const defaultSection = sections[0];
+
+  stateCache.clear();
+  activeViewportWidth = DEFAULT_VIEWPORT_WIDTH;
+
+  if (defaultSection) {
+    switchTo(defaultSection, {
+      force: true,
+      saveCurrentState: false,
+      syncUrl: false,
+    });
+  } else {
+    applyViewportWidth(activeViewportWidth);
+  }
+
+  syncViewportButtons();
+  clearUrlState();
+}
+
+function wireResetButton(): void {
+  const resetButton = document.querySelector<HTMLButtonElement>('[data-reset-state]');
+  if (!resetButton) return;
+
+  resetButton.addEventListener('click', () => {
+    resetShellState();
+  }, { signal: shellAbort.signal });
 }
 
 // ─── Picker ───
@@ -289,6 +335,7 @@ export function initShell(): void {
 
   // Wire viewport buttons (shell-owned, persistent via shellAbort)
   wireViewportButtons();
+  wireResetButton();
 
   // Mount first section
   const first = initialSection ?? sections[0];

@@ -328,11 +328,35 @@
   font-family: 'Space Grotesk', sans-serif;
 }
 
+.viewport-bar__meta {
+  @apply flex items-center gap-3 min-w-0;
+}
+
 .viewport-bar__label {
   @apply text-[11px] font-medium uppercase shrink-0;
   letter-spacing: 0.1em;
   color: #a1a1aa;
   font-family: 'Space Mono', monospace;
+}
+
+.viewport-bar__reset {
+  @apply cursor-pointer rounded-md px-2.5 py-1 text-[10px] font-medium uppercase transition-all duration-150;
+  letter-spacing: 0.08em;
+  color: #a1a1aa;
+  background: #18181b;
+  border: 1px solid #27272a;
+  font-family: 'Space Mono', monospace;
+}
+
+.viewport-bar__reset:hover {
+  color: #f4f4f5;
+  border-color: #3f3f46;
+  background: #232326;
+}
+
+.viewport-bar__reset:focus-visible {
+  color: #f4f4f5;
+  box-shadow: 0 0 0 1px #18181b, 0 0 0 2.5px #F4D923;
 }
 
 .viewport-bar__controls {

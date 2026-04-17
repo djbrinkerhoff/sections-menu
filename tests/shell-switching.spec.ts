@@ -482,6 +482,36 @@ test('URL state restores the active section, viewport, and both section states o
   await expect(page.locator('[data-control="nav-items"] input[aria-label="Nav items"]')).toHaveValue('5');
 });
 
+test('reset clears URL params and restores default shell and section state', async ({ page }) => {
+  await checkRadio(page, 'variant', 'tile');
+  await checkRadio(page, 'capitalization', 'uppercase');
+  await page.locator('[data-control="nav-items"] button[aria-label="Increase Nav items"]').click();
+  await page.locator('[data-viewport="1280"]').click();
+
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+  await checkRadio(page, 'pagination', 'counter');
+  await page.locator('input[name="heading"]').fill('Reset me');
+
+  await page.locator('[data-reset-state]').click();
+
+  expect(await getSearchParams(page)).toEqual({});
+  await expect(page.locator('.controls__picker')).toHaveValue('nav');
+  await expect(page.locator('[data-viewport="375"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#preview-root')).toHaveAttribute('style', /width:\s*375px/);
+  await expect(page.locator('.nav')).toHaveAttribute('data-variant', 'simple');
+  await expect(page.locator('.nav')).toHaveAttribute('data-capitalization', 'normal');
+  await expect(page.locator('input[name="variant"][value="simple"]')).toBeChecked();
+  await expect(page.locator('input[name="capitalization"][value="normal"]')).toBeChecked();
+  await expect(page.locator('[data-control="nav-items"] input[aria-label="Nav items"]')).toHaveValue('4');
+
+  await page.locator('.controls__picker').selectOption('gallery');
+  await expect(page.locator('.gallery')).toHaveAttribute('data-layout', 'grid');
+  await expect(page.locator('.gallery')).toHaveAttribute('data-pagination', 'dots');
+  await expect(page.locator('.gallery')).toHaveAttribute('data-heading', '');
+  await expect(page.locator('input[name="heading"]')).toHaveValue('');
+});
+
 test('controls sync: set tile variant → switch → switch back → controls show tile', async ({ page }) => {
   // Set tile variant
   await checkRadio(page, 'variant', 'tile');

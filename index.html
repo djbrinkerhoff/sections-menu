@@ -14,7 +14,10 @@
     <div class="flex flex-1 flex-col overflow-hidden">
       <!-- Viewport switcher -->
       <div id="viewport-bar" class="viewport-bar">
-        <span class="viewport-bar__label">Viewport</span>
+        <div class="viewport-bar__meta">
+          <span class="viewport-bar__label">Viewport</span>
+          <button type="button" class="viewport-bar__reset" data-reset-state>Reset</button>
+        </div>
         <div class="viewport-bar__controls">
           <button data-viewport="375" class="viewport-btn">375</button>
           <button data-viewport="768" class="viewport-btn">768</button>
