@@ -217,15 +217,15 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     return fieldset;
   }
 
-  // ─── Builder: number input ───
+  // ─── Builder: stepper ───
 
-  function createNumberInputGroup(
+  function createStepperGroup(
     name: string,
     label: string,
     initialValue: number,
     min: number,
     max: number,
-    onInput: (value: number) => void,
+    onStep: (value: number) => void,
     getDisplayValue: () => string,
   ): HTMLFieldSetElement {
     const fieldset = document.createElement('fieldset');
@@ -233,25 +233,55 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     fieldset.dataset.control = name;
     fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
 
-    const input = document.createElement('input');
-    input.className = 'control-group__input';
-    input.type = 'number';
-    input.name = name;
-    input.ariaLabel = label;
-    input.autocomplete = 'off';
-    input.min = String(min);
-    input.max = String(max);
-    input.step = '1';
-    input.inputMode = 'numeric';
-    input.value = String(initialValue);
-    input.addEventListener('input', () => {
-      onInput(Number.parseInt(input.value, 10) || min);
+    let current = initialValue;
+
+    const stepper = document.createElement('div');
+    stepper.className = 'control-stepper';
+
+    const minusBtn = document.createElement('button');
+    minusBtn.className = 'control-stepper__btn';
+    minusBtn.type = 'button';
+    minusBtn.textContent = '\u2212';
+    minusBtn.ariaLabel = `Decrease ${label}`;
+
+    const valueInput = document.createElement('input');
+    valueInput.className = 'control-stepper__value';
+    valueInput.type = 'text';
+    valueInput.inputMode = 'numeric';
+    valueInput.value = getDisplayValue();
+    valueInput.ariaLabel = label;
+    valueInput.autocomplete = 'off';
+
+    const plusBtn = document.createElement('button');
+    plusBtn.className = 'control-stepper__btn';
+    plusBtn.type = 'button';
+    plusBtn.textContent = '+';
+    plusBtn.ariaLabel = `Increase ${label}`;
+
+    function update(newValue: number): void {
+      current = Math.max(min, Math.min(max, newValue));
+      onStep(current);
+      valueInput.value = getDisplayValue();
+    }
+
+    minusBtn.addEventListener('click', () => update(current - 1), { signal });
+    plusBtn.addEventListener('click', () => update(current + 1), { signal });
+    valueInput.addEventListener('change', () => {
+      const parsed = Number.parseInt(valueInput.value, 10);
+      if (Number.isFinite(parsed)) {
+        update(parsed);
+      } else {
+        valueInput.value = getDisplayValue();
+      }
     }, { signal });
-    input.addEventListener('blur', () => {
-      input.value = getDisplayValue();
+    valueInput.addEventListener('blur', () => {
+      valueInput.value = getDisplayValue();
     }, { signal });
 
-    fieldset.appendChild(input);
+    stepper.appendChild(minusBtn);
+    stepper.appendChild(valueInput);
+    stepper.appendChild(plusBtn);
+    fieldset.appendChild(stepper);
     return fieldset;
   }
 
@@ -306,13 +336,23 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     return fieldset;
   }
 
+  function sectionHeading(text: string): HTMLElement {
+    const el = document.createElement('div');
+    el.className = 'control-section__heading';
+    el.textContent = text;
+    return el;
+  }
+
   // ─── Render controls ───
 
   // 1. Layout picker
   wrapper.appendChild(createLayoutGroup());
 
+  // ── Content ──
+  wrapper.appendChild(sectionHeading('Content'));
+
   // 2. Images
-  wrapper.appendChild(createNumberInputGroup(
+  wrapper.appendChild(createStepperGroup(
     'images', 'Images', currentImageCount, 1, totalImages,
     setImageCount, () => String(currentImageCount),
   ));
@@ -344,7 +384,9 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     wrapper.appendChild(fieldset);
   }
 
-  // 3. Columns
+  // ── Grid ──
+  wrapper.appendChild(sectionHeading('Grid'));
+
   wrapper.appendChild(createSegmentedGroup(
     'columns', 'Columns', COLUMNS,
     { '2': '2', '3': '3', '4': '4' },
@@ -359,7 +401,9 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     'gap',
   ));
 
-  // 5. Aspect ratio
+  // ── Appearance ──
+  wrapper.appendChild(sectionHeading('Appearance'));
+
   wrapper.appendChild(createSegmentedGroup(
     'aspect', 'Aspect ratio', ASPECTS,
     { square: '1:1', landscape: '4:3', portrait: '3:4', auto: 'Auto' },
@@ -386,7 +430,9 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
   // 9. Text color
   wrapper.appendChild(createColorGroup('text-color', 'Text color', '--gallery-accent', '#000000'));
 
-  // 10. Auto Play (slideshow only)
+  // ── Slideshow ──
+  wrapper.appendChild(sectionHeading('Slideshow'));
+
   wrapper.appendChild(createSegmentedGroup(
     'autoplay', 'Auto play', ['false', 'true'] as const,
     { false: 'Off', true: 'On' },

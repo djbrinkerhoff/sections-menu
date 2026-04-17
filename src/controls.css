@@ -4,6 +4,7 @@
   @apply relative;
   scrollbar-width: thin;
   scrollbar-color: #3f3f46 transparent;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 /* Bottom fade — signals more content below */
@@ -52,21 +53,34 @@
 }
 
 .control-group__label {
-  @apply text-[10px] font-medium uppercase;
+  @apply text-[11px] font-medium uppercase;
   letter-spacing: 0.1em;
-  color: #71717a;
+  color: #a1a1aa;
+  font-family: 'Space Mono', monospace;
 }
 
 .control-group__desc {
   @apply text-[10px] leading-snug m-0;
+  color: #71717a;
+}
+
+/* ─── Section headings (group dividers) ─── */
+.control-section__heading {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
   color: #52525b;
+  margin: 24px 0 0;
+  padding: 0;
 }
 
 /* ─── Style section — hero treatment ─── */
 .control-group--style {
   @apply pt-0 pb-5;
   border-top: none;
-  margin: 0 -20px;
+  margin: 0 -20px 24px;
   padding-left: 20px;
   padding-right: 20px;
   padding-bottom: 20px;
@@ -239,6 +253,58 @@
   margin: 0;
 }
 
+/* ─── Stepper (replaces number inputs) ─── */
+.control-stepper {
+  @apply flex items-center gap-0 rounded-lg;
+  background: #09090b;
+  padding: 2px;
+}
+
+.control-stepper__btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #71717a;
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  transition: all 150ms ease;
+}
+
+.control-stepper__btn:hover {
+  color: #a1a1aa;
+  background: #27272a;
+}
+
+.control-stepper__btn:focus-visible {
+  color: #f4f4f5;
+  box-shadow: 0 0 0 1px #18181b, 0 0 0 2.5px #F4D923;
+  outline: none;
+}
+
+.control-stepper__value {
+  flex: 1;
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  color: #f4f4f5;
+  font-variant-numeric: tabular-nums;
+  min-width: 40px;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+}
+
+.control-stepper__value:focus {
+  color: #F4D923;
+}
+
 /* ─── Range slider ─── */
 .control-group__range {
   width: 100%;
@@ -259,12 +325,14 @@
   @apply flex items-center justify-between gap-4 px-4 py-3;
   background: #111113;
   border-bottom: 1px solid #27272a;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 .viewport-bar__label {
-  @apply text-[10px] font-medium uppercase shrink-0;
+  @apply text-[11px] font-medium uppercase shrink-0;
   letter-spacing: 0.1em;
-  color: #71717a;
+  color: #a1a1aa;
+  font-family: 'Space Mono', monospace;
 }
 
 .viewport-bar__controls {
@@ -275,6 +343,7 @@
 .viewport-btn {
   @apply cursor-pointer rounded-md px-3 py-1.5 text-[11px] font-medium transition-all duration-150;
   color: #71717a;
+  font-family: 'Space Mono', monospace;
 }
 
 .viewport-btn:hover {

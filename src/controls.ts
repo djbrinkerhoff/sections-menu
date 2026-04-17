@@ -186,58 +186,119 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
     }
   }
 
+  // ─── Helpers ───
+
+  function sectionHeading(text: string): HTMLElement {
+    const el = document.createElement('div');
+    el.className = 'control-section__heading';
+    el.textContent = text;
+    return el;
+  }
+
+  function createStepperGroup(
+    name: string,
+    label: string,
+    initialValue: number,
+    min: number,
+    max: number,
+    onStep: (value: number) => void,
+    getDisplayValue: () => string,
+  ): HTMLFieldSetElement {
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'control-group';
+    fieldset.dataset.control = name;
+    fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
+
+    let current = initialValue;
+
+    const stepper = document.createElement('div');
+    stepper.className = 'control-stepper';
+
+    const minusBtn = document.createElement('button');
+    minusBtn.className = 'control-stepper__btn';
+    minusBtn.type = 'button';
+    minusBtn.textContent = '\u2212'; // minus sign
+    minusBtn.ariaLabel = `Decrease ${label}`;
+
+    const valueInput = document.createElement('input');
+    valueInput.className = 'control-stepper__value';
+    valueInput.type = 'text';
+    valueInput.inputMode = 'numeric';
+    valueInput.value = getDisplayValue();
+    valueInput.ariaLabel = label;
+    valueInput.autocomplete = 'off';
+
+    const plusBtn = document.createElement('button');
+    plusBtn.className = 'control-stepper__btn';
+    plusBtn.type = 'button';
+    plusBtn.textContent = '+';
+    plusBtn.ariaLabel = `Increase ${label}`;
+
+    function update(newValue: number): void {
+      current = Math.max(min, Math.min(max, newValue));
+      onStep(current);
+      valueInput.value = getDisplayValue();
+    }
+
+    minusBtn.addEventListener('click', () => update(current - 1), { signal });
+    plusBtn.addEventListener('click', () => update(current + 1), { signal });
+    valueInput.addEventListener('change', () => {
+      const parsed = Number.parseInt(valueInput.value, 10);
+      if (Number.isFinite(parsed)) {
+        update(parsed);
+      } else {
+        valueInput.value = getDisplayValue();
+      }
+    }, { signal });
+    valueInput.addEventListener('blur', () => {
+      valueInput.value = getDisplayValue();
+    }, { signal });
+
+    stepper.appendChild(minusBtn);
+    stepper.appendChild(valueInput);
+    stepper.appendChild(plusBtn);
+    fieldset.appendChild(stepper);
+    return fieldset;
+  }
+
   // ─── Render ───
 
   // 1. Style (variant) — 2x2 thumbnail grid (hero section)
   wrapper.appendChild(createVariantGroup());
 
-  // 2. Logo style
+  // ── Colors ──
+  wrapper.appendChild(sectionHeading('Colors'));
+
+  wrapper.appendChild(createColorGroup('menu-color', 'Menu color', 'menu'));
+  wrapper.appendChild(createColorGroup('text-color', 'Text color', 'text'));
+
+  // ── Layout ──
+  wrapper.appendChild(sectionHeading('Layout'));
+
   wrapper.appendChild(createSegmentedGroup(
     'logo-style', 'Logo', LOGO_STYLES,
     { small: 'Horizontal', stacked: 'Stacked' },
     'logoStyle',
   ));
 
-  // 3. Menu color + 4. Text color (grouped)
-  wrapper.appendChild(createColorGroup('menu-color', 'Menu color', 'menu'));
-  wrapper.appendChild(createColorGroup('text-color', 'Text color', 'text'));
-
-  // 5. Button style
   wrapper.appendChild(createSegmentedGroup(
     'button-style', 'Button style', BUTTON_STYLES,
     { hamburger: hamburgerIcon(), plus: plusIcon(), text: 'Menu' },
     'buttonStyle',
   ));
 
-  // 6. Logo position (alignment)
   wrapper.appendChild(createSegmentedGroup(
     'alignment', 'Logo position', ALIGNMENTS,
     { left: alignLeftIcon(), center: alignCenterIcon(), right: alignRightIcon() },
     'alignment',
   ));
 
-  // 7. Inset
   wrapper.appendChild(createSegmentedGroup(
     'inset', 'Inset', ['false', 'true'] as const,
     { false: 'Off', true: 'On' },
     'inset',
   ));
 
-  // 7b. Search
-  wrapper.appendChild(createSegmentedGroup(
-    'search', 'Search', ['false', 'true'] as const,
-    { false: 'Off', true: 'On' },
-    'search',
-  ));
-
-  // 7c. Social links
-  wrapper.appendChild(createSegmentedGroup(
-    'social-links', 'Social links', ['false', 'true'] as const,
-    { false: 'Off', true: 'On' },
-    'socialLinks',
-  ));
-
-  // 8. Border radius
   const initialBorderRadius = Number.parseInt(navRoot.dataset.borderRadius ?? '0', 10) || 0;
   wrapper.appendChild(createRangeGroup(
     'border-radius', 'Border radius', BORDER_RADIUS_STEPS,
@@ -251,25 +312,42 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
     initialBorderRadius,
   ));
 
-  // 9. Capitalization
+  // ── Content ──
+  wrapper.appendChild(sectionHeading('Content'));
+
+  wrapper.appendChild(createSegmentedGroup(
+    'search', 'Search', ['false', 'true'] as const,
+    { false: 'Off', true: 'On' },
+    'search',
+  ));
+
+  wrapper.appendChild(createSegmentedGroup(
+    'social-links', 'Social links', ['false', 'true'] as const,
+    { false: 'Off', true: 'On' },
+    'socialLinks',
+  ));
+
   wrapper.appendChild(createSegmentedGroup(
     'capitalization', 'Capitalization', CAPITALIZATIONS,
     { normal: 'Aa', lowercase: 'a↓', uppercase: 'A↑' },
     'capitalization',
   ));
 
-  // 8. Cart icon
   wrapper.appendChild(createSegmentedGroup(
     'cart-icon', 'Cart icon', CART_ICONS,
     { cart: cartIcon(), bag: bagIcon() },
     'cartIcon',
   ));
 
-  // 9. Cart count
-  wrapper.appendChild(createNumberInputGroup('cart-count', 'Cart count', initialCartCount, setCartCount, () => navRoot.dataset.cartCount ?? '0'));
+  wrapper.appendChild(createStepperGroup(
+    'cart-count', 'Cart count', initialCartCount, 0, 99,
+    setCartCount, () => navRoot.dataset.cartCount ?? '0',
+  ));
 
-  // 10. Nav item count
-  wrapper.appendChild(createNumberInputGroup('nav-items', 'Nav items', currentNavItemCount, setNavItemCount, () => String(currentNavItemCount)));
+  wrapper.appendChild(createStepperGroup(
+    'nav-items', 'Nav items', currentNavItemCount, 0, 20,
+    setNavItemCount, () => String(currentNavItemCount),
+  ));
 
   container.appendChild(wrapper);
   setCartCount(initialCartCount);
@@ -412,38 +490,6 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
     return fieldset;
   }
 
-  function createNumberInputGroup(
-    name: string,
-    label: string,
-    initialValue: number,
-    onInput: (value: number) => void,
-    getDisplayValue: () => string,
-  ): HTMLFieldSetElement {
-    const fieldset = document.createElement('fieldset');
-    fieldset.className = 'control-group';
-    fieldset.dataset.control = name;
-    fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
-
-    const input = document.createElement('input');
-    input.className = 'control-group__input';
-    input.type = 'number';
-    input.name = name;
-    input.ariaLabel = label;
-    input.autocomplete = 'off';
-    input.min = '0';
-    input.step = '1';
-    input.inputMode = 'numeric';
-    input.value = String(initialValue);
-    input.addEventListener('input', () => {
-      onInput(Number.parseInt(input.value, 10) || 0);
-    }, { signal });
-    input.addEventListener('blur', () => {
-      input.value = getDisplayValue();
-    }, { signal });
-
-    fieldset.appendChild(input);
-    return fieldset;
-  }
 
   function createRangeGroup(
     name: string,

@@ -1,12 +1,30 @@
 import { expect, test } from 'playwright/test';
 
+/** Click the stepper +/- buttons to reach a target value. */
+async function setStepperValue(page: import('playwright/test').Page, label: string, target: number) {
+  const increase = page.getByRole('button', { name: `Increase ${label}` });
+  const decrease = page.getByRole('button', { name: `Decrease ${label}` });
+  const input = page.locator(`[data-control="${label.toLowerCase().replace(/ /g, '-')}"] .control-stepper__value`);
+
+  let current = Number(await input.inputValue());
+  while (current < target) {
+    await increase.click();
+    current++;
+  }
+  while (current > target) {
+    await decrease.click();
+    current--;
+  }
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
 test('exposes accessible names for search and controls', async ({ page }) => {
   await expect(page.getByLabel('Search Site')).toHaveAttribute('autocomplete', 'off');
-  await expect(page.getByLabel('Cart count')).toHaveAttribute('autocomplete', 'off');
+  await expect(page.getByRole('button', { name: 'Increase Cart count' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Decrease Cart count' })).toBeVisible();
 
   await expect(page.locator('input[name="menu-color"][aria-label="White"]')).toHaveCount(1);
   await expect(page.locator('input[name="text-color"][aria-label="Black"]')).toHaveCount(1);
@@ -335,7 +353,7 @@ test('moves top variant links into the masthead as soon as they fit', async ({ p
 
   await setAlignment('left');
   await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
-  await page.getByRole('spinbutton', { name: 'Nav items' }).fill('20');
+  await setStepperValue(page, 'Nav items', 20);
   await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('false');
 
   const overflowed = await readLayout();
@@ -362,7 +380,7 @@ test('lets nav__list scroll on desktop and toggles the sidebar logo per Figma', 
   expect(closedLogoDisplay).toBe('flex');
   expect(closedLogoHitTarget).toBe(true);
 
-  await page.getByRole('spinbutton', { name: 'Nav items' }).fill('20');
+  await setStepperValue(page, 'Nav items', 20);
   await page.locator('.nav__menu-toggle').click();
 
   const list = page.locator('.nav__list');
@@ -625,15 +643,12 @@ test.describe('social links', () => {
     await toggleSocialLinks(page, 'true');
     await expect(page.locator('.nav__social-link')).toHaveCount(3);
 
-    const input = page.getByLabel('Nav items');
-    await input.fill('10');
-    await input.dispatchEvent('input');
+    await setStepperValue(page, 'Nav items', 10);
 
     await expect(page.locator('.nav__item')).toHaveCount(10);
     await expect(page.locator('.nav__social-link')).toHaveCount(3);
 
-    await input.fill('0');
-    await input.dispatchEvent('input');
+    await setStepperValue(page, 'Nav items', 0);
 
     await expect(page.locator('.nav__item')).toHaveCount(0);
     await expect(page.locator('.nav__social-link')).toHaveCount(3);
@@ -671,7 +686,7 @@ test.describe('edge case: many nav items', () => {
       await setVariant(page, combo.variant);
 
       // Set many items BEFORE opening menu (setNavItemCount resets ephemeral state).
-      await page.getByRole('spinbutton', { name: 'Nav items' }).fill(String(COUNT));
+      await setStepperValue(page, 'Nav items', COUNT);
 
       if (combo.openMenu) {
         await page.locator('.nav__menu-toggle').click();
