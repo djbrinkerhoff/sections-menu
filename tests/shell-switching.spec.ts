@@ -417,6 +417,15 @@ test('slideshow arrows stay vertically aligned when auto aspect slides change he
   await page.locator('.controls__picker').selectOption('gallery');
   await checkRadio(page, 'layout', 'slideshow');
   await checkRadio(page, 'aspect', 'auto');
+  // Wait for all visible images to have a non-zero rendered width (image decode complete)
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const images = document.querySelectorAll<HTMLImageElement>('.gallery__item:not([hidden]) .gallery__image');
+        return images.length > 0 && Array.from(images).every((img) => img.getBoundingClientRect().width > 0);
+      }),
+    )
+    .toBe(true);
   await expect
     .poll(async () => {
       const spacing = await readAutoAspectSpacing(page);
@@ -438,7 +447,7 @@ test('slideshow arrows stay vertically aligned when auto aspect slides change he
           Math.abs(current.prevTop - baseline.prevTop),
           Math.abs(current.nextTop - baseline.nextTop),
         );
-      })
+      }, { timeout: 10_000 })
       .toBeLessThanOrEqual(1);
   }
 });

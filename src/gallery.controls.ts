@@ -2,8 +2,9 @@ import { initSlideshow } from './gallery.slideshow';
 import type { SlideshowHandle } from './gallery.slideshow';
 import { initImageLightbox } from './image.lightbox';
 import { applyImageRadius, getImageRadiusIndex, IMAGE_RADIUS_STOPS } from './image-radius';
-import { COLORS } from './nav.schema';
-import type { ColorName, ColorValue } from './nav.schema';
+import { COLORS, COLOR_LABELS } from './colors';
+import type { ColorName, ColorValue } from './colors';
+import { createStepperGroup, createSegmentedGroup } from './control-builders';
 import { createLabeledRangeGroup } from './range-control';
 
 // Gallery control schema
@@ -239,137 +240,7 @@ export function initGalleryControls(
     return fieldset;
   }
 
-  // ─── Builder: segmented group ───
-
-  function createSegmentedGroup(
-    name: string,
-    label: string,
-    values: readonly string[],
-    labels: Record<string, string>,
-    controlKey: GalleryControlKey,
-    description?: string,
-  ): HTMLFieldSetElement {
-    const fieldset = document.createElement('fieldset');
-    fieldset.className = 'control-group';
-    fieldset.dataset.control = name;
-    fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
-
-    if (description) {
-      const desc = document.createElement('p');
-      desc.className = 'control-group__desc';
-      desc.textContent = description;
-      fieldset.appendChild(desc);
-    }
-
-    const options = document.createElement('div');
-    options.className = 'control-group__options--segmented';
-
-    for (const v of values) {
-      const labelEl = document.createElement('label');
-      labelEl.className = 'segmented-btn';
-
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = name;
-      input.value = v;
-      input.checked = v === (galleryRoot.dataset[controlKey] ?? values[0]);
-      input.addEventListener('change', () => setControl(controlKey, v), { signal });
-
-      labelEl.appendChild(input);
-
-      const display = labels[v];
-      if (display !== undefined) {
-        const span = document.createElement('span');
-        span.innerHTML = display;
-        labelEl.appendChild(span);
-      }
-
-      options.appendChild(labelEl);
-    }
-
-    fieldset.appendChild(options);
-    return fieldset;
-  }
-
-  // ─── Builder: stepper ───
-
-  function createStepperGroup(
-    name: string,
-    label: string,
-    initialValue: number,
-    min: number,
-    max: number,
-    onStep: (value: number) => void,
-    getDisplayValue: () => string,
-  ): HTMLFieldSetElement {
-    const fieldset = document.createElement('fieldset');
-    fieldset.className = 'control-group';
-    fieldset.dataset.control = name;
-    fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
-
-    let current = initialValue;
-
-    const stepper = document.createElement('div');
-    stepper.className = 'control-stepper';
-
-    const minusBtn = document.createElement('button');
-    minusBtn.className = 'control-stepper__btn';
-    minusBtn.type = 'button';
-    minusBtn.textContent = '\u2212';
-    minusBtn.ariaLabel = `Decrease ${label}`;
-
-    const valueInput = document.createElement('input');
-    valueInput.className = 'control-stepper__value';
-    valueInput.type = 'text';
-    valueInput.inputMode = 'numeric';
-    valueInput.value = getDisplayValue();
-    valueInput.ariaLabel = label;
-    valueInput.autocomplete = 'off';
-
-    const plusBtn = document.createElement('button');
-    plusBtn.className = 'control-stepper__btn';
-    plusBtn.type = 'button';
-    plusBtn.textContent = '+';
-    plusBtn.ariaLabel = `Increase ${label}`;
-
-    function update(newValue: number): void {
-      current = Math.max(min, Math.min(max, newValue));
-      onStep(current);
-      valueInput.value = getDisplayValue();
-    }
-
-    minusBtn.addEventListener('click', () => update(current - 1), { signal });
-    plusBtn.addEventListener('click', () => update(current + 1), { signal });
-    valueInput.addEventListener('change', () => {
-      const parsed = Number.parseInt(valueInput.value, 10);
-      if (Number.isFinite(parsed)) {
-        update(parsed);
-      } else {
-        valueInput.value = getDisplayValue();
-      }
-    }, { signal });
-    valueInput.addEventListener('blur', () => {
-      valueInput.value = getDisplayValue();
-    }, { signal });
-
-    stepper.appendChild(minusBtn);
-    stepper.appendChild(valueInput);
-    stepper.appendChild(plusBtn);
-    fieldset.appendChild(stepper);
-    return fieldset;
-  }
-
   // ─── Builder: color swatch group ───
-
-  const COLOR_LABELS: Record<ColorName, string> = {
-    white: 'White',
-    black: 'Black',
-    yellow: 'Yellow',
-    pink: 'Pink',
-    red: 'Red',
-    blue: 'Blue',
-    transparent: 'Transparent',
-  };
 
   function createColorGroup(name: string, label: string, cssProp: string, defaultValue: string): HTMLFieldSetElement {
     const fieldset = document.createElement('fieldset');
@@ -417,24 +288,29 @@ export function initGalleryControls(
   wrapper.appendChild(createLayoutGroup());
 
   // Section width controls
-  wrapper.appendChild(createSegmentedGroup(
-    'bgWidth', 'Background width', BG_WIDTHS,
-    { full: 'Full', hug: 'Hug content' },
-    'bgWidth',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'bgWidth', label: 'Background width', values: BG_WIDTHS,
+    labels: { full: 'Full', hug: 'Hug content' },
+    initialValue: galleryRoot.dataset.bgWidth,
+    onChange: (v) => setControl('bgWidth', v),
+    signal,
+  }));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'contentWidth', 'Content width', CONTENT_WIDTHS,
-    { full: 'Full', wide: 'Wide', medium: 'Medium', narrow: 'Narrow' },
-    'contentWidth',
-    'Visible at wider viewports.',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'contentWidth', label: 'Content width', values: CONTENT_WIDTHS,
+    labels: { full: 'Full', wide: 'Wide', medium: 'Medium', narrow: 'Narrow' },
+    initialValue: galleryRoot.dataset.contentWidth,
+    onChange: (v) => setControl('contentWidth', v),
+    signal, description: 'Visible at wider viewports.',
+  }));
 
   // 2. Images
-  wrapper.appendChild(createStepperGroup(
-    'images', 'Images', currentImageCount, 1, totalImages,
-    setImageCount, () => String(currentImageCount),
-  ));
+  wrapper.appendChild(createStepperGroup({
+    name: 'images', label: 'Images',
+    initialValue: currentImageCount, min: 1, max: totalImages,
+    onStep: setImageCount, getDisplayValue: () => String(currentImageCount),
+    signal,
+  }));
 
   // 3. Heading
   {
@@ -492,52 +368,65 @@ export function initGalleryControls(
     wrapper.appendChild(fieldset);
   }
 
-  wrapper.appendChild(createSegmentedGroup(
-    'headingAlign', 'Heading alignment', HEADING_ALIGNS,
-    { left: 'Left', center: 'Center', right: 'Right' },
-    'headingAlign',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'headingAlign', label: 'Heading alignment', values: HEADING_ALIGNS,
+    labels: { left: 'Left', center: 'Center', right: 'Right' },
+    initialValue: galleryRoot.dataset.headingAlign,
+    onChange: (v) => setControl('headingAlign', v),
+    signal,
+  }));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'columns', 'Columns', COLUMNS,
-    { '2': '2', '3': '3', '4': '4' },
-    'columns',
-    'Applies at 768px and above. Smaller screens show 2 columns.',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'columns', label: 'Columns', values: COLUMNS,
+    labels: { '2': '2', '3': '3', '4': '4' },
+    initialValue: galleryRoot.dataset.columns,
+    onChange: (v) => setControl('columns', v),
+    signal, description: 'Applies at 768px and above. Smaller screens show 2 columns.',
+  }));
 
   // 4. Spacing
-  wrapper.appendChild(createSegmentedGroup(
-    'gap', 'Spacing', GAPS,
-    { none: 'None', sm: 'S', md: 'M', lg: 'L' },
-    'gap',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'gap', label: 'Spacing', values: GAPS,
+    labels: { none: 'None', sm: 'S', md: 'M', lg: 'L' },
+    initialValue: galleryRoot.dataset.gap,
+    onChange: (v) => setControl('gap', v),
+    signal,
+  }));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'aspect', 'Aspect ratio', ASPECTS,
-    { square: '1:1', landscape: '4:3', portrait: '3:4', auto: 'Auto' },
-    'aspect',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'aspect', label: 'Aspect ratio', values: ASPECTS,
+    labels: { square: '1:1', landscape: '4:3', portrait: '3:4', auto: 'Auto' },
+    initialValue: galleryRoot.dataset.aspect,
+    onChange: (v) => setControl('aspect', v),
+    signal,
+  }));
 
   // 6. Fill
-  wrapper.appendChild(createSegmentedGroup(
-    'fit', 'Fill', FITS,
-    { cover: 'Crop to Fill', contain: 'Fit Whole Image' },
-    'fit',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'fit', label: 'Fill', values: FITS,
+    labels: { cover: 'Crop to Fill', contain: 'Fit Whole Image' },
+    initialValue: galleryRoot.dataset.fit,
+    onChange: (v) => setControl('fit', v),
+    signal,
+  }));
 
   // 7. Captions
-  wrapper.appendChild(createSegmentedGroup(
-    'captions', 'Captions', ['false', 'true'] as const,
-    { false: 'Off', true: 'On' },
-    'captions',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'captions', label: 'Captions', values: ['false', 'true'],
+    labels: { false: 'Off', true: 'On' },
+    initialValue: galleryRoot.dataset.captions,
+    onChange: (v) => setControl('captions', v),
+    signal,
+  }));
 
   // 8. Lightbox
-  wrapper.appendChild(createSegmentedGroup(
-    'lightbox', 'Lightbox', ['false', 'true'] as const,
-    { false: 'Off', true: 'On' },
-    'lightbox',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'lightbox', label: 'Lightbox', values: ['false', 'true'],
+    labels: { false: 'Off', true: 'On' },
+    initialValue: galleryRoot.dataset.lightbox,
+    onChange: (v) => setControl('lightbox', v),
+    signal,
+  }));
 
   wrapper.appendChild(createLabeledRangeGroup({
     name: 'radius',
@@ -554,25 +443,31 @@ export function initGalleryControls(
   // 9. Text color
   wrapper.appendChild(createColorGroup('text-color', 'Text color', '--gallery-accent', '#000000'));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'autoplay', 'Auto play', ['false', 'true'] as const,
-    { false: 'Off', true: 'On' },
-    'autoplay',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'autoplay', label: 'Auto play', values: ['false', 'true'],
+    labels: { false: 'Off', true: 'On' },
+    initialValue: galleryRoot.dataset.autoplay,
+    onChange: (v) => setControl('autoplay', v),
+    signal,
+  }));
 
   // 9. Timing (slideshow only, hidden when autoplay off)
-  wrapper.appendChild(createSegmentedGroup(
-    'timing', 'Timing', TIMINGS,
-    { '2': '2s', '4': '4s', '6': '6s', '8': '8s' },
-    'timing',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'timing', label: 'Timing', values: TIMINGS,
+    labels: { '2': '2s', '4': '4s', '6': '6s', '8': '8s' },
+    initialValue: galleryRoot.dataset.timing,
+    onChange: (v) => setControl('timing', v),
+    signal,
+  }));
 
   // 10. Pagination (slideshow only)
-  wrapper.appendChild(createSegmentedGroup(
-    'pagination', 'Pagination', PAGINATIONS,
-    { dots: 'Dots', dashes: 'Dashes', counter: 'Counter', thumbnails: 'Thumbs' },
-    'pagination',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'pagination', label: 'Pagination', values: PAGINATIONS,
+    labels: { dots: 'Dots', dashes: 'Dashes', counter: 'Counter', thumbnails: 'Thumbs' },
+    initialValue: galleryRoot.dataset.pagination,
+    onChange: (v) => setControl('pagination', v),
+    signal,
+  }));
 
   container.appendChild(wrapper);
 

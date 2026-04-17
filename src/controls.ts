@@ -1,8 +1,11 @@
 import {
-  VARIANTS, BUTTON_STYLES, ALIGNMENTS, CAPITALIZATIONS, CART_ICONS, LOGO_STYLES, COLORS,
+  VARIANTS, BUTTON_STYLES, ALIGNMENTS, CAPITALIZATIONS, CART_ICONS, LOGO_STYLES,
   BORDER_RADIUS_STEPS,
 } from './nav.schema';
-import type { ControlMap, ColorName, ColorValue, Variant } from './nav.schema';
+import type { ControlMap, Variant } from './nav.schema';
+import { COLORS, COLOR_LABELS } from './colors';
+import type { ColorName, ColorValue } from './colors';
+import { createStepperGroup, createSegmentedGroup } from './control-builders';
 import { resetEphemeralState } from './nav';
 
 // Controls hidden per variant (extensible — add entries as needed)
@@ -10,17 +13,6 @@ const HIDDEN_CONTROLS: Partial<Record<Variant, string[]>> = {
   top: ['button-style'],
   sidebar: ['inset', 'border-radius', 'alignment'],
   tile: ['inset', 'logo-style', 'alignment', 'button-style'],
-};
-
-// Color display names for labels
-const COLOR_LABELS: Record<ColorName, string> = {
-  white: 'White',
-  black: 'Black',
-  yellow: 'Yellow',
-  pink: 'Pink',
-  red: 'Red',
-  blue: 'Blue',
-  transparent: 'Transparent',
 };
 
 export function initControls(
@@ -198,72 +190,6 @@ export function initControls(
 
   // ─── Helpers ───
 
-  function createStepperGroup(
-    name: string,
-    label: string,
-    initialValue: number,
-    min: number,
-    max: number,
-    onStep: (value: number) => void,
-    getDisplayValue: () => string,
-  ): HTMLFieldSetElement {
-    const fieldset = document.createElement('fieldset');
-    fieldset.className = 'control-group';
-    fieldset.dataset.control = name;
-    fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
-
-    let current = initialValue;
-
-    const stepper = document.createElement('div');
-    stepper.className = 'control-stepper';
-
-    const minusBtn = document.createElement('button');
-    minusBtn.className = 'control-stepper__btn';
-    minusBtn.type = 'button';
-    minusBtn.textContent = '\u2212'; // minus sign
-    minusBtn.ariaLabel = `Decrease ${label}`;
-
-    const valueInput = document.createElement('input');
-    valueInput.className = 'control-stepper__value';
-    valueInput.type = 'text';
-    valueInput.inputMode = 'numeric';
-    valueInput.value = getDisplayValue();
-    valueInput.ariaLabel = label;
-    valueInput.autocomplete = 'off';
-
-    const plusBtn = document.createElement('button');
-    plusBtn.className = 'control-stepper__btn';
-    plusBtn.type = 'button';
-    plusBtn.textContent = '+';
-    plusBtn.ariaLabel = `Increase ${label}`;
-
-    function update(newValue: number): void {
-      current = Math.max(min, Math.min(max, newValue));
-      onStep(current);
-      valueInput.value = getDisplayValue();
-    }
-
-    minusBtn.addEventListener('click', () => update(current - 1), { signal });
-    plusBtn.addEventListener('click', () => update(current + 1), { signal });
-    valueInput.addEventListener('change', () => {
-      const parsed = Number.parseInt(valueInput.value, 10);
-      if (Number.isFinite(parsed)) {
-        update(parsed);
-      } else {
-        valueInput.value = getDisplayValue();
-      }
-    }, { signal });
-    valueInput.addEventListener('blur', () => {
-      valueInput.value = getDisplayValue();
-    }, { signal });
-
-    stepper.appendChild(minusBtn);
-    stepper.appendChild(valueInput);
-    stepper.appendChild(plusBtn);
-    fieldset.appendChild(stepper);
-    return fieldset;
-  }
-
   function syncStepperDisplay(controlName: string, value: string): void {
     const input = wrapper.querySelector<HTMLInputElement>(`[data-control="${controlName}"] .control-stepper__value`);
     if (input) input.value = value;
@@ -277,29 +203,37 @@ export function initControls(
   wrapper.appendChild(createColorGroup('menu-color', 'Menu color', 'menu'));
   wrapper.appendChild(createColorGroup('text-color', 'Text color', 'text'));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'logo-style', 'Logo', LOGO_STYLES,
-    { small: 'Horizontal', stacked: 'Stacked' },
-    'logoStyle',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'logo-style', label: 'Logo', values: LOGO_STYLES,
+    labels: { small: 'Horizontal', stacked: 'Stacked' },
+    initialValue: navRoot.dataset.logoStyle,
+    onChange: (v) => setControl('logoStyle', v as ControlMap['logoStyle']),
+    signal,
+  }));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'button-style', 'Button style', BUTTON_STYLES,
-    { hamburger: hamburgerIcon(), plus: plusIcon(), text: 'Menu' },
-    'buttonStyle',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'button-style', label: 'Button style', values: BUTTON_STYLES,
+    labels: { hamburger: hamburgerIcon(), plus: plusIcon(), text: 'Menu' },
+    initialValue: navRoot.dataset.buttonStyle,
+    onChange: (v) => setControl('buttonStyle', v as ControlMap['buttonStyle']),
+    signal,
+  }));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'alignment', 'Logo position', ALIGNMENTS,
-    { left: alignLeftIcon(), center: alignCenterIcon(), right: alignRightIcon() },
-    'alignment',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'alignment', label: 'Logo position', values: ALIGNMENTS,
+    labels: { left: alignLeftIcon(), center: alignCenterIcon(), right: alignRightIcon() },
+    initialValue: navRoot.dataset.alignment,
+    onChange: (v) => setControl('alignment', v as ControlMap['alignment']),
+    signal,
+  }));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'inset', 'Inset', ['false', 'true'] as const,
-    { false: 'Off', true: 'On' },
-    'inset',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'inset', label: 'Inset', values: ['false', 'true'],
+    labels: { false: 'Off', true: 'On' },
+    initialValue: navRoot.dataset.inset,
+    onChange: (v) => setControl('inset', v as ControlMap['inset']),
+    signal,
+  }));
 
   const initialBorderRadius = Number.parseInt(navRoot.dataset.borderRadius ?? '0', 10) || 0;
   wrapper.appendChild(createRangeGroup(
@@ -315,39 +249,51 @@ export function initControls(
     initialBorderRadius,
   ));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'search', 'Search', ['false', 'true'] as const,
-    { false: 'Off', true: 'On' },
-    'search',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'search', label: 'Search', values: ['false', 'true'],
+    labels: { false: 'Off', true: 'On' },
+    initialValue: navRoot.dataset.search,
+    onChange: (v) => setControl('search', v as ControlMap['search']),
+    signal,
+  }));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'social-links', 'Social links', ['false', 'true'] as const,
-    { false: 'Off', true: 'On' },
-    'socialLinks',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'social-links', label: 'Social links', values: ['false', 'true'],
+    labels: { false: 'Off', true: 'On' },
+    initialValue: navRoot.dataset.socialLinks,
+    onChange: (v) => setControl('socialLinks', v as ControlMap['socialLinks']),
+    signal,
+  }));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'capitalization', 'Capitalization', CAPITALIZATIONS,
-    { normal: 'Aa', lowercase: 'a↓', uppercase: 'A↑' },
-    'capitalization',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'capitalization', label: 'Capitalization', values: CAPITALIZATIONS,
+    labels: { normal: 'Aa', lowercase: 'a↓', uppercase: 'A↑' },
+    initialValue: navRoot.dataset.capitalization,
+    onChange: (v) => setControl('capitalization', v as ControlMap['capitalization']),
+    signal,
+  }));
 
-  wrapper.appendChild(createSegmentedGroup(
-    'cart-icon', 'Cart icon', CART_ICONS,
-    { cart: cartIcon(), bag: bagIcon() },
-    'cartIcon',
-  ));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'cart-icon', label: 'Cart icon', values: CART_ICONS,
+    labels: { cart: cartIcon(), bag: bagIcon() },
+    initialValue: navRoot.dataset.cartIcon,
+    onChange: (v) => setControl('cartIcon', v as ControlMap['cartIcon']),
+    signal,
+  }));
 
-  wrapper.appendChild(createStepperGroup(
-    'cart-count', 'Cart count', initialCartCount, 0, 99,
-    setCartCount, () => navRoot.dataset.cartCount ?? '0',
-  ));
+  wrapper.appendChild(createStepperGroup({
+    name: 'cart-count', label: 'Cart count',
+    initialValue: initialCartCount, min: 0, max: 99,
+    onStep: setCartCount, getDisplayValue: () => navRoot.dataset.cartCount ?? '0',
+    signal,
+  }));
 
-  wrapper.appendChild(createStepperGroup(
-    'nav-items', 'Nav items', currentNavItemCount, 0, 20,
-    setNavItemCount, () => String(currentNavItemCount),
-  ));
+  wrapper.appendChild(createStepperGroup({
+    name: 'nav-items', label: 'Nav items',
+    initialValue: currentNavItemCount, min: 0, max: 20,
+    onStep: setNavItemCount, getDisplayValue: () => String(currentNavItemCount),
+    signal,
+  }));
 
   container.appendChild(wrapper);
   setCartCount(initialCartCount);
@@ -445,51 +391,6 @@ export function initControls(
     fieldset.appendChild(options);
     return fieldset;
   }
-
-  function createSegmentedGroup<T extends readonly string[]>(
-    name: string,
-    label: string,
-    values: T,
-    labels: Record<string, string>,
-    controlKey: keyof ControlMap,
-  ): HTMLFieldSetElement {
-    const fieldset = document.createElement('fieldset');
-    fieldset.className = 'control-group';
-    fieldset.dataset.control = name;
-    fieldset.innerHTML = `<legend class="control-group__label">${label}</legend>`;
-
-    const options = document.createElement('div');
-    options.className = 'control-group__options--segmented';
-
-    for (const v of values) {
-      const labelEl = document.createElement('label');
-      labelEl.className = 'segmented-btn';
-
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = name;
-      input.value = v;
-      input.checked = v === (navRoot.dataset[controlKey] ?? values[0]);
-      input.addEventListener('change', () => {
-        setControl(controlKey, v as ControlMap[typeof controlKey]);
-      }, { signal });
-
-      labelEl.appendChild(input);
-
-      const display = labels[v];
-      if (display !== undefined) {
-        const span = document.createElement('span');
-        span.innerHTML = display;
-        labelEl.appendChild(span);
-      }
-
-      options.appendChild(labelEl);
-    }
-
-    fieldset.appendChild(options);
-    return fieldset;
-  }
-
 
   function createRangeGroup(
     name: string,

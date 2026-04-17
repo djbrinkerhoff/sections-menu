@@ -427,7 +427,7 @@ export function initSlideshow(galleryRoot: HTMLElement, parentSignal: AbortSigna
     cleanup() {
       controller.abort(); // Tears down listeners, observers, clones, autoplay via the abort handler
     },
-    goToIndex(index: number, options?: { immediate?: boolean }) {
+    goToIndex(index: number, options?: { immediate?: boolean; resetAutoplay?: boolean }) {
       goToSlide(index, options);
     },
     pauseAutoplay() {

@@ -38,7 +38,9 @@ export function inertReset(): void {
 }
 
 function getCartDialog(): HTMLDialogElement | null {
-  return document.getElementById('cart-drawer') as HTMLDialogElement | null;
+  const el = document.getElementById('cart-drawer');
+  if (!el || typeof HTMLDialogElement === 'undefined') return null;
+  return el instanceof HTMLDialogElement ? el : null;
 }
 
 function closeSearch(root: HTMLElement, { restoreFocus = false }: { restoreFocus?: boolean } = {}): void {
@@ -85,23 +87,27 @@ function getInlineNavWidth(list: HTMLElement): number {
   return itemWidths.reduce((sum, width) => sum + width, 0) + gap * Math.max(itemWidths.length - 1, 0);
 }
 
-function syncTopInlineState(root: HTMLElement): void {
-  if (root.dataset.variant !== 'top') {
-    delete root.dataset.topInline;
-    return;
-  }
+// ─── Shared inline-state measurement ───
+// Each variant checks whether its nav links fit in a single masthead row.
+// The measurement logic is shared; per-variant differences are in the
+// callers (guards, pre-measurement DOM mutations, gap counts).
 
+interface NavMeasurements {
+  contentWidth: number;
+  fixedWidth: number;
+  linkWidth: number;
+  socialWidth: number;
+  gap: number;
+}
+
+function measureNavElements(root: HTMLElement): NavMeasurements | null {
   const inner = root.querySelector<HTMLElement>('.nav__inner');
-  const primary = root.querySelector<HTMLElement>('.nav__primary');
   const list = root.querySelector<HTMLElement>('.nav__list');
   const logo = root.querySelector<HTMLElement>('.nav__logo');
   const search = root.querySelector<HTMLElement>('.nav__search');
   const cart = root.querySelector<HTMLElement>('.nav__cart');
 
-  if (!inner || !primary || !list || !logo || !search || !cart) {
-    root.dataset.topInline = 'false';
-    return;
-  }
+  if (!inner || !list || !logo || !search || !cart) return null;
 
   const styles = getComputedStyle(inner);
   const paddingInline =
@@ -119,21 +125,38 @@ function syncTopInlineState(root: HTMLElement): void {
     social && root.dataset.socialLinks === 'true'
       ? social.getBoundingClientRect().width
       : 0;
-  const socialGap = socialWidth > 0 ? 16 : 0;
+
+  return { contentWidth, fixedWidth, linkWidth, socialWidth, gap };
+}
+
+// Hysteresis: require extra clearance to promote, collapse immediately.
+function shouldInline(wasInline: boolean, availableWidth: number, linkWidth: number): boolean {
+  return wasInline
+    ? availableWidth >= linkWidth
+    : availableWidth >= linkWidth + 16;
+}
+
+function syncTopInlineState(root: HTMLElement): void {
+  if (root.dataset.variant !== 'top') {
+    delete root.dataset.topInline;
+    return;
+  }
 
   if (root.dataset.alignment === 'center') {
     root.dataset.topInline = 'false';
     return;
   }
 
-  const availableWidth = contentWidth - fixedWidth - socialWidth - socialGap - gap * 3;
-  const wasInline = root.dataset.topInline === 'true';
-  // Hysteresis only on entry: require extra clearance before promoting the
-  // links into the masthead row, but collapse immediately once they stop fitting.
-  const newInline = wasInline
-    ? availableWidth >= linkWidth
-    : availableWidth >= linkWidth + 16;
-  const newValue = newInline ? 'true' : 'false';
+  const m = measureNavElements(root);
+  if (!m) {
+    root.dataset.topInline = 'false';
+    return;
+  }
+
+  const socialGap = m.socialWidth > 0 ? 16 : 0;
+  const availableWidth = m.contentWidth - m.fixedWidth - m.socialWidth - socialGap - m.gap * 3;
+  const newValue = shouldInline(root.dataset.topInline === 'true', availableWidth, m.linkWidth)
+    ? 'true' : 'false';
   if (root.dataset.topInline !== newValue) {
     root.dataset.topInline = newValue;
   }
@@ -144,23 +167,8 @@ function syncSimpleInlineState(root: HTMLElement): void {
     delete root.dataset.simpleInline;
     return;
   }
-
-  // Don't recalculate while the overlay is open
   if (root.dataset.open === 'true') return;
-
-  // On narrow containers the desktop CQ styles don't match — always collapse.
   if (root.clientWidth < 768) {
-    root.dataset.simpleInline = 'false';
-    return;
-  }
-
-  const inner = root.querySelector<HTMLElement>('.nav__inner');
-  const list = root.querySelector<HTMLElement>('.nav__list');
-  const logo = root.querySelector<HTMLElement>('.nav__logo');
-  const search = root.querySelector<HTMLElement>('.nav__search');
-  const cart = root.querySelector<HTMLElement>('.nav__cart');
-
-  if (!inner || !list || !logo || !search || !cart) {
     root.dataset.simpleInline = 'false';
     return;
   }
@@ -169,34 +177,16 @@ function syncSimpleInlineState(root: HTMLElement): void {
   const prev = root.dataset.simpleInline;
   root.dataset.simpleInline = 'true';
 
-  // Simple links are flex: 0 0 auto — natural widths, no override needed
-  const styles = getComputedStyle(inner);
-  const paddingInline =
-    (Number.parseFloat(styles.paddingLeft) || 0) +
-    (Number.parseFloat(styles.paddingRight) || 0);
-  const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
-  const contentWidth = inner.clientWidth - paddingInline;
-  const fixedWidth =
-    logo.getBoundingClientRect().width +
-    search.getBoundingClientRect().width +
-    cart.getBoundingClientRect().width;
-  const linkWidth = getInlineNavWidth(list);
-  const social = root.querySelector<HTMLElement>('.nav__social');
-  const socialWidth =
-    social && root.dataset.socialLinks === 'true'
-      ? social.getBoundingClientRect().width
-      : 0;
-  const socialGap = socialWidth > 0 ? gap : 0;
+  const m = measureNavElements(root);
+  if (!m) {
+    root.dataset.simpleInline = 'false';
+    return;
+  }
 
-  // When inline: grid is logo | primary | actions → 2 gaps
-  const availableWidth =
-    contentWidth - fixedWidth - socialWidth - socialGap - gap * 2;
-  const wasInline = prev === 'true';
-  const newInline = wasInline
-    ? availableWidth >= linkWidth
-    : availableWidth >= linkWidth + 16;
-
-  root.dataset.simpleInline = newInline ? 'true' : 'false';
+  const socialGap = m.socialWidth > 0 ? m.gap : 0;
+  const availableWidth = m.contentWidth - m.fixedWidth - m.socialWidth - socialGap - m.gap * 2;
+  root.dataset.simpleInline = shouldInline(prev === 'true', availableWidth, m.linkWidth)
+    ? 'true' : 'false';
 }
 
 function syncTileInlineState(root: HTMLElement): void {
@@ -204,24 +194,8 @@ function syncTileInlineState(root: HTMLElement): void {
     delete root.dataset.tileInline;
     return;
   }
-
-  // Don't recalculate while the overlay is open
   if (root.dataset.open === 'true') return;
-
-  // On narrow containers the desktop CQ styles that show the tile bar
-  // don't match, so links are invisible and unmeasurable — always collapse.
   if (root.clientWidth < 768) {
-    root.dataset.tileInline = 'false';
-    return;
-  }
-
-  const inner = root.querySelector<HTMLElement>('.nav__inner');
-  const list = root.querySelector<HTMLElement>('.nav__list');
-  const logo = root.querySelector<HTMLElement>('.nav__logo');
-  const search = root.querySelector<HTMLElement>('.nav__search');
-  const cart = root.querySelector<HTMLElement>('.nav__cart');
-
-  if (!inner || !list || !logo || !search || !cart) {
     root.dataset.tileInline = 'false';
     return;
   }
@@ -233,46 +207,37 @@ function syncTileInlineState(root: HTMLElement): void {
   // Temporarily remove flex-equal constraint on tile items
   // so getInlineNavWidth returns natural content widths, not the
   // equal-distribution widths imposed by flex: 1 1 0%.
-  const items = Array.from(list.children) as HTMLElement[];
+  const list = root.querySelector<HTMLElement>('.nav__list');
+  if (!list) {
+    root.dataset.tileInline = 'false';
+    return;
+  }
+  const items = Array.from(list.children).filter(
+    (el): el is HTMLElement => el instanceof HTMLElement,
+  );
   const savedFlex = items.map(item => item.style.flex);
   items.forEach(item => { item.style.flex = '0 0 auto'; });
 
-  // Measure (forces one synchronous reflow with inline + auto styles)
-  const styles = getComputedStyle(inner);
-  const paddingInline =
-    (Number.parseFloat(styles.paddingLeft) || 0) +
-    (Number.parseFloat(styles.paddingRight) || 0);
-  const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
-  const contentWidth = inner.clientWidth - paddingInline;
-  const fixedWidth =
-    logo.getBoundingClientRect().width +
-    search.getBoundingClientRect().width +
-    cart.getBoundingClientRect().width;
-  const linkWidth = getInlineNavWidth(list);
-  const social = root.querySelector<HTMLElement>('.nav__social');
-  const socialWidth =
-    social && root.dataset.socialLinks === 'true'
-      ? social.getBoundingClientRect().width
-      : 0;
-  const primaryStyles = getComputedStyle(
-    root.querySelector<HTMLElement>('.nav__primary')!,
-  );
-  const primaryGap =
-    Number.parseFloat(primaryStyles.columnGap || primaryStyles.gap || '0') || 0;
-  const socialGap = socialWidth > 0 ? primaryGap : 0;
+  const m = measureNavElements(root);
 
-  // Restore flex
+  // Restore flex before any early return
   items.forEach((item, i) => { item.style.flex = savedFlex[i] ?? ''; });
 
-  const availableWidth =
-    contentWidth - fixedWidth - socialWidth - socialGap - gap * 2;
-  const wasInline = prev === 'true';
-  // Hysteresis: require extra clearance to promote, collapse immediately
-  const newInline = wasInline
-    ? availableWidth >= linkWidth
-    : availableWidth >= linkWidth + 16;
+  if (!m) {
+    root.dataset.tileInline = 'false';
+    return;
+  }
 
-  root.dataset.tileInline = newInline ? 'true' : 'false';
+  const primary = root.querySelector<HTMLElement>('.nav__primary');
+  const primaryStyles = primary ? getComputedStyle(primary) : null;
+  const primaryGap = primaryStyles
+    ? Number.parseFloat(primaryStyles.columnGap || primaryStyles.gap || '0') || 0
+    : 0;
+  const socialGap = m.socialWidth > 0 ? primaryGap : 0;
+  const availableWidth = m.contentWidth - m.fixedWidth - m.socialWidth - socialGap - m.gap * 2;
+
+  root.dataset.tileInline = shouldInline(prev === 'true', availableWidth, m.linkWidth)
+    ? 'true' : 'false';
 }
 
 // ─── Submenu relocation for top variant ───
@@ -522,31 +487,15 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
   previewEl = preview;
   const abortController = new AbortController();
   const { signal } = abortController;
-  let topInlineFrame = 0;
-  let tileInlineFrame = 0;
-  let simpleInlineFrame = 0;
+  let inlineSyncFrame = 0;
 
-  const scheduleTopInlineSync = () => {
-    if (topInlineFrame) cancelAnimationFrame(topInlineFrame);
-    topInlineFrame = requestAnimationFrame(() => {
-      topInlineFrame = 0;
+  const scheduleInlineSync = () => {
+    if (inlineSyncFrame) cancelAnimationFrame(inlineSyncFrame);
+    inlineSyncFrame = requestAnimationFrame(() => {
+      inlineSyncFrame = 0;
       syncTopInlineState(root);
-    });
-  };
-
-  const scheduleTileInlineSync = () => {
-    if (tileInlineFrame) cancelAnimationFrame(tileInlineFrame);
-    tileInlineFrame = requestAnimationFrame(() => {
-      tileInlineFrame = 0;
-      syncTileInlineState(root);
-    });
-  };
-
-  const scheduleSimpleInlineSync = () => {
-    if (simpleInlineFrame) cancelAnimationFrame(simpleInlineFrame);
-    simpleInlineFrame = requestAnimationFrame(() => {
-      simpleInlineFrame = 0;
       syncSimpleInlineState(root);
+      syncTileInlineState(root);
     });
   };
 
@@ -604,7 +553,8 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
 
   // Shop submenu toggle (delegated so dynamically-added buttons work)
   root.addEventListener('click', (e: MouseEvent) => {
-    const btn = (e.target as Element).closest<HTMLButtonElement>('.nav__item--has-submenu button');
+    if (!(e.target instanceof Element)) return;
+    const btn = e.target.closest<HTMLButtonElement>('.nav__item--has-submenu button');
     if (!btn) return;
     const submenuId = btn.getAttribute('aria-controls');
     if (!submenuId) return;
@@ -632,7 +582,7 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
 
   // Cart dialog
   const cartBtn = root.querySelector<HTMLButtonElement>('.nav__cart');
-  const cartDialog = document.getElementById('cart-drawer') as HTMLDialogElement | null;
+  const cartDialog = getCartDialog();
 
   if (cartBtn && cartDialog) {
     cartBtn.addEventListener('click', () => {
@@ -675,18 +625,10 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
     primary.setAttribute('role', 'region');
   }
 
-  const inlineResizeObserver = new ResizeObserver(() => {
-    scheduleTopInlineSync();
-    scheduleTileInlineSync();
-    scheduleSimpleInlineSync();
-  });
+  const inlineResizeObserver = new ResizeObserver(scheduleInlineSync);
   inlineResizeObserver.observe(root);
 
-  const inlineMutationObserver = new MutationObserver(() => {
-    scheduleTopInlineSync();
-    scheduleTileInlineSync();
-    scheduleSimpleInlineSync();
-  });
+  const inlineMutationObserver = new MutationObserver(scheduleInlineSync);
 
   inlineMutationObserver.observe(root, {
     attributes: true,
@@ -700,15 +642,11 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
     });
   }
 
-  scheduleTopInlineSync();
-  scheduleTileInlineSync();
-  scheduleSimpleInlineSync();
+  scheduleInlineSync();
 
   return () => {
     abortController.abort();
-    if (topInlineFrame) cancelAnimationFrame(topInlineFrame);
-    if (tileInlineFrame) cancelAnimationFrame(tileInlineFrame);
-    if (simpleInlineFrame) cancelAnimationFrame(simpleInlineFrame);
+    if (inlineSyncFrame) cancelAnimationFrame(inlineSyncFrame);
     inlineResizeObserver.disconnect();
     inlineMutationObserver.disconnect();
     removeSidebarHandler();
