@@ -3,12 +3,14 @@
 export interface SlideshowHandle {
   cleanup(): void;
   syncPagination(): void;
+  syncLayout(): void;
 }
 
 export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): SlideshowHandle {
   const gridEl = galleryRoot.querySelector<HTMLElement>('.gallery__grid');
   if (!gridEl) throw new Error('Slideshow: .gallery__grid not found');
   const grid: HTMLElement = gridEl;
+  const viewportEl = galleryRoot.querySelector<HTMLElement>('.gallery__viewport');
   const prevBtn = galleryRoot.querySelector<HTMLButtonElement>('.gallery__prev');
   const nextBtn = galleryRoot.querySelector<HTMLButtonElement>('.gallery__next');
   const paginationEl = galleryRoot.querySelector<HTMLElement>('.gallery__pagination');
@@ -16,12 +18,53 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
 
   const items = Array.from(grid.querySelectorAll<HTMLElement>('.gallery__item:not([hidden])'));
   const totalSlides = items.length;
-  if (totalSlides === 0) return { cleanup() {}, syncPagination() {} };
+  if (totalSlides === 0) return { cleanup() {}, syncPagination() {}, syncLayout() {} };
 
   let activeIndex = 0;
   let autoplayId: number | undefined;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const resizeObserver = typeof ResizeObserver === 'undefined'
+    ? null
+    : new ResizeObserver(() => {
+      updateArrowPosition();
+    });
+
+  function updateArrowPosition(): void {
+    if (!viewportEl) return;
+    const images = items
+      .map((item) => item.querySelector<HTMLImageElement>('.gallery__image'))
+      .filter((image): image is HTMLImageElement => image instanceof HTMLImageElement);
+    const referenceItem = items[0];
+    const referenceImage = images[0];
+    if (!referenceItem || !referenceImage) return;
+
+    const viewportRect = viewportEl.getBoundingClientRect();
+    const referenceItemRect = referenceItem.getBoundingClientRect();
+    const referenceRect = referenceImage.getBoundingClientRect();
+    const bandTop = referenceItemRect.top;
+
+    let anchorHeight = referenceRect.height;
+
+    if (galleryRoot.dataset.aspect === 'auto') {
+      const renderedWidth = referenceRect.width;
+      const expectedHeights = images.map((image) => {
+        const intrinsicWidth = Number(image.getAttribute('width') ?? '');
+        const intrinsicHeight = Number(image.getAttribute('height') ?? '');
+        if (intrinsicWidth > 0 && intrinsicHeight > 0) {
+          return renderedWidth * (intrinsicHeight / intrinsicWidth);
+        }
+        return image.getBoundingClientRect().height;
+      });
+      anchorHeight = Math.max(...expectedHeights);
+      viewportEl.style.setProperty('--gallery-image-band-height', `${anchorHeight}px`);
+    } else {
+      viewportEl.style.removeProperty('--gallery-image-band-height');
+    }
+
+    const arrowTop = bandTop - viewportRect.top + anchorHeight / 2;
+    viewportEl.style.setProperty('--gallery-arrow-top', `${arrowTop}px`);
+  }
 
   // ─── Pagination indicators ───
 
@@ -80,6 +123,8 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
         item.setAttribute('aria-hidden', 'true');
       }
     });
+
+    updateArrowPosition();
   }
 
   // ─── Navigation ───
@@ -191,8 +236,16 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
 
   // ─── Init ───
 
+  for (const item of items) {
+    const image = item.querySelector<HTMLElement>('.gallery__image');
+    if (image) resizeObserver?.observe(image);
+  }
+
   buildPagination();
   updateActiveState(0);
+  requestAnimationFrame(() => {
+    updateArrowPosition();
+  });
 
   // Start auto-play if preference is on
   if (galleryRoot.dataset.autoplay === 'true') {
@@ -204,6 +257,7 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
   signal.addEventListener('abort', () => {
     stopAutoplay();
     observer.disconnect();
+    resizeObserver?.disconnect();
     // Remove inert from all items on teardown
     for (const item of items) {
       item.removeAttribute('inert');
@@ -215,6 +269,7 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
     cleanup() {
       stopAutoplay();
       observer.disconnect();
+      resizeObserver?.disconnect();
       for (const item of items) {
         item.removeAttribute('inert');
         item.removeAttribute('aria-hidden');
@@ -223,6 +278,14 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
     syncPagination() {
       buildPagination();
       updateActiveState(activeIndex);
+      requestAnimationFrame(() => {
+        updateArrowPosition();
+      });
+    },
+    syncLayout() {
+      requestAnimationFrame(() => {
+        updateArrowPosition();
+      });
     },
   };
 }

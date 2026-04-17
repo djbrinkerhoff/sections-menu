@@ -125,6 +125,10 @@ export function initGalleryControls(
       slideshowHandle.syncPagination();
     }
 
+    if (slideshowHandle && (key === 'aspect' || key === 'fit' || key === 'captions')) {
+      slideshowHandle.syncLayout();
+    }
+
     onStateChange();
   }
 

@@ -11,6 +11,7 @@
 
 .gallery__viewport {
   position: relative;
+  --gallery-arrow-top: 50%;
 }
 
 /* ─── Heading ─── */
@@ -114,6 +115,16 @@
   scroll-snap-stop: always;
 }
 
+[data-layout="slideshow"][data-aspect="auto"] .gallery__item {
+  display: grid;
+  grid-template-rows: minmax(0, var(--gallery-image-band-height, auto)) auto;
+  align-items: start;
+}
+
+[data-layout="slideshow"][data-aspect="auto"] .gallery__image {
+  align-self: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-layout="slideshow"] .gallery__grid {
     scroll-behavior: auto;
@@ -166,7 +177,7 @@
 .gallery__next {
   display: none;
   position: absolute;
-  top: 50%;
+  top: var(--gallery-arrow-top);
   transform: translateY(-50%);
   z-index: 2;
   width: 36px;

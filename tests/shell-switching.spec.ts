@@ -288,6 +288,113 @@ test('slideshow arrows stay vertically aligned when pagination style changes', a
   await expect(next).toBeVisible();
 });
 
+test('slideshow arrows stay vertically aligned when captions toggle', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+
+  const baseline = await page.evaluate(() => {
+    const prev = document.querySelector('.gallery__prev');
+    const next = document.querySelector('.gallery__next');
+    if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
+      throw new Error('Expected slideshow arrows');
+    }
+
+    return {
+      prevTop: prev.getBoundingClientRect().top,
+      nextTop: next.getBoundingClientRect().top,
+    };
+  });
+
+  for (const captions of ['true', 'false'] as const) {
+    await checkRadio(page, 'captions', captions);
+
+    const current = await page.evaluate(() => {
+      const prev = document.querySelector('.gallery__prev');
+      const next = document.querySelector('.gallery__next');
+      if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
+        throw new Error('Expected slideshow arrows');
+      }
+
+      return {
+        prevTop: prev.getBoundingClientRect().top,
+        nextTop: next.getBoundingClientRect().top,
+      };
+    });
+
+    expect(Math.abs(current.prevTop - baseline.prevTop)).toBeLessThanOrEqual(1);
+    expect(Math.abs(current.nextTop - baseline.nextTop)).toBeLessThanOrEqual(1);
+  }
+});
+
+test('slideshow arrows stay vertically aligned when auto aspect slides change height', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+  await checkRadio(page, 'aspect', 'auto');
+  await page.waitForTimeout(50);
+
+  const indicators = page.locator('.gallery__pagination [role="tab"]');
+  const baseline = await page.evaluate(() => {
+    const prev = document.querySelector('.gallery__prev');
+    const next = document.querySelector('.gallery__next');
+    if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
+      throw new Error('Expected slideshow arrows');
+    }
+
+    return {
+      prevTop: prev.getBoundingClientRect().top,
+      nextTop: next.getBoundingClientRect().top,
+    };
+  });
+
+  for (const targetIndex of [3, 7, 11]) {
+    await indicators.nth(targetIndex).click();
+    await page.waitForTimeout(500);
+
+    const current = await page.evaluate(() => {
+      const prev = document.querySelector('.gallery__prev');
+      const next = document.querySelector('.gallery__next');
+      if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
+        throw new Error('Expected slideshow arrows');
+      }
+
+      return {
+        prevTop: prev.getBoundingClientRect().top,
+        nextTop: next.getBoundingClientRect().top,
+      };
+    });
+
+    expect(Math.abs(current.prevTop - baseline.prevTop)).toBeLessThanOrEqual(1);
+    expect(Math.abs(current.nextTop - baseline.nextTop)).toBeLessThanOrEqual(1);
+  }
+});
+
+test('slideshow auto aspect vertically centers shorter images', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+  await checkRadio(page, 'aspect', 'auto');
+  await page.waitForTimeout(50);
+
+  const spacing = await page.evaluate(() => {
+    const item = document.querySelector('.gallery__item');
+    const image = item?.querySelector('.gallery__image');
+    if (!(item instanceof HTMLElement) || !(image instanceof HTMLElement)) {
+      throw new Error('Expected slideshow item and image');
+    }
+
+    const itemRect = item.getBoundingClientRect();
+    const imageRect = image.getBoundingClientRect();
+
+    return {
+      topGap: imageRect.top - itemRect.top,
+      bottomGap: itemRect.bottom - imageRect.bottom,
+    };
+  });
+
+  expect(spacing.topGap).toBeGreaterThan(0);
+  expect(spacing.bottomGap).toBeGreaterThan(0);
+  expect(Math.abs(spacing.topGap - spacing.bottomGap)).toBeLessThanOrEqual(1);
+});
+
 test('slideshow dots, dashes, and counter inherit the gallery text color', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('gallery');
   await checkRadio(page, 'layout', 'slideshow');
