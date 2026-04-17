@@ -7,9 +7,15 @@ export interface SlideshowHandle {
   resumeAutoplay(): void;
   syncPagination(): void;
   syncLayout(): void;
+  readonly activeIndex: number;
 }
 
-export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): SlideshowHandle {
+export function initSlideshow(galleryRoot: HTMLElement, parentSignal: AbortSignal): SlideshowHandle {
+  // Own AbortController so cleanup() removes all event listeners for this instance.
+  // Linked to parent so section unmount cascades automatically.
+  const controller = new AbortController();
+  const signal = controller.signal;
+  parentSignal.addEventListener('abort', () => controller.abort(), { signal });
   const gridEl = galleryRoot.querySelector<HTMLElement>('.gallery__grid');
   if (!gridEl) throw new Error('Slideshow: .gallery__grid not found');
   const grid: HTMLElement = gridEl;
@@ -27,6 +33,7 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
   const totalSlides = items.length;
   if (totalSlides === 0) {
     return {
+      activeIndex: 0,
       cleanup() {},
       goToIndex() {},
       pauseAutoplay() {},
@@ -415,20 +422,9 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
   });
 
   return {
+    get activeIndex() { return activeIndex; },
     cleanup() {
-      stopAutoplay();
-      if (scrollSettleId !== undefined) {
-        window.clearTimeout(scrollSettleId);
-        scrollSettleId = undefined;
-      }
-      observer.disconnect();
-      resizeObserver?.disconnect();
-      prependClone?.remove();
-      appendClone?.remove();
-      for (const item of items) {
-        item.removeAttribute('inert');
-        item.removeAttribute('aria-hidden');
-      }
+      controller.abort(); // Tears down listeners, observers, clones, autoplay via the abort handler
     },
     goToIndex(index: number, options?: { immediate?: boolean }) {
       goToSlide(index, options);

@@ -99,8 +99,10 @@ export function initGalleryControls(
 
   function reinitSlideshow(): void {
     if (!slideshowHandle) return;
+    const savedIndex = slideshowHandle.activeIndex;
     slideshowHandle.cleanup();
     slideshowHandle = initSlideshow(galleryRoot, signal);
+    slideshowHandle.goToIndex(savedIndex, { immediate: true, resetAutoplay: false });
   }
 
   function syncImageVisibility(): void {
