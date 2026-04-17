@@ -87,6 +87,7 @@ test.describe('standalone mode', () => {
     const trigger = page.locator('.single-image__trigger');
 
     await trigger.click();
+    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
 
@@ -212,17 +213,17 @@ test.describe('gallery collection mode', () => {
     await expect(page.locator('.image-lightbox__counter')).toHaveText('2 of 12');
   });
 
-  test('prev is disabled on first image, next disabled on last', async ({ page }) => {
-    // Open first image
+  test('prev and next are never disabled in collection mode', async ({ page }) => {
+    // Open first image — both nav buttons enabled (loops)
     await page.locator('.gallery__trigger').first().click();
-    await expect(page.locator('.image-lightbox__nav--prev')).toBeDisabled();
+    await expect(page.locator('.image-lightbox__nav--prev')).not.toBeDisabled();
     await expect(page.locator('.image-lightbox__nav--next')).not.toBeDisabled();
 
     await page.keyboard.press('Escape');
 
-    // Open last image
+    // Open last image — both still enabled
     await page.locator('.gallery__trigger').nth(11).click();
-    await expect(page.locator('.image-lightbox__nav--next')).toBeDisabled();
+    await expect(page.locator('.image-lightbox__nav--next')).not.toBeDisabled();
     await expect(page.locator('.image-lightbox__nav--prev')).not.toBeDisabled();
   });
 
@@ -240,20 +241,20 @@ test.describe('gallery collection mode', () => {
     await expect(page.locator('.image-lightbox__counter')).toHaveText('2 of 12');
   });
 
-  test('ArrowLeft on first image does not wrap', async ({ page }) => {
+  test('ArrowLeft on first image wraps to last', async ({ page }) => {
     await page.locator('.gallery__trigger').first().click();
     await expect(page.locator('.image-lightbox__counter')).toHaveText('1 of 12');
 
     await page.keyboard.press('ArrowLeft');
-    await expect(page.locator('.image-lightbox__counter')).toHaveText('1 of 12');
+    await expect(page.locator('.image-lightbox__counter')).toHaveText('12 of 12');
   });
 
-  test('ArrowRight on last image does not wrap', async ({ page }) => {
+  test('ArrowRight on last image wraps to first', async ({ page }) => {
     await page.locator('.gallery__trigger').nth(11).click();
     await expect(page.locator('.image-lightbox__counter')).toHaveText('12 of 12');
 
     await page.keyboard.press('ArrowRight');
-    await expect(page.locator('.image-lightbox__counter')).toHaveText('12 of 12');
+    await expect(page.locator('.image-lightbox__counter')).toHaveText('1 of 12');
   });
 
   test('Escape closes and restores focus to invoking trigger', async ({ page }) => {

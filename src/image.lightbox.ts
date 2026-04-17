@@ -126,7 +126,7 @@ function createDialog(): {
   closeButton.className = 'image-lightbox__close';
   closeButton.type = 'button';
   closeButton.setAttribute('aria-label', 'Close image');
-  closeButton.textContent = '\u00d7';
+  closeButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>';
 
   const viewport = document.createElement('div');
   viewport.className = 'image-lightbox__viewport';
@@ -135,13 +135,13 @@ function createDialog(): {
   prevButton.className = 'image-lightbox__nav image-lightbox__nav--prev';
   prevButton.type = 'button';
   prevButton.setAttribute('aria-label', 'Previous image');
-  prevButton.innerHTML = '&#8249;';
+  prevButton.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="11,4 6,9 11,14"/></svg>';
 
   const nextButton = document.createElement('button');
   nextButton.className = 'image-lightbox__nav image-lightbox__nav--next';
   nextButton.type = 'button';
   nextButton.setAttribute('aria-label', 'Next image');
-  nextButton.innerHTML = '&#8250;';
+  nextButton.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="7,4 12,9 7,14"/></svg>';
 
   const figure = document.createElement('figure');
   figure.className = 'image-lightbox__figure';
@@ -188,6 +188,38 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   let pendingRenderId = 0;
   let sessionId = 0;
   let destroyed = false;
+  let hiddenThumbnail: HTMLImageElement | null = null;
+  let scrollContainer: HTMLElement | null = null;
+
+  function findScrollContainer(): HTMLElement | null {
+    let current = host.parentElement;
+    while (current) {
+      const style = window.getComputedStyle(current);
+      if (/(auto|scroll|overlay)/.test(style.overflowY)) return current;
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  function syncDialogPosition(): void {
+    if (!scrollContainer) {
+      scrollContainer = findScrollContainer();
+    }
+    if (!scrollContainer) return;
+    const top = scrollContainer.scrollTop;
+    const height = scrollContainer.clientHeight;
+    dialog.style.top = `${top}px`;
+    dialog.style.height = `${height}px`;
+  }
+
+  function lockScroll(): void {
+    if (!scrollContainer) scrollContainer = findScrollContainer();
+    if (scrollContainer) scrollContainer.style.overflow = 'hidden';
+  }
+
+  function unlockScroll(): void {
+    if (scrollContainer) scrollContainer.style.overflow = '';
+  }
 
   function isOpen(): boolean {
     return activeState !== null && dialog.open;
@@ -206,8 +238,8 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     const isCollection = total > 1;
 
     dialog.dataset.mode = isCollection ? 'collection' : 'single';
-    prevButton.disabled = !isCollection || activeIndex === 0;
-    nextButton.disabled = !isCollection || activeIndex === total - 1;
+    prevButton.disabled = !isCollection;
+    nextButton.disabled = !isCollection;
     counter.textContent = isCollection ? `${activeIndex + 1} of ${total}` : '';
   }
 
@@ -298,12 +330,12 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
 
     const keyframes = direction === 'open'
       ? [
-          { transform: `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`, opacity: 0.82 },
+          { transform: `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`, opacity: 1 },
           { transform: 'translate(0, 0) scale(1, 1)', opacity: 1 },
         ]
       : [
           { transform: 'translate(0, 0) scale(1, 1)', opacity: 1 },
-          { transform: `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`, opacity: 0.82 },
+          { transform: `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`, opacity: 1 },
         ];
 
     return image.animate(keyframes, {
@@ -347,9 +379,35 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
 
     image.src = source;
     image.alt = target.alt;
+    await image.decode().catch(() => {});
+    if (!activeState || renderId !== pendingRenderId) return;
+
     activeState.activeIndex = index;
     syncChrome();
-    preloadNeighbors();
+    // Defer neighbor preloads so they don't compete with current image
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(() => preloadNeighbors());
+    } else {
+      setTimeout(() => preloadNeighbors(), 300);
+    }
+  }
+
+  function hideSourceThumbnail(target: ZoomTarget | undefined): void {
+    if (hiddenThumbnail) {
+      hiddenThumbnail.style.opacity = '';
+      hiddenThumbnail = null;
+    }
+    if (target?.image) {
+      target.image.style.opacity = '0';
+      hiddenThumbnail = target.image;
+    }
+  }
+
+  function showSourceThumbnail(): void {
+    if (hiddenThumbnail) {
+      hiddenThumbnail.style.opacity = '';
+      hiddenThumbnail = null;
+    }
   }
 
   function animateOpen(sourceRect: DOMRect | null): void {
@@ -380,9 +438,10 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
 
   async function goToIndex(index: number): Promise<void> {
     if (!activeState) return;
-    const clamped = Math.max(0, Math.min(activeState.targets.length - 1, index));
-    if (clamped === activeState.activeIndex) return;
-    await renderIndex(clamped);
+    const total = activeState.targets.length;
+    const wrapped = ((index % total) + total) % total;
+    if (wrapped === activeState.activeIndex) return;
+    await renderIndex(wrapped);
   }
 
   async function open(trigger: HTMLElement): Promise<void> {
@@ -401,11 +460,14 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     };
 
     setTriggerExpanded(trigger, true);
-    const sourceRect = targets[activeIndex]?.image.getBoundingClientRect() ?? null;
+    const sourceTarget = targets[activeIndex];
 
     await renderIndex(activeIndex);
     if (!activeState || sessionId !== openSessionId) return;
 
+    hideSourceThumbnail(sourceTarget);
+    syncDialogPosition();
+    lockScroll();
     if (!dialog.open) dialog.show();
     applyInert();
     syncChrome();
@@ -415,6 +477,8 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
 
     requestAnimationFrame(() => {
       if (!activeState || sessionId !== openSessionId) return;
+      // Measure sourceRect here, after all layout changes have settled
+      const sourceRect = sourceTarget?.image.getBoundingClientRect() ?? null;
       animateOpen(sourceRect);
     });
   }
@@ -433,6 +497,16 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     stopScrollClose();
     swipeState = null;
 
+    // Hide chrome immediately so only the image animates back
+    closeButton.hidden = true;
+    prevButton.hidden = true;
+    nextButton.hidden = true;
+    counter.hidden = true;
+
+    // Unlock scroll before measuring so scrollbar restoration doesn't shift the target
+    unlockScroll();
+    clearInert();
+
     const activeTarget = state.targets[state.activeIndex];
     const closeTargetRect = activeTarget?.image.isConnected && !activeTarget.image.closest('[hidden]')
       ? activeTarget.image.getBoundingClientRect()
@@ -446,7 +520,11 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     if (sessionId !== closeSessionId) return;
 
     if (dialog.open) dialog.close();
-    clearInert();
+    closeButton.hidden = false;
+    prevButton.hidden = false;
+    nextButton.hidden = false;
+    counter.hidden = false;
+    showSourceThumbnail();
     setTriggerExpanded(state.invoker, false);
     if (restoreFocus && state.invoker.isConnected) {
       state.invoker.focus();
@@ -542,6 +620,14 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     void goToIndex(activeState.activeIndex + 1);
   }, { signal });
   backdrop.addEventListener('click', () => { void close(); }, { signal });
+  dialog.addEventListener('click', (event) => {
+    const target = event.target;
+    // Close when clicking outside the image and interactive controls
+    if (target === image) return;
+    if (target instanceof HTMLButtonElement) return;
+    if (target instanceof Element && target.closest('button')) return;
+    void close();
+  }, { signal });
   viewport.addEventListener('pointerdown', onPointerDown, { signal });
   viewport.addEventListener('pointerup', onPointerUp, { signal });
   viewport.addEventListener('pointercancel', onPointerCancel, { signal });
@@ -572,12 +658,15 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
       void close({ animate: false, restoreFocus: false, notify: false });
       abortController.abort();
       stopScrollClose();
+      unlockScroll();
+      showSourceThumbnail();
       clearInert();
       if (dialog.open) dialog.close();
       dialog.remove();
     },
     handleViewportChange() {
       if (!activeState) return;
+      syncDialogPosition();
       startScrollClose();
       syncChrome();
     },
