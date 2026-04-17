@@ -42,6 +42,10 @@ export function initGalleryControls(
   let slideshowHandle: SlideshowHandle | null = null;
   const lightbox = initImageLightbox(galleryRoot, {
     isEnabled: () => galleryRoot.dataset.lightbox === 'true',
+    onIndexChange(session) {
+      if (galleryRoot.dataset.layout !== 'slideshow') return;
+      slideshowHandle?.goToIndex(session.activeIndex, { immediate: true, resetAutoplay: false });
+    },
     onOpen() {
       if (galleryRoot.dataset.layout === 'slideshow') {
         slideshowHandle?.pauseAutoplay();
@@ -49,7 +53,7 @@ export function initGalleryControls(
     },
     onClose(session) {
       if (galleryRoot.dataset.layout !== 'slideshow') return;
-      slideshowHandle?.goToIndex(session.activeIndex, { immediate: true });
+      slideshowHandle?.goToIndex(session.activeIndex, { immediate: true, resetAutoplay: false });
       slideshowHandle?.resumeAutoplay();
     },
   });
@@ -60,7 +64,7 @@ export function initGalleryControls(
 
   function closeLightboxForMutation(): void {
     if (lightbox.isOpen()) {
-      lightbox.close();
+      lightbox.close({ animate: false, restoreFocus: false });
     }
   }
 

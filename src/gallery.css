@@ -121,8 +121,15 @@
   align-items: start;
 }
 
+[data-layout="slideshow"][data-aspect="auto"] .gallery__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: 100%;
+}
+
 [data-layout="slideshow"][data-aspect="auto"] .gallery__image {
-  align-self: center;
+  align-self: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

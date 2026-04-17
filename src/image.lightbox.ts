@@ -16,12 +16,13 @@ export interface LightboxSession {
 
 export interface ImageLightboxOptions {
   isEnabled?(): boolean;
+  onIndexChange?(session: LightboxSession): void;
   onOpen?(session: LightboxSession): void;
   onClose?(session: LightboxSession): void;
 }
 
 export interface ImageLightboxHandle {
-  close(): void;
+  close(options?: CloseOptions): void;
   cleanup(): void;
   handleViewportChange(): void;
   isOpen(): boolean;
@@ -223,6 +224,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   let destroyed = false;
   let hiddenThumbnail: HTMLImageElement | null = null;
   let scrollContainer: HTMLElement | null = null;
+  let wheelCloseDistance = 0;
 
   function findScrollContainer(): HTMLElement | null {
     let current = host.parentElement;
@@ -312,6 +314,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
 
   function onScrollClose(): void {
     if (!activeState || activeState.targets.length > 1) return;
+    syncDialogPosition();
     const maxDelta = scrollBaselines.reduce((largest, baseline) => {
       const topDelta = Math.abs(getScrollTop(baseline.target) - baseline.top);
       const leftDelta = Math.abs(getScrollLeft(baseline.target) - baseline.left);
@@ -320,6 +323,15 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
 
     if (maxDelta >= SCROLL_CLOSE_THRESHOLD) {
       close();
+    }
+  }
+
+  function onWheelClose(event: WheelEvent): void {
+    if (!activeState || activeState.targets.length > 1) return;
+    wheelCloseDistance += Math.abs(event.deltaY) + Math.abs(event.deltaX);
+    if (wheelCloseDistance >= SCROLL_CLOSE_THRESHOLD) {
+      event.preventDefault();
+      void close();
     }
   }
 
@@ -505,6 +517,9 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     const wrapped = ((index % total) + total) % total;
     if (wrapped === activeState.activeIndex) return;
     await renderIndex(wrapped);
+    if (activeState && activeState.activeIndex === wrapped) {
+      options.onIndexChange?.(getSession(activeState));
+    }
   }
 
   async function open(trigger: HTMLElement): Promise<void> {
@@ -534,7 +549,11 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     hideSourceThumbnail(sourceTarget);
     clearStaleAnimations();
     syncDialogPosition();
-    lockScroll();
+    if (activeState.targets.length > 1) {
+      lockScroll();
+    } else {
+      unlockScroll();
+    }
     if (!dialog.open) dialog.show();
     applyInert();
     syncChrome();
@@ -561,6 +580,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     pendingRenderId += 1;
     stopScrollClose();
     swipeState = null;
+    wheelCloseDistance = 0;
 
     setChromeVisible(false);
 
@@ -669,6 +689,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   }
 
   dialog.addEventListener('keydown', handleKeyboard, { signal });
+  dialog.addEventListener('wheel', onWheelClose, { passive: false, signal });
   closeButton.addEventListener('click', () => { void close(); }, { signal });
   prevButton.addEventListener('click', () => {
     if (!activeState) return;
@@ -709,17 +730,28 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   }, { signal });
 
   return {
-    close() {
-      void close();
+    close(options = {}) {
+      void close(options);
     },
     cleanup() {
+      if (destroyed) return;
+      const state = activeState;
       destroyed = true;
-      void close({ animate: false, restoreFocus: false, notify: false });
+      sessionId += 1;
+      pendingRenderId += 1;
+      activeState = null;
+      swipeState = null;
+      wheelCloseDistance = 0;
+      clearStaleAnimations();
       abortController.abort();
       stopScrollClose();
       unlockScroll();
       showSourceThumbnail();
       clearInert();
+      setChromeVisible(true);
+      if (state) {
+        setTriggerExpanded(state.invoker, false);
+      }
       if (dialog.open) dialog.close();
       dialog.remove();
     },

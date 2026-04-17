@@ -155,6 +155,15 @@ test.describe('standalone mode', () => {
     });
     expect(siblingInertedAfter).toBe(false);
   });
+
+  test('scrolling on the lightbox closes it in single mode', async ({ page }) => {
+    await page.locator('.single-image__trigger').click();
+    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
+
+    await page.locator('.image-lightbox').dispatchEvent('wheel', { deltaY: 80 });
+
+    await expect(page.locator('.image-lightbox[open]')).toHaveCount(0);
+  });
 });
 
 // ─── Collection (Gallery) mode ───
@@ -345,6 +354,18 @@ test.describe('slideshow coordination', () => {
     await expect(indicators.nth(2)).toHaveAttribute('aria-selected', 'true');
   });
 
+  test('navigating inside the lightbox keeps the inline slideshow in sync before close', async ({ page }) => {
+    const indicators = page.locator('.gallery__pagination [role="tab"]');
+
+    await page.locator('.gallery__trigger').first().click();
+    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
+
+    await page.locator('.image-lightbox__nav--next').click();
+    await expect(page.locator('.image-lightbox__counter')).toHaveText('2 of 12');
+    await expect(indicators.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(indicators.nth(0)).toHaveAttribute('aria-selected', 'false');
+  });
+
   test('changing layout while lightbox is open closes it cleanly', async ({ page }) => {
     await page.locator('.gallery__trigger').first().click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
@@ -414,6 +435,34 @@ test.describe('lifecycle and section switching', () => {
       return Array.from(document.querySelectorAll('.gallery > [inert]')).length;
     });
     expect(hasInert).toBe(0);
+  });
+
+  test('slow zoom loads are cancelled cleanly when switching sections', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+
+    await page.route('**/slow-zoom.svg', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"><rect width="12" height="12" fill="#000"/></svg>',
+      });
+    });
+
+    await page.locator('.controls__picker').selectOption('single-image');
+    await page.locator('.single-image__trigger').evaluate((trigger) => {
+      if (!(trigger instanceof HTMLElement)) throw new Error('Expected trigger');
+      trigger.dataset.zoomSrc = '/slow-zoom.svg';
+    });
+
+    await page.locator('.single-image__trigger').click();
+    await page.locator('.controls__picker').selectOption('nav');
+    await expect(page.locator('.nav')).toBeVisible();
+
+    await page.waitForTimeout(450);
+    await expect(page.locator('.image-lightbox')).toHaveCount(0);
+    expect(pageErrors).toEqual([]);
   });
 });
 

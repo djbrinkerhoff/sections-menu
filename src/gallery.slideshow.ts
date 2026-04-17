@@ -2,7 +2,7 @@
 
 export interface SlideshowHandle {
   cleanup(): void;
-  goToIndex(index: number, options?: { immediate?: boolean }): void;
+  goToIndex(index: number, options?: { immediate?: boolean; resetAutoplay?: boolean }): void;
   pauseAutoplay(): void;
   resumeAutoplay(): void;
   syncPagination(): void;
@@ -141,7 +141,7 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
 
   // ─── Navigation ───
 
-  function goToSlide(index: number, options?: { immediate?: boolean }): void {
+  function goToSlide(index: number, options?: { immediate?: boolean; resetAutoplay?: boolean }): void {
     const clamped = Math.max(0, Math.min(totalSlides - 1, index));
     const target = items[clamped];
     if (!target) return;
@@ -154,13 +154,17 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
       requestAnimationFrame(() => {
         grid.style.scrollBehavior = previousScrollBehavior;
       });
-      resetAutoplay();
+      if (options.resetAutoplay !== false) {
+        resetAutoplay();
+      }
       return;
     }
 
     const behavior = prefersReducedMotion.matches ? 'auto' as const : 'smooth' as const;
     target.scrollIntoView({ behavior, block: 'nearest', inline: 'start' });
-    resetAutoplay();
+    if (options?.resetAutoplay !== false) {
+      resetAutoplay();
+    }
   }
 
   function goNext(): void {
