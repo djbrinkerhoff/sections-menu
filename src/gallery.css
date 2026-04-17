@@ -239,7 +239,8 @@
 
 /* Fill behavior via data-attribute */
 [data-fit="cover"] .gallery__image { object-fit: cover; }
-[data-fit="contain"] .gallery__image { object-fit: contain; }
+[data-fit="contain"] .gallery__image { object-fit: contain; border-radius: 0; }
+[data-fit="contain"] .gallery__trigger { border-radius: 0; }
 
 /* ─── Captions ─── */
 
