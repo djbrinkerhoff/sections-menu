@@ -1,6 +1,7 @@
 import type { Section, MountedSection, SectionInitContext } from './shell';
 import galleryHtml from './gallery.partial.html?raw';
 import { initGalleryControls } from './gallery.controls';
+import { setOnViewportChange } from './shell';
 
 export const gallerySection: Section = {
   id: 'gallery',
@@ -16,6 +17,9 @@ export const gallerySection: Section = {
     if (!galleryRoot) throw new Error('Gallery root .gallery not found in previewHtml');
 
     const controls = initGalleryControls(galleryRoot, controlsContainer, onStateChange);
+    setOnViewportChange(() => {
+      controls.handleViewportChange();
+    });
 
     return {
       destroy() {

@@ -1,5 +1,6 @@
 import { initSlideshow } from './gallery.slideshow';
 import type { SlideshowHandle } from './gallery.slideshow';
+import { initImageLightbox } from './image.lightbox';
 import { COLORS } from './nav.schema';
 import type { ColorName, ColorValue } from './nav.schema';
 
@@ -13,7 +14,7 @@ const TIMINGS = ['2', '4', '6', '8'] as const;
 const PAGINATIONS = ['dots', 'dashes', 'counter', 'thumbnails'] as const;
 
 type Layout = (typeof LAYOUTS)[number];
-type GalleryControlKey = 'layout' | 'columns' | 'gap' | 'aspect' | 'fit' | 'captions' | 'autoplay' | 'timing' | 'pagination';
+type GalleryControlKey = 'layout' | 'columns' | 'gap' | 'aspect' | 'fit' | 'captions' | 'lightbox' | 'autoplay' | 'timing' | 'pagination';
 
 // Controls hidden per layout
 const HIDDEN_CONTROLS: Record<Layout, string[]> = {
@@ -22,11 +23,16 @@ const HIDDEN_CONTROLS: Record<Layout, string[]> = {
   masonry: ['autoplay', 'timing', 'pagination', 'aspect', 'fit'],
 };
 
+export interface GalleryControlsHandle {
+  cleanup(): void;
+  handleViewportChange(): void;
+}
+
 export function initGalleryControls(
   galleryRoot: HTMLElement,
   container: HTMLElement,
   onStateChange: () => void = () => {},
-) {
+): GalleryControlsHandle {
   const abortController = new AbortController();
   const { signal } = abortController;
 
@@ -34,10 +40,29 @@ export function initGalleryControls(
   wrapper.className = 'controls';
 
   let slideshowHandle: SlideshowHandle | null = null;
+  const lightbox = initImageLightbox(galleryRoot, {
+    isEnabled: () => galleryRoot.dataset.lightbox === 'true',
+    onOpen() {
+      if (galleryRoot.dataset.layout === 'slideshow') {
+        slideshowHandle?.pauseAutoplay();
+      }
+    },
+    onClose(session) {
+      if (galleryRoot.dataset.layout !== 'slideshow') return;
+      slideshowHandle?.goToIndex(session.activeIndex, { immediate: true });
+      slideshowHandle?.resumeAutoplay();
+    },
+  });
 
   const allItems = Array.from(galleryRoot.querySelectorAll<HTMLElement>('.gallery__item'));
   const totalImages = allItems.length;
   let currentImageCount = Number(galleryRoot.dataset.images) || totalImages;
+
+  function closeLightboxForMutation(): void {
+    if (lightbox.isOpen()) {
+      lightbox.close();
+    }
+  }
 
   function syncImageVisibility(): void {
     for (let i = 0; i < allItems.length; i++) {
@@ -47,6 +72,8 @@ export function initGalleryControls(
   }
 
   function setImageCount(rawValue: number): void {
+    closeLightboxForMutation();
+
     const count = Number.isFinite(rawValue) ? Math.max(1, Math.min(totalImages, Math.trunc(rawValue))) : totalImages;
     currentImageCount = count;
     galleryRoot.dataset.images = String(count);
@@ -81,6 +108,8 @@ export function initGalleryControls(
   }
 
   function onLayoutChange(layout: Layout): void {
+    closeLightboxForMutation();
+
     // Tear down slideshow if leaving
     if (slideshowHandle) {
       slideshowHandle.cleanup();
@@ -104,6 +133,10 @@ export function initGalleryControls(
     if (key === 'layout') {
       onLayoutChange(value as Layout);
       return;
+    }
+
+    if (key === 'lightbox' && value !== 'true') {
+      closeLightboxForMutation();
     }
 
     if (key === 'autoplay') {
@@ -439,7 +472,14 @@ export function initGalleryControls(
     'captions',
   ));
 
-  // 8. Background color
+  // 8. Lightbox
+  wrapper.appendChild(createSegmentedGroup(
+    'lightbox', 'Lightbox', ['false', 'true'] as const,
+    { false: 'Off', true: 'On' },
+    'lightbox',
+  ));
+
+  // 9. Background color
   wrapper.appendChild(createColorGroup('background-color', 'Background', '--gallery-color', '#FFFFFF'));
 
   // 9. Text color
@@ -478,12 +518,17 @@ export function initGalleryControls(
 
   return {
     cleanup() {
+      lightbox.cleanup();
       if (slideshowHandle) {
         slideshowHandle.cleanup();
         slideshowHandle = null;
       }
       abortController.abort();
       wrapper.remove();
+    },
+    handleViewportChange() {
+      slideshowHandle?.syncLayout();
+      lightbox.handleViewportChange();
     },
   };
 }

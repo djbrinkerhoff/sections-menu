@@ -6,4 +6,6 @@
 
 @import "./nav.css";
 @import "./gallery.css";
+@import "./image.lightbox.css";
+@import "./single-image.css";
 @import "./controls.css";

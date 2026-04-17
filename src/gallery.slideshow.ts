@@ -2,6 +2,9 @@
 
 export interface SlideshowHandle {
   cleanup(): void;
+  goToIndex(index: number, options?: { immediate?: boolean }): void;
+  pauseAutoplay(): void;
+  resumeAutoplay(): void;
   syncPagination(): void;
   syncLayout(): void;
 }
@@ -18,7 +21,16 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
 
   const items = Array.from(grid.querySelectorAll<HTMLElement>('.gallery__item:not([hidden])'));
   const totalSlides = items.length;
-  if (totalSlides === 0) return { cleanup() {}, syncPagination() {}, syncLayout() {} };
+  if (totalSlides === 0) {
+    return {
+      cleanup() {},
+      goToIndex() {},
+      pauseAutoplay() {},
+      resumeAutoplay() {},
+      syncPagination() {},
+      syncLayout() {},
+    };
+  }
 
   let activeIndex = 0;
   let autoplayId: number | undefined;
@@ -274,6 +286,15 @@ export function initSlideshow(galleryRoot: HTMLElement, signal: AbortSignal): Sl
         item.removeAttribute('inert');
         item.removeAttribute('aria-hidden');
       }
+    },
+    goToIndex(index: number, options?: { immediate?: boolean }) {
+      goToSlide(index, options);
+    },
+    pauseAutoplay() {
+      stopAutoplay();
+    },
+    resumeAutoplay() {
+      resetAutoplay();
     },
     syncPagination() {
       buildPagination();

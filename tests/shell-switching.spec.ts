@@ -24,12 +24,13 @@ test('boots with Navigation as default and shows picker', async ({ page }) => {
   await expect(page.locator('.nav')).toBeVisible();
 });
 
-test('picker shows both Navigation and Image Gallery options', async ({ page }) => {
+test('picker shows Navigation, Image Gallery, and Single Image options', async ({ page }) => {
   const picker = page.locator('.controls__picker');
   const options = picker.locator('option');
-  await expect(options).toHaveCount(2);
+  await expect(options).toHaveCount(3);
   await expect(options.nth(0)).toHaveText('Navigation');
   await expect(options.nth(1)).toHaveText('Image Gallery');
+  await expect(options.nth(2)).toHaveText('Single Image');
 });
 
 test('switching to gallery unmounts nav and shows gallery', async ({ page }) => {

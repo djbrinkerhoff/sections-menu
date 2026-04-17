@@ -138,6 +138,15 @@
   overflow: hidden;
 }
 
+.gallery__trigger {
+  display: block;
+  inline-size: 100%;
+}
+
+[data-lightbox="false"] .gallery__trigger {
+  cursor: default;
+}
+
 .gallery__image {
   display: block;
   width: 100%;
