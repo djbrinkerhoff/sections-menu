@@ -360,9 +360,10 @@ export function initSlideshow(galleryRoot: HTMLElement, parentSignal: AbortSigna
   prevBtn?.addEventListener('click', goPrev, { signal });
   nextBtn?.addEventListener('click', goNext, { signal });
 
-  // Keyboard nav (scoped to gallery)
+  // Keyboard nav (scoped to gallery, skip when lightbox is handling keys)
   galleryRoot.addEventListener('keydown', (e: KeyboardEvent) => {
     if (galleryRoot.dataset.layout !== 'slideshow') return;
+    if (e.target instanceof HTMLElement && e.target.closest('.image-lightbox')) return;
     if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
     if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
   }, { signal });

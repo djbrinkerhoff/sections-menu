@@ -258,7 +258,9 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   }
 
   function isOpen(): boolean {
-    return dialog.open;
+    // True when dialog is visible OR an open() is in-flight (activeState set,
+    // awaiting renderIndex before dialog.show). Mutations must cancel both.
+    return dialog.open || activeState !== null;
   }
 
   function setTriggerExpanded(trigger: HTMLElement, expanded: boolean): void {

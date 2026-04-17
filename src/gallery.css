@@ -1,7 +1,6 @@
 /* ─── Gallery component ─── */
 
 .gallery {
-  container-type: inline-size;
   color: var(--gallery-accent, #000000);
   min-height: 100%;
   position: relative;
@@ -41,6 +40,7 @@
 /* ─── Section width: content layer ─── */
 
 .gallery__body {
+  container-type: inline-size;
   grid-row: 1;
   z-index: 1;
   padding: 16px;
