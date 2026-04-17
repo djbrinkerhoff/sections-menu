@@ -17,6 +17,49 @@ async function getSearchParams(page: import('playwright/test').Page) {
   return page.evaluate(() => Object.fromEntries(new URLSearchParams(window.location.search).entries()));
 }
 
+async function selectedSlideshowIndex(page: import('playwright/test').Page) {
+  return page.locator('.gallery__pagination [role="tab"]').evaluateAll((tabs) =>
+    tabs.findIndex((tab) => tab.getAttribute('aria-selected') === 'true'),
+  );
+}
+
+async function waitForSelectedSlideshowIndex(page: import('playwright/test').Page, index: number) {
+  await expect.poll(async () => selectedSlideshowIndex(page)).toBe(index);
+}
+
+async function readSlideshowArrowTops(page: import('playwright/test').Page) {
+  return page.evaluate(() => {
+    const prev = document.querySelector('.gallery__prev');
+    const next = document.querySelector('.gallery__next');
+    if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
+      throw new Error('Expected slideshow arrows');
+    }
+
+    return {
+      prevTop: prev.getBoundingClientRect().top,
+      nextTop: next.getBoundingClientRect().top,
+    };
+  });
+}
+
+async function readAutoAspectSpacing(page: import('playwright/test').Page) {
+  return page.evaluate(() => {
+    const item = document.querySelector('.gallery__item');
+    const image = item?.querySelector('.gallery__image');
+    if (!(item instanceof HTMLElement) || !(image instanceof HTMLElement)) {
+      throw new Error('Expected slideshow item and image');
+    }
+
+    const itemRect = item.getBoundingClientRect();
+    const imageRect = image.getBoundingClientRect();
+
+    return {
+      topGap: imageRect.top - itemRect.top,
+      bottomGap: itemRect.bottom - imageRect.bottom,
+    };
+  });
+}
+
 test('boots with Navigation as default and shows picker', async ({ page }) => {
   const picker = page.locator('.controls__picker');
   await expect(picker).toBeVisible();
@@ -204,12 +247,9 @@ test('slideshow prev/next buttons navigate slides', async ({ page }) => {
 
   // Click next
   await page.locator('.gallery__next').click();
-  // Wait for scroll to complete and observer to fire
-  await page.waitForTimeout(500);
 
   // Second indicator should now be selected
-  const indicators = page.locator('.gallery__pagination [role="tab"]');
-  await expect(indicators.nth(1)).toHaveAttribute('aria-selected', 'true');
+  await waitForSelectedSlideshowIndex(page, 1);
 });
 
 test('slideshow wraps from the last slide back to the first without animating through the strip', async ({ page }) => {
@@ -220,19 +260,16 @@ test('slideshow wraps from the last slide back to the first without animating th
   const grid = page.locator('.gallery__grid');
 
   await indicators.nth(11).click();
-  await page.waitForTimeout(500);
-  await expect(indicators.nth(11)).toHaveAttribute('aria-selected', 'true');
+  await waitForSelectedSlideshowIndex(page, 11);
 
   await page.locator('.gallery__next').click();
-  await page.waitForTimeout(50);
-
-  const scrollLeft = await grid.evaluate((node) => {
-    if (!(node instanceof HTMLElement)) throw new Error('Expected .gallery__grid to be an HTMLElement');
-    return node.scrollLeft;
-  });
-
-  expect(scrollLeft).toBeLessThan(5);
-  await expect(indicators.nth(0)).toHaveAttribute('aria-selected', 'true');
+  await expect.poll(async () =>
+    grid.evaluate((node) => {
+      if (!(node instanceof HTMLElement)) throw new Error('Expected .gallery__grid to be an HTMLElement');
+      return node.scrollLeft;
+    }),
+  ).toBeLessThan(5);
+  await waitForSelectedSlideshowIndex(page, 0);
 });
 
 test('slideshow counter shows correct text', async ({ page }) => {
@@ -252,34 +289,12 @@ test('slideshow arrows stay vertically aligned when pagination style changes', a
   const prev = page.locator('.gallery__prev');
   const next = page.locator('.gallery__next');
 
-  const baseline = await page.evaluate(() => {
-    const prev = document.querySelector('.gallery__prev');
-    const next = document.querySelector('.gallery__next');
-    if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
-      throw new Error('Expected slideshow arrows');
-    }
-
-    return {
-      prevTop: prev.getBoundingClientRect().top,
-      nextTop: next.getBoundingClientRect().top,
-    };
-  });
+  const baseline = await readSlideshowArrowTops(page);
 
   for (const pagination of ['dots', 'dashes', 'thumbnails', 'counter'] as const) {
     await checkRadio(page, 'pagination', pagination);
 
-    const current = await page.evaluate(() => {
-      const prev = document.querySelector('.gallery__prev');
-      const next = document.querySelector('.gallery__next');
-      if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
-        throw new Error('Expected slideshow arrows');
-      }
-
-      return {
-        prevTop: prev.getBoundingClientRect().top,
-        nextTop: next.getBoundingClientRect().top,
-      };
-    });
+    const current = await readSlideshowArrowTops(page);
 
     expect(Math.abs(current.prevTop - baseline.prevTop)).toBeLessThanOrEqual(1);
     expect(Math.abs(current.nextTop - baseline.nextTop)).toBeLessThanOrEqual(1);
@@ -293,34 +308,12 @@ test('slideshow arrows stay vertically aligned when captions toggle', async ({ p
   await page.locator('.controls__picker').selectOption('gallery');
   await checkRadio(page, 'layout', 'slideshow');
 
-  const baseline = await page.evaluate(() => {
-    const prev = document.querySelector('.gallery__prev');
-    const next = document.querySelector('.gallery__next');
-    if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
-      throw new Error('Expected slideshow arrows');
-    }
-
-    return {
-      prevTop: prev.getBoundingClientRect().top,
-      nextTop: next.getBoundingClientRect().top,
-    };
-  });
+  const baseline = await readSlideshowArrowTops(page);
 
   for (const captions of ['true', 'false'] as const) {
     await checkRadio(page, 'captions', captions);
 
-    const current = await page.evaluate(() => {
-      const prev = document.querySelector('.gallery__prev');
-      const next = document.querySelector('.gallery__next');
-      if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
-        throw new Error('Expected slideshow arrows');
-      }
-
-      return {
-        prevTop: prev.getBoundingClientRect().top,
-        nextTop: next.getBoundingClientRect().top,
-      };
-    });
+    const current = await readSlideshowArrowTops(page);
 
     expect(Math.abs(current.prevTop - baseline.prevTop)).toBeLessThanOrEqual(1);
     expect(Math.abs(current.nextTop - baseline.nextTop)).toBeLessThanOrEqual(1);
@@ -331,41 +324,29 @@ test('slideshow arrows stay vertically aligned when auto aspect slides change he
   await page.locator('.controls__picker').selectOption('gallery');
   await checkRadio(page, 'layout', 'slideshow');
   await checkRadio(page, 'aspect', 'auto');
-  await page.waitForTimeout(50);
+  await expect
+    .poll(async () => {
+      const spacing = await readAutoAspectSpacing(page);
+      return spacing.topGap > 0 && spacing.bottomGap > 0;
+    })
+    .toBe(true);
 
   const indicators = page.locator('.gallery__pagination [role="tab"]');
-  const baseline = await page.evaluate(() => {
-    const prev = document.querySelector('.gallery__prev');
-    const next = document.querySelector('.gallery__next');
-    if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
-      throw new Error('Expected slideshow arrows');
-    }
-
-    return {
-      prevTop: prev.getBoundingClientRect().top,
-      nextTop: next.getBoundingClientRect().top,
-    };
-  });
+  const baseline = await readSlideshowArrowTops(page);
 
   for (const targetIndex of [3, 7, 11]) {
     await indicators.nth(targetIndex).click();
-    await page.waitForTimeout(500);
+    await waitForSelectedSlideshowIndex(page, targetIndex);
 
-    const current = await page.evaluate(() => {
-      const prev = document.querySelector('.gallery__prev');
-      const next = document.querySelector('.gallery__next');
-      if (!(prev instanceof HTMLElement) || !(next instanceof HTMLElement)) {
-        throw new Error('Expected slideshow arrows');
-      }
-
-      return {
-        prevTop: prev.getBoundingClientRect().top,
-        nextTop: next.getBoundingClientRect().top,
-      };
-    });
-
-    expect(Math.abs(current.prevTop - baseline.prevTop)).toBeLessThanOrEqual(1);
-    expect(Math.abs(current.nextTop - baseline.nextTop)).toBeLessThanOrEqual(1);
+    await expect
+      .poll(async () => {
+        const current = await readSlideshowArrowTops(page);
+        return Math.max(
+          Math.abs(current.prevTop - baseline.prevTop),
+          Math.abs(current.nextTop - baseline.nextTop),
+        );
+      })
+      .toBeLessThanOrEqual(1);
   }
 });
 
@@ -373,23 +354,14 @@ test('slideshow auto aspect vertically centers shorter images', async ({ page })
   await page.locator('.controls__picker').selectOption('gallery');
   await checkRadio(page, 'layout', 'slideshow');
   await checkRadio(page, 'aspect', 'auto');
-  await page.waitForTimeout(50);
+  await expect
+    .poll(async () => {
+      const spacing = await readAutoAspectSpacing(page);
+      return spacing.topGap > 0 && spacing.bottomGap > 0 && Math.abs(spacing.topGap - spacing.bottomGap) <= 1;
+    })
+    .toBe(true);
 
-  const spacing = await page.evaluate(() => {
-    const item = document.querySelector('.gallery__item');
-    const image = item?.querySelector('.gallery__image');
-    if (!(item instanceof HTMLElement) || !(image instanceof HTMLElement)) {
-      throw new Error('Expected slideshow item and image');
-    }
-
-    const itemRect = item.getBoundingClientRect();
-    const imageRect = image.getBoundingClientRect();
-
-    return {
-      topGap: imageRect.top - itemRect.top,
-      bottomGap: itemRect.bottom - imageRect.bottom,
-    };
-  });
+  const spacing = await readAutoAspectSpacing(page);
 
   expect(spacing.topGap).toBeGreaterThan(0);
   expect(spacing.bottomGap).toBeGreaterThan(0);

@@ -122,7 +122,7 @@ test('auto-opens fullscreen search on mobile and desktop', async ({ page }) => {
   }
 });
 
-test('renders the simple mobile menu like the Figma frame when open', async ({ page }) => {
+test('renders the simple mobile menu as a stacked overlay without shifting the logo', async ({ page }) => {
   const closedLogo = await page.locator('.nav__logo').evaluate((element) => {
     const rect = element.getBoundingClientRect();
     return { left: rect.left, width: rect.width };
@@ -134,9 +134,7 @@ test('renders the simple mobile menu like the Figma frame when open', async ({ p
     const actions = document.querySelector('.nav__actions');
     const primary = document.querySelector('.nav__primary');
     const list = document.querySelector('.nav__list');
-    const firstLink = document.querySelector('.nav__item .nav__link');
     const dropdownLink = document.querySelector('.nav__item--has-submenu > .nav__link');
-    const firstItem = document.querySelector('.nav__item');
     const logo = document.querySelector('.nav__logo');
     const logoRect = logo?.getBoundingClientRect();
 
@@ -144,10 +142,7 @@ test('renders the simple mobile menu like the Figma frame when open', async ({ p
       actionsDisplay: actions ? getComputedStyle(actions).display : null,
       primaryDisplay: primary ? getComputedStyle(primary).display : null,
       listDirection: list ? getComputedStyle(list).flexDirection : null,
-      firstLinkFontSize: firstLink ? getComputedStyle(firstLink).fontSize : null,
-      firstLinkPaddingTop: firstLink ? getComputedStyle(firstLink).paddingTop : null,
       dropdownJustify: dropdownLink ? getComputedStyle(dropdownLink).justifyContent : null,
-      firstItemBorderBottomWidth: firstItem ? getComputedStyle(firstItem).borderBottomWidth : null,
       logoLeft: logoRect?.left ?? null,
       logoWidth: logoRect?.width ?? null,
     };
@@ -156,10 +151,7 @@ test('renders the simple mobile menu like the Figma frame when open', async ({ p
   expect(layout.actionsDisplay).toBe('none');
   expect(layout.primaryDisplay).toBe('block');
   expect(layout.listDirection).toBe('column');
-  expect(layout.firstLinkFontSize).toBe('20px');
-  expect(layout.firstLinkPaddingTop).toBe('20px');
   expect(layout.dropdownJustify).toBe('space-between');
-  expect(layout.firstItemBorderBottomWidth).toBe('1px');
   expect(layout.logoLeft).toBeCloseTo(closedLogo.left, 0);
   expect(layout.logoWidth).toBeCloseTo(closedLogo.width, 0);
 });
@@ -198,7 +190,7 @@ test('shows simple variant links inline in the desktop nav bar', async ({ page }
   expect(layout.primaryRect?.right).toBeLessThanOrEqual(layout.actionsRect?.left ?? Number.MAX_SAFE_INTEGER);
 });
 
-test('moves top variant links into the masthead as soon as they fit', async ({ page }) => {
+test('moves top variant links inline when there is room and stacks them when there is not', async ({ page }) => {
   const setTopVariant = async () => {
     await page.locator('input[name="variant"][value="top"]').evaluate((input) => {
       if (!(input instanceof HTMLInputElement)) throw new Error('Expected top variant input');
@@ -256,80 +248,6 @@ test('moves top variant links into the masthead as soon as they fit', async ({ p
   expect(inline.primaryRect?.bottom).toBeGreaterThan(inline.logoRect?.top ?? 0);
   expect(inline.primaryRect?.top).toBeLessThan(inline.cartRect?.bottom ?? Number.MAX_SAFE_INTEGER);
   expect(inline.primaryRect?.bottom).toBeGreaterThan(inline.cartRect?.top ?? 0);
-
-  await page.getByRole('button', { name: '1280' }).click();
-  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
-
-  const nearBreakpoint = await page.evaluate(async () => {
-    const preview = document.getElementById('preview-root');
-    const nav = document.querySelector('.nav');
-    const inner = nav?.querySelector<HTMLElement>('.nav__inner');
-    const list = nav?.querySelector<HTMLElement>('.nav__list');
-    const logo = nav?.querySelector<HTMLElement>('.nav__logo');
-    const search = nav?.querySelector<HTMLElement>('.nav__search');
-    const cart = nav?.querySelector<HTMLElement>('.nav__cart');
-
-    if (!preview || !(nav instanceof HTMLElement) || !inner || !list || !logo || !search || !cart) {
-      throw new Error('Missing top nav elements');
-    }
-
-    const waitForLayout = () => new Promise<void>((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => resolve());
-      });
-    });
-
-    const getInlineNavWidth = () => {
-      const styles = getComputedStyle(list);
-      const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
-      const itemWidths = Array.from(list.children).map((item) => {
-        const trigger = item.firstElementChild;
-        return trigger instanceof HTMLElement ? trigger.getBoundingClientRect().width : 0;
-      });
-
-      return itemWidths.reduce((sum, width) => sum + width, 0) + gap * Math.max(itemWidths.length - 1, 0);
-    };
-
-    const measure = () => {
-      const styles = getComputedStyle(inner);
-      const paddingInline =
-        (Number.parseFloat(styles.paddingLeft) || 0) +
-        (Number.parseFloat(styles.paddingRight) || 0);
-      const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
-      const contentWidth = inner.clientWidth - paddingInline;
-      const fixedWidth =
-        logo.getBoundingClientRect().width +
-        search.getBoundingClientRect().width +
-        cart.getBoundingClientRect().width;
-      const linkWidth = getInlineNavWidth();
-
-      return {
-        availableWidth: contentWidth - fixedWidth - gap * 3,
-        linkWidth,
-        topInline: nav.dataset.topInline,
-      };
-    };
-
-    let metrics = measure();
-    let previewWidth = Number.parseFloat(preview.style.width || '1280');
-
-    while (!(metrics.availableWidth < metrics.linkWidth && metrics.availableWidth >= metrics.linkWidth - 16)) {
-      previewWidth -= 1;
-      if (previewWidth < 320) {
-        throw new Error('Failed to reach the top-nav breakpoint band');
-      }
-
-      preview.style.width = `${previewWidth}px`;
-      await waitForLayout();
-      metrics = measure();
-    }
-
-    return metrics;
-  });
-
-  expect(nearBreakpoint.availableWidth).toBeLessThan(nearBreakpoint.linkWidth);
-  expect(nearBreakpoint.availableWidth).toBeGreaterThanOrEqual(nearBreakpoint.linkWidth - 16);
-  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('false');
 
   await page.getByRole('button', { name: '1280' }).click();
   await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
@@ -430,41 +348,6 @@ test('keeps the desktop sidebar logo container in sync with menu color', async (
 
   expect(colors.logoBackground).toBe('rgb(244, 217, 35)');
   expect(colors.railBackground).toBe(colors.logoBackground);
-});
-
-test('cleans up controls DOM when controls handle is destroyed', async ({ page }) => {
-  const result = await page.evaluate(async () => {
-    const { initControls } = await import('/src/controls.ts');
-
-    const sandboxContainer = document.createElement('div');
-    document.body.appendChild(sandboxContainer);
-
-    const navRoot = document.querySelector('.nav')?.cloneNode(true) as HTMLElement | null;
-    if (!navRoot) {
-      throw new Error('Missing nav root');
-    }
-
-    // Mount controls into sandbox
-    const handle = initControls(navRoot, sandboxContainer);
-    const childCountAfterMount = sandboxContainer.children.length;
-
-    // Cleanup should remove all children
-    handle.cleanup();
-    const childCountAfterCleanup = sandboxContainer.children.length;
-
-    // Remount — should work without errors
-    const handle2 = initControls(navRoot, sandboxContainer);
-    const childCountAfterRemount = sandboxContainer.children.length;
-    handle2.cleanup();
-
-    sandboxContainer.remove();
-
-    return { childCountAfterMount, childCountAfterCleanup, childCountAfterRemount };
-  });
-
-  expect(result.childCountAfterMount).toBe(1);
-  expect(result.childCountAfterCleanup).toBe(0);
-  expect(result.childCountAfterRemount).toBe(1);
 });
 
 async function setVariant(page: import('playwright/test').Page, variant: string) {

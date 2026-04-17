@@ -9,6 +9,38 @@ async function checkRadio(page: import('playwright/test').Page, name: string, va
   });
 }
 
+async function selectedSlideshowIndex(page: import('playwright/test').Page) {
+  return page.locator('.gallery__pagination [role="tab"]').evaluateAll((tabs) =>
+    tabs.findIndex((tab) => tab.getAttribute('aria-selected') === 'true'),
+  );
+}
+
+async function waitForSelectedSlideshowIndex(page: import('playwright/test').Page, index: number) {
+  await expect.poll(async () => selectedSlideshowIndex(page)).toBe(index);
+}
+
+async function expectLightboxContainedWithinHost(page: import('playwright/test').Page) {
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const dialog = document.querySelector('.image-lightbox');
+        const host = dialog?.parentElement;
+        if (!(dialog instanceof HTMLElement) || !(host instanceof HTMLElement)) {
+          return false;
+        }
+
+        const dialogRect = dialog.getBoundingClientRect();
+        const hostRect = host.getBoundingClientRect();
+        return (
+          dialogRect.left >= hostRect.left - 1 &&
+          dialogRect.right <= hostRect.right + 1 &&
+          dialogRect.top >= hostRect.top - 1
+        );
+      }),
+    )
+    .toBe(true);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
@@ -21,19 +53,13 @@ test.describe('standalone mode', () => {
     await expect(page.locator('.single-image')).toBeVisible();
   });
 
-  test('clicking the image opens the lightbox', async ({ page }) => {
+  test('clicking the image opens the lightbox in single mode with the expected chrome', async ({ page }) => {
     const trigger = page.locator('.single-image__trigger');
     await trigger.click();
 
     const dialog = page.locator('.image-lightbox[open]');
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('.image-lightbox__image')).toBeVisible();
-  });
-
-  test('lightbox opens with no prev/next controls in single mode', async ({ page }) => {
-    await page.locator('.single-image__trigger').click();
-
-    const dialog = page.locator('.image-lightbox[open]');
     await expect(dialog).toHaveAttribute('data-mode', 'single');
     await expect(dialog.locator('.image-lightbox__nav--prev')).not.toBeVisible();
     await expect(dialog.locator('.image-lightbox__nav--next')).not.toBeVisible();
@@ -294,8 +320,10 @@ test.describe('gallery collection mode', () => {
   test('lightbox opens correctly from all three gallery layouts', async ({ page }) => {
     for (const layout of ['grid', 'masonry', 'slideshow'] as const) {
       await checkRadio(page, 'layout', layout);
-      // Allow layout to settle
-      await page.waitForTimeout(100);
+      await expect(page.locator('.gallery')).toHaveAttribute('data-layout', layout);
+      if (layout === 'slideshow') {
+        await expect(page.locator('.gallery__pagination [role="tab"]')).toHaveCount(12);
+      }
 
       await page.locator('.gallery__trigger').first().click();
       await expect(page.locator('.image-lightbox[open]')).toBeVisible();
@@ -310,8 +338,6 @@ test.describe('gallery collection mode', () => {
     // Lightbox is off by default — turn it off explicitly to be sure
     await checkRadio(page, 'lightbox', 'false');
     await page.locator('.gallery__trigger').first().click();
-    // Short wait to verify nothing opens
-    await page.waitForTimeout(200);
     await expect(page.locator('.image-lightbox[open]')).toHaveCount(0);
   });
 
@@ -331,7 +357,7 @@ test.describe('slideshow coordination', () => {
     await page.locator('.controls__picker').selectOption('gallery');
     await checkRadio(page, 'lightbox', 'true');
     await checkRadio(page, 'layout', 'slideshow');
-    await page.waitForTimeout(100);
+    await expect(page.locator('.gallery__pagination [role="tab"]')).toHaveCount(12);
   });
 
   test('opening from slideshow preserves inline slideshow state after close', async ({ page }) => {
@@ -339,8 +365,7 @@ test.describe('slideshow coordination', () => {
 
     // Navigate inline slideshow to slide 3
     await indicators.nth(2).click();
-    await page.waitForTimeout(500);
-    await expect(indicators.nth(2)).toHaveAttribute('aria-selected', 'true');
+    await waitForSelectedSlideshowIndex(page, 2);
 
     // Open lightbox from the active slide's trigger
     await page.locator('.gallery__trigger').nth(2).click();
@@ -460,7 +485,7 @@ test.describe('lifecycle and section switching', () => {
     await page.locator('.controls__picker').selectOption('nav');
     await expect(page.locator('.nav')).toBeVisible();
 
-    await page.waitForTimeout(450);
+    await page.waitForResponse((response) => response.url().includes('/slow-zoom.svg'));
     await expect(page.locator('.image-lightbox')).toHaveCount(0);
     expect(pageErrors).toEqual([]);
   });
@@ -469,71 +494,43 @@ test.describe('lifecycle and section switching', () => {
 // ─── Viewport containment ───
 
 test.describe('viewport containment', () => {
-  test('lightbox stays contained at 375px preview width', async ({ page }) => {
-    await page.locator('.controls__picker').selectOption('single-image');
-    await page.locator('[data-viewport="375"]').click();
+  const cases = [
+    {
+      name: 'single-image lightbox stays contained at 375px preview width',
+      open: async (page: import('playwright/test').Page) => {
+        await page.locator('.controls__picker').selectOption('single-image');
+        await page.locator('[data-viewport="375"]').click();
+        await page.locator('.single-image__trigger').click();
+      },
+    },
+    {
+      name: 'gallery lightbox stays contained at 768px preview width',
+      open: async (page: import('playwright/test').Page) => {
+        await page.locator('.controls__picker').selectOption('gallery');
+        await checkRadio(page, 'lightbox', 'true');
+        await page.locator('[data-viewport="768"]').click();
+        await page.locator('.gallery__trigger').nth(1).click();
+      },
+    },
+    {
+      name: 'gallery lightbox stays contained at 1280px preview width',
+      open: async (page: import('playwright/test').Page) => {
+        await page.locator('.controls__picker').selectOption('gallery');
+        await checkRadio(page, 'lightbox', 'true');
+        await page.locator('[data-viewport="1280"]').click();
+        await page.locator('.gallery__trigger').first().click();
+      },
+    },
+  ] satisfies Array<{
+    name: string;
+    open: (page: import('playwright/test').Page) => Promise<void>;
+  }>;
 
-    await page.locator('.single-image__trigger').click();
-    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
-
-    const contained = await page.evaluate(() => {
-      const dialog = document.querySelector('.image-lightbox');
-      const host = dialog?.parentElement;
-      if (!dialog || !host) return false;
-      const dialogRect = dialog.getBoundingClientRect();
-      const hostRect = host.getBoundingClientRect();
-      return (
-        dialogRect.left >= hostRect.left - 1 &&
-        dialogRect.right <= hostRect.right + 1 &&
-        dialogRect.top >= hostRect.top - 1
-      );
+  for (const { name, open } of cases) {
+    test(name, async ({ page }) => {
+      await open(page);
+      await expect(page.locator('.image-lightbox[open]')).toBeVisible();
+      await expectLightboxContainedWithinHost(page);
     });
-    expect(contained).toBe(true);
-  });
-
-  test('lightbox stays contained at 1280px preview width', async ({ page }) => {
-    await page.locator('.controls__picker').selectOption('gallery');
-    await checkRadio(page, 'lightbox', 'true');
-    await page.locator('[data-viewport="1280"]').click();
-
-    await page.locator('.gallery__trigger').first().click();
-    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
-
-    const contained = await page.evaluate(() => {
-      const dialog = document.querySelector('.image-lightbox');
-      const host = dialog?.parentElement;
-      if (!dialog || !host) return false;
-      const dialogRect = dialog.getBoundingClientRect();
-      const hostRect = host.getBoundingClientRect();
-      return (
-        dialogRect.left >= hostRect.left - 1 &&
-        dialogRect.right <= hostRect.right + 1 &&
-        dialogRect.top >= hostRect.top - 1
-      );
-    });
-    expect(contained).toBe(true);
-  });
-
-  test('gallery lightbox stays contained at 768px preview width', async ({ page }) => {
-    await page.locator('.controls__picker').selectOption('gallery');
-    await checkRadio(page, 'lightbox', 'true');
-    await page.locator('[data-viewport="768"]').click();
-
-    await page.locator('.gallery__trigger').nth(1).click();
-    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
-
-    const contained = await page.evaluate(() => {
-      const dialog = document.querySelector('.image-lightbox');
-      const host = dialog?.parentElement;
-      if (!dialog || !host) return false;
-      const dialogRect = dialog.getBoundingClientRect();
-      const hostRect = host.getBoundingClientRect();
-      return (
-        dialogRect.left >= hostRect.left - 1 &&
-        dialogRect.right <= hostRect.right + 1 &&
-        dialogRect.top >= hostRect.top - 1
-      );
-    });
-    expect(contained).toBe(true);
-  });
+  }
 });
