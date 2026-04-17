@@ -216,13 +216,16 @@ test.describe('gallery collection mode', () => {
   test('prev and next are never disabled in collection mode', async ({ page }) => {
     // Open first image — both nav buttons enabled (loops)
     await page.locator('.gallery__trigger').first().click();
+    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
     await expect(page.locator('.image-lightbox__nav--prev')).not.toBeDisabled();
     await expect(page.locator('.image-lightbox__nav--next')).not.toBeDisabled();
 
     await page.keyboard.press('Escape');
+    await expect(page.locator('.image-lightbox[open]')).toHaveCount(0);
 
     // Open last image — both still enabled
     await page.locator('.gallery__trigger').nth(11).click();
+    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
     await expect(page.locator('.image-lightbox__nav--next')).not.toBeDisabled();
     await expect(page.locator('.image-lightbox__nav--prev')).not.toBeDisabled();
   });

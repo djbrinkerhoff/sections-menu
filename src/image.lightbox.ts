@@ -3,7 +3,10 @@ import { getZoomTrigger, resolveZoomCollection, type ZoomTarget } from './image.
 const SCROLL_CLOSE_THRESHOLD = 40;
 const SWIPE_CLOSE_GUARD = 56;
 const SWIPE_VERTICAL_RATIO = 1.2;
-const ZOOM_ANIMATION_MS = 220;
+const OPEN_DURATION_MS = 280;
+const CLOSE_DURATION_MS = 220;
+const OPEN_EASING = 'cubic-bezier(0.16, 1, 0.3, 1)';
+const CLOSE_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
 
 export interface LightboxSession {
   readonly targets: ZoomTarget[];
@@ -99,6 +102,36 @@ function getFocusableElements(root: HTMLElement): HTMLElement[] {
 
   return Array.from(root.querySelectorAll<HTMLElement>(selector))
     .filter((element) => !element.hidden && element.tabIndex !== -1);
+}
+
+/**
+ * Compute the virtual uncropped image rect for a thumbnail.
+ * When an image uses object-fit:cover with a forced aspect ratio,
+ * getBoundingClientRect returns the container box (e.g. a square),
+ * not the visible image content. This replicates the cover math
+ * to find where the full image sits within the cropped container.
+ */
+function computeSourceRect(img: HTMLImageElement): DOMRect | null {
+  const thumbRect = img.getBoundingClientRect();
+  if (!thumbRect.width || !thumbRect.height) return null;
+
+  const naturalW = img.naturalWidth;
+  const naturalH = img.naturalHeight;
+  if (!naturalW || !naturalH) return thumbRect;
+
+  const style = window.getComputedStyle(img);
+  if (style.objectFit !== 'cover') return thumbRect;
+
+  const hRatio = thumbRect.width / naturalW;
+  const vRatio = thumbRect.height / naturalH;
+  const fillZoom = Math.max(hRatio, vRatio);
+
+  const uncroppedW = naturalW * fillZoom;
+  const uncroppedH = naturalH * fillZoom;
+  const left = thumbRect.left + (thumbRect.width - uncroppedW) / 2;
+  const top = thumbRect.top + (thumbRect.height - uncroppedH) / 2;
+
+  return new DOMRect(left, top, uncroppedW, uncroppedH);
 }
 
 function createDialog(): {
@@ -307,42 +340,51 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     }
   }
 
-  function animateBackdrop(fromOpacity: number, toOpacity: number): Animation | null {
+  function animateBackdrop(fromOpacity: number, toOpacity: number, duration: number): Animation | null {
     if (prefersReducedMotion.matches) return null;
     return backdrop.animate(
       [{ opacity: fromOpacity }, { opacity: toOpacity }],
-      { duration: ZOOM_ANIMATION_MS, easing: 'ease-out', fill: 'both' },
+      { duration, easing: 'ease-out', fill: 'both' },
     );
   }
 
-  function animateImageRect(fromRect: DOMRect | null, toRect: DOMRect, direction: 'open' | 'close'): Animation | null {
-    if (!fromRect || prefersReducedMotion.matches) return null;
-
+  function computeFlipValues(fromRect: DOMRect, toRect: DOMRect): { translateX: number; translateY: number; scale: number } {
     const fromCenterX = fromRect.left + fromRect.width / 2;
     const fromCenterY = fromRect.top + fromRect.height / 2;
     const toCenterX = toRect.left + toRect.width / 2;
     const toCenterY = toRect.top + toRect.height / 2;
+    return {
+      translateX: fromCenterX - toCenterX,
+      translateY: fromCenterY - toCenterY,
+      scale: fromRect.width / Math.max(toRect.width, 1),
+    };
+  }
 
-    const translateX = fromCenterX - toCenterX;
-    const translateY = fromCenterY - toCenterY;
-    const scaleX = fromRect.width / Math.max(toRect.width, 1);
-    const scaleY = fromRect.height / Math.max(toRect.height, 1);
+  function animateImageOpen(fromRect: DOMRect, toRect: DOMRect): Animation {
+    const { translateX, translateY, scale } = computeFlipValues(fromRect, toRect);
+    return image.animate(
+      [
+        { transform: `translate(${translateX}px, ${translateY}px) scale(${scale})` },
+        { transform: 'translate(0, 0) scale(1)' },
+      ],
+      { duration: OPEN_DURATION_MS, easing: OPEN_EASING, fill: 'both' },
+    );
+  }
 
-    const keyframes = direction === 'open'
-      ? [
-          { transform: `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`, opacity: 1 },
-          { transform: 'translate(0, 0) scale(1, 1)', opacity: 1 },
-        ]
-      : [
-          { transform: 'translate(0, 0) scale(1, 1)', opacity: 1 },
-          { transform: `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`, opacity: 1 },
-        ];
-
-    return image.animate(keyframes, {
-      duration: ZOOM_ANIMATION_MS,
-      easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
-      fill: 'both',
-    });
+  function animateImageClose(fromRect: DOMRect, toRect: DOMRect): Animation[] {
+    const { translateX, translateY, scale } = computeFlipValues(fromRect, toRect);
+    const transform = image.animate(
+      [
+        { transform: 'translate(0, 0) scale(1)' },
+        { transform: `translate(${translateX}px, ${translateY}px) scale(${scale})` },
+      ],
+      { duration: CLOSE_DURATION_MS, easing: CLOSE_EASING, fill: 'both' },
+    );
+    const fade = image.animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { duration: CLOSE_DURATION_MS * 0.35, delay: CLOSE_DURATION_MS * 0.65, easing: 'ease-out', fill: 'both' },
+    );
+    return [transform, fade];
   }
 
   async function resolveDisplaySource(target: ZoomTarget): Promise<string> {
@@ -410,14 +452,29 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     }
   }
 
+  function setChromeVisible(visible: boolean): void {
+    closeButton.hidden = !visible;
+    prevButton.hidden = !visible;
+    nextButton.hidden = !visible;
+    counter.hidden = !visible;
+  }
+
+  function clearStaleAnimations(): void {
+    image.getAnimations().forEach((a) => a.cancel());
+    backdrop.getAnimations().forEach((a) => a.cancel());
+    image.style.opacity = '';
+  }
+
   function animateOpen(sourceRect: DOMRect | null): void {
     const targetRect = image.getBoundingClientRect();
-    const animations = [
-      animateBackdrop(0, 1),
-      animateImageRect(sourceRect, targetRect, 'open'),
-    ].filter((animation): animation is Animation => animation !== null);
+    const animations: Animation[] = [];
 
-    if (animations.length === 0) return;
+    const backdropAnim = animateBackdrop(0, 1, OPEN_DURATION_MS);
+    if (backdropAnim) animations.push(backdropAnim);
+    if (sourceRect && !prefersReducedMotion.matches) {
+      animations.push(animateImageOpen(sourceRect, targetRect));
+    }
+
     for (const animation of animations) {
       animation.finished.catch(() => {});
     }
@@ -426,14 +483,20 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   function animateClose(targetRect: DOMRect | null): Promise<void> {
     if (prefersReducedMotion.matches) return Promise.resolve();
 
+    // Cancel any in-flight open animation to prevent compositing conflicts
+    clearStaleAnimations();
+
     const currentRect = image.getBoundingClientRect();
-    const animations = [
-      animateBackdrop(1, 0),
-      targetRect ? animateImageRect(targetRect, currentRect, 'close') : null,
-    ].filter((animation): animation is Animation => animation !== null);
+    const animations: Animation[] = [];
+
+    const backdropAnim = animateBackdrop(1, 0, CLOSE_DURATION_MS);
+    if (backdropAnim) animations.push(backdropAnim);
+    if (targetRect) {
+      animations.push(...animateImageClose(targetRect, currentRect));
+    }
 
     if (animations.length === 0) return Promise.resolve();
-    return Promise.all(animations.map((animation) => animation.finished.catch(() => undefined))).then(() => undefined);
+    return Promise.all(animations.map((a) => a.finished.catch(() => undefined))).then(() => undefined);
   }
 
   async function goToIndex(index: number): Promise<void> {
@@ -465,7 +528,11 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     await renderIndex(activeIndex);
     if (!activeState || sessionId !== openSessionId) return;
 
+    // Measure source rect BEFORE any layout mutations (scroll lock, dialog positioning)
+    const sourceRect = sourceTarget ? computeSourceRect(sourceTarget.image) : null;
+
     hideSourceThumbnail(sourceTarget);
+    clearStaleAnimations();
     syncDialogPosition();
     lockScroll();
     if (!dialog.open) dialog.show();
@@ -477,8 +544,6 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
 
     requestAnimationFrame(() => {
       if (!activeState || sessionId !== openSessionId) return;
-      // Measure sourceRect here, after all layout changes have settled
-      const sourceRect = sourceTarget?.image.getBoundingClientRect() ?? null;
       animateOpen(sourceRect);
     });
   }
@@ -497,20 +562,16 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     stopScrollClose();
     swipeState = null;
 
-    // Hide chrome immediately so only the image animates back
-    closeButton.hidden = true;
-    prevButton.hidden = true;
-    nextButton.hidden = true;
-    counter.hidden = true;
+    setChromeVisible(false);
 
-    // Unlock scroll before measuring so scrollbar restoration doesn't shift the target
-    unlockScroll();
-    clearInert();
-
+    // Measure the thumbnail's actual container rect (cropped box) while scroll is still locked
     const activeTarget = state.targets[state.activeIndex];
     const closeTargetRect = activeTarget?.image.isConnected && !activeTarget.image.closest('[hidden]')
       ? activeTarget.image.getBoundingClientRect()
       : null;
+
+    // Show the thumbnail before animating so the cropped image is visible underneath
+    showSourceThumbnail();
 
     if (animate) {
       await animateClose(closeTargetRect);
@@ -520,11 +581,9 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     if (sessionId !== closeSessionId) return;
 
     if (dialog.open) dialog.close();
-    closeButton.hidden = false;
-    prevButton.hidden = false;
-    nextButton.hidden = false;
-    counter.hidden = false;
-    showSourceThumbnail();
+    unlockScroll();
+    clearInert();
+    setChromeVisible(true);
     setTriggerExpanded(state.invoker, false);
     if (restoreFocus && state.invoker.isConnected) {
       state.invoker.focus();
