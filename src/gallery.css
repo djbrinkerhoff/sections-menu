@@ -9,13 +9,13 @@
   /* Section width grid — 7-column named-lines ("Layout Breakouts" pattern) */
   display: grid;
   grid-template-columns:
-    [full-start] minmax(clamp(1rem, 4cqi, 2rem), 1fr)
-    [wide-start] minmax(0, calc((1200px - 960px) / 2))
-    [medium-start] minmax(0, calc((960px - 640px) / 2))
-    [narrow-start] min(640px, 100% - clamp(1rem, 4cqi, 2rem) * 2) [narrow-end]
-    minmax(0, calc((960px - 640px) / 2)) [medium-end]
-    minmax(0, calc((1200px - 960px) / 2)) [wide-end]
-    minmax(clamp(1rem, 4cqi, 2rem), 1fr) [full-end];
+    [full-start] minmax(0, 1fr)
+    [wide-start] minmax(0, calc((1200px - 768px) / 2))
+    [medium-start] minmax(0, calc((768px - 480px) / 2))
+    [narrow-start] min(480px, 100%) [narrow-end]
+    minmax(0, calc((768px - 480px) / 2)) [medium-end]
+    minmax(0, calc((1200px - 768px) / 2)) [wide-end]
+    minmax(0, 1fr) [full-end];
 }
 
 /* ─── Section width: background layer ─── */
@@ -27,8 +27,13 @@
   background-color: var(--gallery-color, #ffffff);
 }
 
-[data-bg-width="contained"] > .gallery__bg {
-  grid-column: wide;
+/* Hug: background matches content width with rounded corners */
+[data-bg-width="hug"] > .gallery__bg {
+  display: none;
+}
+
+[data-bg-width="hug"] > .gallery__body {
+  background-color: var(--gallery-color, #ffffff);
   border-radius: var(--section-radius, 12px);
   overflow: clip;
 }
@@ -46,26 +51,6 @@
 [data-content-width="medium"] > .gallery__body  { grid-column: medium; }
 [data-content-width="narrow"] > .gallery__body  { grid-column: narrow; }
 
-/* Snap: background collapses to hug content */
-[data-content-width="snap"] > .gallery__bg {
-  display: none;
-}
-
-[data-content-width="snap"] > .gallery__body {
-  grid-column: full;
-  justify-self: center;
-  max-width: 960px;
-  min-inline-size: 280px;
-  background-color: var(--gallery-color, #ffffff);
-  border-radius: var(--section-radius, 12px);
-}
-
-/* Snap + slideshow: disable snap shrink-wrap (circular sizing) */
-[data-content-width="snap"][data-layout="slideshow"] > .gallery__body {
-  justify-self: stretch;
-  max-width: none;
-  min-inline-size: 0;
-}
 
 .gallery__viewport {
   position: relative;

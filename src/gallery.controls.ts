@@ -16,31 +16,11 @@ const TIMINGS = ['2', '4', '6', '8'] as const;
 const PAGINATIONS = ['dots', 'dashes', 'counter', 'thumbnails'] as const;
 
 // Section width schema
-const BG_WIDTHS = ['full', 'contained'] as const;
-const CONTENT_WIDTHS = ['full', 'wide', 'medium', 'narrow', 'snap'] as const;
+const BG_WIDTHS = ['full', 'hug'] as const;
+const CONTENT_WIDTHS = ['full', 'wide', 'medium', 'narrow'] as const;
 
 type Layout = (typeof LAYOUTS)[number];
-type BgWidth = (typeof BG_WIDTHS)[number];
-type ContentWidth = (typeof CONTENT_WIDTHS)[number];
 type GalleryControlKey = 'layout' | 'columns' | 'gap' | 'aspect' | 'fit' | 'captions' | 'lightbox' | 'autoplay' | 'timing' | 'pagination' | 'bgWidth' | 'contentWidth';
-
-// Content-width options valid for each bg-width (content cannot exceed background)
-type NonEmptyReadonlyArray<T> = readonly [T, ...T[]];
-const VALID_CONTENT_WIDTHS: Record<BgWidth, NonEmptyReadonlyArray<ContentWidth>> = {
-  full: CONTENT_WIDTHS,
-  contained: ['wide', 'medium', 'narrow', 'snap'],
-};
-
-function isBgWidth(v: string): v is BgWidth {
-  return (BG_WIDTHS as readonly string[]).includes(v);
-}
-
-function resolveContentWidth(bgWidth: BgWidth, current: string): ContentWidth {
-  const allowed = VALID_CONTENT_WIDTHS[bgWidth];
-  return (allowed as readonly string[]).includes(current)
-    ? (current as ContentWidth)
-    : allowed[0];
-}
 
 // Controls hidden per layout
 const HIDDEN_CONTROLS: Record<Layout, string[]> = {
@@ -181,16 +161,8 @@ export function initGalleryControls(
       closeLightboxForMutation();
     }
 
-    // Width changes: enforce constraints, close lightbox, reinit slideshow
-    if (key === 'bgWidth') {
-      closeLightboxForMutation();
-      if (isBgWidth(value)) enforceWidthConstraints(value);
-      reinitSlideshow();
-      onStateChange();
-      return;
-    }
-
-    if (key === 'contentWidth') {
+    // Width changes: close lightbox, reinit slideshow
+    if (key === 'bgWidth' || key === 'contentWidth') {
       closeLightboxForMutation();
       reinitSlideshow();
       onStateChange();
@@ -217,37 +189,7 @@ export function initGalleryControls(
     onStateChange();
   }
 
-  // ─── Width constraint helpers ───
-
-  // Created eagerly below; helpers reference it via closure.
-  const contentWidthFieldset = createSegmentedGroup(
-    'contentWidth', 'Content width', CONTENT_WIDTHS,
-    { full: 'Full', wide: 'Wide', medium: 'Medium', narrow: 'Narrow', snap: 'Snap' },
-    'contentWidth',
-    'Snap collapses background to content. Visible at wider viewports.',
-  );
-
-  function syncContentWidthRadios(active: ContentWidth): void {
-    for (const input of contentWidthFieldset.querySelectorAll<HTMLInputElement>('input[type="radio"]')) {
-      input.checked = input.value === active;
-    }
-  }
-
-  function syncContentWidthDisabled(bgWidth: BgWidth): void {
-    const allowed = VALID_CONTENT_WIDTHS[bgWidth];
-    for (const input of contentWidthFieldset.querySelectorAll<HTMLInputElement>('input[type="radio"]')) {
-      input.disabled = !(allowed as readonly string[]).includes(input.value);
-    }
-  }
-
-  function enforceWidthConstraints(bgWidth: BgWidth): void {
-    const resolved = resolveContentWidth(bgWidth, galleryRoot.dataset.contentWidth ?? 'full');
-    if (resolved !== galleryRoot.dataset.contentWidth) {
-      galleryRoot.dataset.contentWidth = resolved;
-      syncContentWidthRadios(resolved);
-    }
-    syncContentWidthDisabled(bgWidth);
-  }
+  // ─── Width helpers (no constraints — all bg/content combos are valid) ───
 
   // ─── Builder: layout picker (thumbnail grid like nav variant picker) ───
 
@@ -475,11 +417,16 @@ export function initGalleryControls(
   // Section width controls
   wrapper.appendChild(createSegmentedGroup(
     'bgWidth', 'Background width', BG_WIDTHS,
-    { full: 'Full', contained: 'Contained' },
+    { full: 'Full', hug: 'Hug content' },
     'bgWidth',
   ));
 
-  wrapper.appendChild(contentWidthFieldset);
+  wrapper.appendChild(createSegmentedGroup(
+    'contentWidth', 'Content width', CONTENT_WIDTHS,
+    { full: 'Full', wide: 'Wide', medium: 'Medium', narrow: 'Narrow' },
+    'contentWidth',
+    'Visible at wider viewports.',
+  ));
 
   // 2. Images
   wrapper.appendChild(createStepperGroup(
@@ -592,12 +539,6 @@ export function initGalleryControls(
   ));
 
   container.appendChild(wrapper);
-
-  // Validate width constraints on mount (URL hydration may produce invalid combos)
-  {
-    const bgWidth = galleryRoot.dataset.bgWidth ?? 'full';
-    if (isBgWidth(bgWidth)) enforceWidthConstraints(bgWidth);
-  }
 
   // Init control visibility + slideshow if restoring into slideshow layout
   syncControlVisibility();
