@@ -2,11 +2,69 @@
 
 .gallery {
   container-type: inline-size;
-  background-color: var(--gallery-color, #ffffff);
   color: var(--gallery-accent, #000000);
-  padding: 16px;
   min-height: 100%;
   position: relative;
+
+  /* Section width grid — 7-column named-lines ("Layout Breakouts" pattern) */
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(clamp(1rem, 4cqi, 2rem), 1fr)
+    [wide-start] minmax(0, calc((1200px - 960px) / 2))
+    [medium-start] minmax(0, calc((960px - 640px) / 2))
+    [narrow-start] min(640px, 100% - clamp(1rem, 4cqi, 2rem) * 2) [narrow-end]
+    minmax(0, calc((960px - 640px) / 2)) [medium-end]
+    minmax(0, calc((1200px - 960px) / 2)) [wide-end]
+    minmax(clamp(1rem, 4cqi, 2rem), 1fr) [full-end];
+}
+
+/* ─── Section width: background layer ─── */
+
+.gallery__bg {
+  grid-row: 1;
+  grid-column: full;
+  z-index: 0;
+  background-color: var(--gallery-color, #ffffff);
+}
+
+[data-bg-width="contained"] > .gallery__bg {
+  grid-column: wide;
+  border-radius: var(--section-radius, 12px);
+  overflow: clip;
+}
+
+/* ─── Section width: content layer ─── */
+
+.gallery__body {
+  grid-row: 1;
+  z-index: 1;
+  padding: 16px;
+}
+
+[data-content-width="full"] > .gallery__body    { grid-column: full; }
+[data-content-width="wide"] > .gallery__body    { grid-column: wide; }
+[data-content-width="medium"] > .gallery__body  { grid-column: medium; }
+[data-content-width="narrow"] > .gallery__body  { grid-column: narrow; }
+
+/* Snap: background collapses to hug content */
+[data-content-width="snap"] > .gallery__bg {
+  display: none;
+}
+
+[data-content-width="snap"] > .gallery__body {
+  grid-column: full;
+  justify-self: center;
+  max-width: 960px;
+  min-inline-size: 280px;
+  background-color: var(--gallery-color, #ffffff);
+  border-radius: var(--section-radius, 12px);
+}
+
+/* Snap + slideshow: disable snap shrink-wrap (circular sizing) */
+[data-content-width="snap"][data-layout="slideshow"] > .gallery__body {
+  justify-self: stretch;
+  max-width: none;
+  min-inline-size: 0;
 }
 
 .gallery__viewport {
@@ -38,7 +96,6 @@
 }
 
 /* Columns via data-attribute — only applied when preview is 768px+.
-   .gallery has 16px padding each side, so content-box = preview - 32px.
    Below that, grid always shows 2 columns. */
 [data-columns="2"] .gallery__grid { grid-template-columns: repeat(2, 1fr); }
 [data-columns="3"] .gallery__grid { grid-template-columns: repeat(2, 1fr); }

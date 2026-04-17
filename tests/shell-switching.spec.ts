@@ -761,3 +761,86 @@ test('controls sync: set tile variant → switch → switch back → controls sh
   await expect(page.locator('input[name="variant"][value="tile"]')).toBeChecked();
   await expect(page.locator('input[name="capitalization"][value="uppercase"]')).toBeChecked();
 });
+
+// ─── Section width system ───
+
+test('width controls update data attributes on the gallery root', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  const gallery = page.locator('.gallery');
+
+  // Defaults
+  await expect(gallery).toHaveAttribute('data-bg-width', 'full');
+  await expect(gallery).toHaveAttribute('data-content-width', 'full');
+
+  // Change background width
+  await checkRadio(page, 'bgWidth', 'contained');
+  await expect(gallery).toHaveAttribute('data-bg-width', 'contained');
+
+  // Change content width
+  await checkRadio(page, 'contentWidth', 'narrow');
+  await expect(gallery).toHaveAttribute('data-content-width', 'narrow');
+});
+
+test('width state round-trips across section switches', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+
+  await checkRadio(page, 'bgWidth', 'contained');
+  await checkRadio(page, 'contentWidth', 'medium');
+
+  // Switch away and back
+  await page.locator('.controls__picker').selectOption('nav');
+  await page.locator('.controls__picker').selectOption('gallery');
+
+  const gallery = page.locator('.gallery');
+  await expect(gallery).toHaveAttribute('data-bg-width', 'contained');
+  await expect(gallery).toHaveAttribute('data-content-width', 'medium');
+
+  // Controls reflect restored state
+  await expect(page.locator('input[name="bgWidth"][value="contained"]')).toBeChecked();
+  await expect(page.locator('input[name="contentWidth"][value="medium"]')).toBeChecked();
+});
+
+test('width settings serialize to URL query params', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+
+  await checkRadio(page, 'bgWidth', 'contained');
+  await checkRadio(page, 'contentWidth', 'narrow');
+
+  const params = await getSearchParams(page);
+  expect(params['gallery.bgWidth']).toBe('contained');
+  expect(params['gallery.contentWidth']).toBe('narrow');
+});
+
+test('contained bg auto-downgrades full content-width to wide', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  const gallery = page.locator('.gallery');
+
+  // Start with full content-width (default)
+  await expect(gallery).toHaveAttribute('data-content-width', 'full');
+
+  // Switch bg to contained — content-width should downgrade from full to wide
+  await checkRadio(page, 'bgWidth', 'contained');
+  await expect(gallery).toHaveAttribute('data-content-width', 'wide');
+  await expect(page.locator('input[name="contentWidth"][value="wide"]')).toBeChecked();
+
+  // The "full" option should be disabled
+  await expect(page.locator('input[name="contentWidth"][value="full"]')).toBeDisabled();
+});
+
+test('invalid URL width combo is corrected on mount', async ({ page }) => {
+  // Navigate with invalid combo: contained bg + full content
+  await page.goto('/?section=gallery&gallery.bgWidth=contained&gallery.contentWidth=full');
+
+  const gallery = page.locator('.gallery');
+  await expect(gallery).toHaveAttribute('data-bg-width', 'contained');
+  // Should have been corrected from "full" to "wide"
+  await expect(gallery).toHaveAttribute('data-content-width', 'wide');
+});
+
+test('gallery__bg and gallery__body elements exist in the DOM', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+
+  await expect(page.locator('.gallery__bg')).toHaveCount(1);
+  await expect(page.locator('.gallery__body')).toHaveCount(1);
+  await expect(page.locator('.gallery__body .gallery__grid')).toHaveCount(1);
+});

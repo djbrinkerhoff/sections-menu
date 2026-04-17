@@ -15,8 +15,32 @@ const FITS = ['cover', 'contain'] as const;
 const TIMINGS = ['2', '4', '6', '8'] as const;
 const PAGINATIONS = ['dots', 'dashes', 'counter', 'thumbnails'] as const;
 
+// Section width schema
+const BG_WIDTHS = ['full', 'contained'] as const;
+const CONTENT_WIDTHS = ['full', 'wide', 'medium', 'narrow', 'snap'] as const;
+
 type Layout = (typeof LAYOUTS)[number];
-type GalleryControlKey = 'layout' | 'columns' | 'gap' | 'aspect' | 'fit' | 'captions' | 'lightbox' | 'autoplay' | 'timing' | 'pagination';
+type BgWidth = (typeof BG_WIDTHS)[number];
+type ContentWidth = (typeof CONTENT_WIDTHS)[number];
+type GalleryControlKey = 'layout' | 'columns' | 'gap' | 'aspect' | 'fit' | 'captions' | 'lightbox' | 'autoplay' | 'timing' | 'pagination' | 'bgWidth' | 'contentWidth';
+
+// Content-width options valid for each bg-width (content cannot exceed background)
+type NonEmptyReadonlyArray<T> = readonly [T, ...T[]];
+const VALID_CONTENT_WIDTHS: Record<BgWidth, NonEmptyReadonlyArray<ContentWidth>> = {
+  full: CONTENT_WIDTHS,
+  contained: ['wide', 'medium', 'narrow', 'snap'],
+};
+
+function isBgWidth(v: string): v is BgWidth {
+  return (BG_WIDTHS as readonly string[]).includes(v);
+}
+
+function resolveContentWidth(bgWidth: BgWidth, current: string): ContentWidth {
+  const allowed = VALID_CONTENT_WIDTHS[bgWidth];
+  return (allowed as readonly string[]).includes(current)
+    ? (current as ContentWidth)
+    : allowed[0];
+}
 
 // Controls hidden per layout
 const HIDDEN_CONTROLS: Record<Layout, string[]> = {
@@ -65,10 +89,18 @@ export function initGalleryControls(
   const totalImages = allItems.length;
   let currentImageCount = Number(galleryRoot.dataset.images) || totalImages;
 
+  // animate:false is critical — must complete synchronously before
+  // the caller mutates dataset or reinits the slideshow.
   function closeLightboxForMutation(): void {
     if (lightbox.isOpen()) {
       lightbox.close({ animate: false, restoreFocus: false });
     }
+  }
+
+  function reinitSlideshow(): void {
+    if (!slideshowHandle) return;
+    slideshowHandle.cleanup();
+    slideshowHandle = initSlideshow(galleryRoot, signal);
   }
 
   function syncImageVisibility(): void {
@@ -85,13 +117,7 @@ export function initGalleryControls(
     currentImageCount = count;
     galleryRoot.dataset.images = String(count);
     syncImageVisibility();
-
-    // Re-init slideshow so it picks up the new visible item set
-    if (slideshowHandle) {
-      slideshowHandle.cleanup();
-      slideshowHandle = initSlideshow(galleryRoot, signal);
-    }
-
+    reinitSlideshow();
     onStateChange();
   }
 
@@ -153,19 +179,29 @@ export function initGalleryControls(
       closeLightboxForMutation();
     }
 
-    if (key === 'autoplay') {
-      syncControlVisibility();
-      if (slideshowHandle) {
-        // Restart or stop autoplay by re-initing slideshow
-        slideshowHandle.cleanup();
-        slideshowHandle = initSlideshow(galleryRoot, signal);
-      }
+    // Width changes: enforce constraints, close lightbox, reinit slideshow
+    if (key === 'bgWidth') {
+      closeLightboxForMutation();
+      if (isBgWidth(value)) enforceWidthConstraints(value);
+      reinitSlideshow();
+      onStateChange();
+      return;
     }
 
-    if (key === 'timing' && slideshowHandle) {
-      // Restart autoplay with new timing
-      slideshowHandle.cleanup();
-      slideshowHandle = initSlideshow(galleryRoot, signal);
+    if (key === 'contentWidth') {
+      closeLightboxForMutation();
+      reinitSlideshow();
+      onStateChange();
+      return;
+    }
+
+    if (key === 'autoplay') {
+      syncControlVisibility();
+      reinitSlideshow();
+    }
+
+    if (key === 'timing') {
+      reinitSlideshow();
     }
 
     if (key === 'pagination' && slideshowHandle) {
@@ -177,6 +213,38 @@ export function initGalleryControls(
     }
 
     onStateChange();
+  }
+
+  // ─── Width constraint helpers ───
+
+  // Created eagerly below; helpers reference it via closure.
+  const contentWidthFieldset = createSegmentedGroup(
+    'contentWidth', 'Content width', CONTENT_WIDTHS,
+    { full: 'Full', wide: 'Wide', medium: 'Medium', narrow: 'Narrow', snap: 'Snap' },
+    'contentWidth',
+    'Snap collapses background to content. Visible at wider viewports.',
+  );
+
+  function syncContentWidthRadios(active: ContentWidth): void {
+    for (const input of contentWidthFieldset.querySelectorAll<HTMLInputElement>('input[type="radio"]')) {
+      input.checked = input.value === active;
+    }
+  }
+
+  function syncContentWidthDisabled(bgWidth: BgWidth): void {
+    const allowed = VALID_CONTENT_WIDTHS[bgWidth];
+    for (const input of contentWidthFieldset.querySelectorAll<HTMLInputElement>('input[type="radio"]')) {
+      input.disabled = !(allowed as readonly string[]).includes(input.value);
+    }
+  }
+
+  function enforceWidthConstraints(bgWidth: BgWidth): void {
+    const resolved = resolveContentWidth(bgWidth, galleryRoot.dataset.contentWidth ?? 'full');
+    if (resolved !== galleryRoot.dataset.contentWidth) {
+      galleryRoot.dataset.contentWidth = resolved;
+      syncContentWidthRadios(resolved);
+    }
+    syncContentWidthDisabled(bgWidth);
   }
 
   // ─── Builder: layout picker (thumbnail grid like nav variant picker) ───
@@ -402,6 +470,15 @@ export function initGalleryControls(
   // 1. Layout picker
   wrapper.appendChild(createLayoutGroup());
 
+  // Section width controls
+  wrapper.appendChild(createSegmentedGroup(
+    'bgWidth', 'Background width', BG_WIDTHS,
+    { full: 'Full', contained: 'Contained' },
+    'bgWidth',
+  ));
+
+  wrapper.appendChild(contentWidthFieldset);
+
   // 2. Images
   wrapper.appendChild(createStepperGroup(
     'images', 'Images', currentImageCount, 1, totalImages,
@@ -513,6 +590,12 @@ export function initGalleryControls(
   ));
 
   container.appendChild(wrapper);
+
+  // Validate width constraints on mount (URL hydration may produce invalid combos)
+  {
+    const bgWidth = galleryRoot.dataset.bgWidth ?? 'full';
+    if (isBgWidth(bgWidth)) enforceWidthConstraints(bgWidth);
+  }
 
   // Init control visibility + slideshow if restoring into slideshow layout
   syncControlVisibility();
