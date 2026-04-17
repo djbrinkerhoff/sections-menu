@@ -23,7 +23,11 @@ const COLOR_LABELS: Record<ColorName, string> = {
   transparent: 'Transparent',
 };
 
-export function initControls(navRoot: HTMLElement, container: HTMLElement) {
+export function initControls(
+  navRoot: HTMLElement,
+  container: HTMLElement,
+  onStateChange: () => void = () => {},
+) {
   const abortController = new AbortController();
   const { signal } = abortController;
   const cartButton = navRoot.querySelector<HTMLButtonElement>('.nav__cart');
@@ -62,6 +66,7 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
         if (radio) radio.checked = true;
       }
     }
+    onStateChange();
   }
 
   // APCA-based band mix: tint the link-row band toward the text color,
@@ -114,6 +119,7 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
     if (target === 'menu') currentMenuHex = value;
     else currentTextHex = value;
     syncBandMix();
+    onStateChange();
   }
 
   syncBandMix();
@@ -166,6 +172,8 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
 
       list.appendChild(li);
     }
+
+    onStateChange();
   }
 
   function setCartCount(rawValue: number): void {
@@ -184,6 +192,8 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
         cartButton.setAttribute('aria-label', 'Open cart');
       }
     }
+
+    onStateChange();
   }
 
   // ─── Helpers ───
@@ -261,6 +271,11 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
     return fieldset;
   }
 
+  function syncStepperDisplay(controlName: string, value: string): void {
+    const input = wrapper.querySelector<HTMLInputElement>(`[data-control="${controlName}"] .control-stepper__value`);
+    if (input) input.value = value;
+  }
+
   // ─── Render ───
 
   // 1. Style (variant) — 2x2 thumbnail grid (hero section)
@@ -307,6 +322,7 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
       if (value !== undefined) {
         navRoot.style.setProperty('--border-radius', value);
         navRoot.dataset.borderRadius = String(stepIndex);
+        onStateChange();
       }
     },
     initialBorderRadius,
@@ -560,8 +576,14 @@ export function initControls(navRoot: HTMLElement, container: HTMLElement) {
       abortController.abort();
       wrapper.remove();
     },
-    setNavItemCount,
-    setCartCount,
+    setNavItemCount(value: number) {
+      setNavItemCount(value);
+      syncStepperDisplay('nav-items', String(currentNavItemCount));
+    },
+    setCartCount(value: number) {
+      setCartCount(value);
+      syncStepperDisplay('cart-count', navRoot.dataset.cartCount ?? '0');
+    },
     get navItemCount() { return currentNavItemCount; },
   };
 }

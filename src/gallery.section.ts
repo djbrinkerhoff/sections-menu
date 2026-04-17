@@ -1,4 +1,4 @@
-import type { Section, MountedSection } from './shell';
+import type { Section, MountedSection, SectionInitContext } from './shell';
 import galleryHtml from './gallery.partial.html?raw';
 import { initGalleryControls } from './gallery.controls';
 
@@ -7,11 +7,15 @@ export const gallerySection: Section = {
   label: 'Image Gallery',
   previewHtml: galleryHtml,
 
-  init(previewRoot: HTMLElement, controlsContainer: HTMLElement): MountedSection {
+  init(
+    previewRoot: HTMLElement,
+    controlsContainer: HTMLElement,
+    { onStateChange }: SectionInitContext,
+  ): MountedSection {
     const galleryRoot = previewRoot.querySelector<HTMLElement>('.gallery');
     if (!galleryRoot) throw new Error('Gallery root .gallery not found in previewHtml');
 
-    const controls = initGalleryControls(galleryRoot, controlsContainer);
+    const controls = initGalleryControls(galleryRoot, controlsContainer, onStateChange);
 
     return {
       destroy() {

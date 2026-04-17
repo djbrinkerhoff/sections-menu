@@ -22,7 +22,11 @@ const HIDDEN_CONTROLS: Record<Layout, string[]> = {
   masonry: ['autoplay', 'timing', 'pagination', 'aspect', 'fit'],
 };
 
-export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLElement) {
+export function initGalleryControls(
+  galleryRoot: HTMLElement,
+  container: HTMLElement,
+  onStateChange: () => void = () => {},
+) {
   const abortController = new AbortController();
   const { signal } = abortController;
 
@@ -53,6 +57,8 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
       slideshowHandle.cleanup();
       slideshowHandle = initSlideshow(galleryRoot, signal);
     }
+
+    onStateChange();
   }
 
   // Apply initial visibility
@@ -89,6 +95,7 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     }
 
     syncControlVisibility();
+    onStateChange();
   }
 
   function setControl(key: GalleryControlKey, value: string): void {
@@ -117,6 +124,8 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     if (key === 'pagination' && slideshowHandle) {
       slideshowHandle.syncPagination();
     }
+
+    onStateChange();
   }
 
   // ─── Builder: layout picker (thumbnail grid like nav variant picker) ───
@@ -326,6 +335,7 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
       input.ariaLabel = COLOR_LABELS[colorName];
       input.addEventListener('change', () => {
         galleryRoot.style.setProperty(cssProp, colorValue);
+        onStateChange();
       }, { signal });
 
       labelEl.appendChild(input);
@@ -378,6 +388,7 @@ export function initGalleryControls(galleryRoot: HTMLElement, container: HTMLEle
     input.addEventListener('input', () => {
       galleryRoot.dataset.heading = input.value;
       if (headingEl) headingEl.textContent = input.value;
+      onStateChange();
     }, { signal });
 
     fieldset.appendChild(input);

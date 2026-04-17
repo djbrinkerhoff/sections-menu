@@ -13,6 +13,10 @@ async function checkRadio(page: import('playwright/test').Page, name: string, va
   });
 }
 
+async function getSearchParams(page: import('playwright/test').Page) {
+  return page.evaluate(() => Object.fromEntries(new URLSearchParams(window.location.search).entries()));
+}
+
 test('boots with Navigation as default and shows picker', async ({ page }) => {
   const picker = page.locator('.controls__picker');
   await expect(picker).toBeVisible();
@@ -422,6 +426,60 @@ test('viewport width persists across component switches', async ({ page }) => {
   // Switch back to nav
   await page.locator('.controls__picker').selectOption('nav');
   await expect(preview).toHaveAttribute('style', /width:\s*1280px/);
+});
+
+test('URL reflects the active section, viewport, and saved section state', async ({ page }) => {
+  await checkRadio(page, 'variant', 'tile');
+  await checkRadio(page, 'capitalization', 'uppercase');
+  await page.locator('[data-control="nav-items"] button[aria-label="Increase Nav items"]').click();
+  await page.locator('[data-viewport="768"]').click();
+
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+  await checkRadio(page, 'pagination', 'counter');
+  await page.locator('input[name="heading"]').fill('Shareable gallery');
+
+  const params = await getSearchParams(page);
+
+  expect(params.section).toBe('gallery');
+  expect(params.viewport).toBe('768');
+  expect(params['nav.variant']).toBe('tile');
+  expect(params['nav.capitalization']).toBe('uppercase');
+  expect(params['nav.custom:navItemCount']).toBe('5');
+  expect(params['gallery.layout']).toBe('slideshow');
+  expect(params['gallery.pagination']).toBe('counter');
+  expect(params['gallery.heading']).toBe('Shareable gallery');
+});
+
+test('URL state restores the active section, viewport, and both section states on reload', async ({ page }) => {
+  await checkRadio(page, 'variant', 'tile');
+  await checkRadio(page, 'capitalization', 'uppercase');
+  await page.locator('[data-control="nav-items"] button[aria-label="Increase Nav items"]').click();
+  await page.locator('[data-viewport="1280"]').click();
+
+  await page.locator('.controls__picker').selectOption('gallery');
+  await checkRadio(page, 'layout', 'slideshow');
+  await checkRadio(page, 'pagination', 'counter');
+  await checkRadio(page, 'captions', 'true');
+  await page.locator('input[name="heading"]').fill('Reloaded gallery');
+
+  const sharedUrl = page.url();
+  await page.goto(sharedUrl);
+
+  await expect(page.locator('.controls__picker')).toHaveValue('gallery');
+  await expect(page.locator('.gallery')).toHaveAttribute('data-layout', 'slideshow');
+  await expect(page.locator('.gallery')).toHaveAttribute('data-pagination', 'counter');
+  await expect(page.locator('.gallery')).toHaveAttribute('data-captions', 'true');
+  await expect(page.locator('.gallery')).toHaveAttribute('data-heading', 'Reloaded gallery');
+  await expect(page.locator('input[name="heading"]')).toHaveValue('Reloaded gallery');
+  await expect(page.locator('#preview-root')).toHaveAttribute('style', /width:\s*1280px/);
+
+  await page.locator('.controls__picker').selectOption('nav');
+  await expect(page.locator('.nav')).toHaveAttribute('data-variant', 'tile');
+  await expect(page.locator('.nav')).toHaveAttribute('data-capitalization', 'uppercase');
+  await expect(page.locator('input[name="variant"][value="tile"]')).toBeChecked();
+  await expect(page.locator('input[name="capitalization"][value="uppercase"]')).toBeChecked();
+  await expect(page.locator('[data-control="nav-items"] input[aria-label="Nav items"]')).toHaveValue('5');
 });
 
 test('controls sync: set tile variant → switch → switch back → controls show tile', async ({ page }) => {

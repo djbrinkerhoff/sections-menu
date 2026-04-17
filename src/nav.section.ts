@@ -1,4 +1,4 @@
-import type { Section, MountedSection } from './shell';
+import type { Section, MountedSection, SectionInitContext } from './shell';
 import { getSavedState, setOnViewportChange } from './shell';
 import navHtml from './nav.partial.html?raw';
 import { initNavBehavior, resetEphemeralState, resetNavModuleState } from './nav';
@@ -13,12 +13,16 @@ export const navSection: Section = {
   label: 'Navigation',
   previewHtml: navHtml,
 
-  init(previewRoot: HTMLElement, controlsContainer: HTMLElement): MountedSection {
+  init(
+    previewRoot: HTMLElement,
+    controlsContainer: HTMLElement,
+    { onStateChange }: SectionInitContext,
+  ): MountedSection {
     const navRoot = previewRoot.querySelector<HTMLElement>('.nav');
     if (!navRoot) throw new Error('Nav root .nav not found in previewHtml');
 
     const cleanupNav = initNavBehavior(navRoot, previewRoot);
-    const controls = initControls(navRoot, controlsContainer);
+    const controls = initControls(navRoot, controlsContainer, onStateChange);
 
     // Restore custom keys (navItemCount, cartCount) that need JS logic
     const saved = getSavedState('nav');
