@@ -1,7 +1,7 @@
 import {
   VARIANTS, BUTTON_STYLES, ALIGNMENTS, CAPITALIZATIONS, CART_ICONS, LOGO_STYLES,
 } from './nav.schema';
-import type { ControlMap, Variant } from './nav.schema';
+import type { ControlMap, FontScale, Variant } from './nav.schema';
 import { COLORS, COLOR_LABELS } from './colors';
 import type { ColorName, ColorValue } from './colors';
 import { createStepperGroup, createSegmentedGroup } from './control-builders';
@@ -16,6 +16,18 @@ const NAV_RADIUS_STOPS = [
   { value: '16', label: 'Very Round', css: '16px' },
   { value: '9999', label: 'Full', css: '9999px' },
 ] as const;
+
+const NAV_FONT_SCALE_STOPS = [
+  { value: '0', label: 'XS', multiplier: '0.85' },
+  { value: '1', label: 'S', multiplier: '0.925' },
+  { value: '2', label: 'M', multiplier: '1' },
+  { value: '3', label: 'L', multiplier: '1.075' },
+  { value: '4', label: 'XL', multiplier: '1.15' },
+] as const satisfies readonly {
+  value: FontScale;
+  label: string;
+  multiplier: string;
+}[];
 
 const HIDDEN_CONTROLS: Partial<Record<Variant, string[]>> = {
   top: ['button-style'],
@@ -205,6 +217,10 @@ export function initControls(
 
   // ─── Render ───
 
+  const initialFontScaleIndex = NAV_FONT_SCALE_STOPS.findIndex(
+    (stop) => stop.value === navRoot.dataset.fontScale,
+  );
+
   // 1. Style (variant) — 2x2 thumbnail grid (hero section)
   wrapper.appendChild(createVariantGroup());
 
@@ -240,6 +256,21 @@ export function initControls(
     labels: { false: 'Off', true: 'On' },
     initialValue: navRoot.dataset.inset,
     onChange: (v) => setControl('inset', v as ControlMap['inset']),
+    signal,
+  }));
+
+  wrapper.appendChild(createLabeledRangeGroup({
+    name: 'font-size',
+    label: 'Font size',
+    steps: NAV_FONT_SCALE_STOPS.map((stop) => stop.label),
+    initialIndex: initialFontScaleIndex >= 0 ? initialFontScaleIndex : 2,
+    onInput(stepIndex) {
+      const stop = NAV_FONT_SCALE_STOPS[stepIndex];
+      if (!stop) return;
+      navRoot.style.setProperty('--nav-font-scale', stop.multiplier);
+      navRoot.dataset.fontScale = stop.value;
+      onStateChange();
+    },
     signal,
   }));
 

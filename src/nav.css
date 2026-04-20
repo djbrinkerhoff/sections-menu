@@ -6,6 +6,9 @@
   background-color: var(--menu-color);
   color: var(--text-color);
   container-type: inline-size;
+  --nav-font-scale: 1;
+  --nav-link-size: 0.875rem;
+  --nav-submenu-size: 0.75rem;
   --sidebar-rail-width: 88px;
   --sidebar-panel-width: 425px;
   --sidebar-logo-box-width: 168px;
@@ -93,6 +96,7 @@
   @apply bg-transparent border-0 cursor-pointer no-underline px-2 py-1 text-sm leading-none;
   color: var(--text-color);
   font: inherit;
+  font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
   vertical-align: middle;
   transition: color 150ms ease, background-color 150ms ease;
 }
@@ -117,6 +121,7 @@
 .nav__submenu-link {
   @apply text-xs no-underline px-2 py-1;
   color: var(--text-color);
+  font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
   transition: color 150ms ease;
 }
 
@@ -457,6 +462,8 @@
 
 [data-variant="top"] > .nav__inner > .nav__submenu .nav__submenu-link {
   @apply text-sm no-underline;
+  --nav-submenu-size: 0.875rem;
+  font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
   padding: 0;
   white-space: nowrap;
 }
@@ -476,6 +483,8 @@
 
 [data-variant="top"] .nav__link {
   @apply text-sm font-medium;
+  --nav-link-size: 0.875rem;
+  font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
   padding: 0;
 }
 
@@ -674,10 +683,11 @@
 
 [data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__link {
   @apply text-left font-normal;
+  --nav-link-size: 1.25rem;
   display: block;
   width: 100%;
   padding: 20px 16px;
-  font-size: 1.25rem;
+  font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
   line-height: 1.2;
   letter-spacing: 0.02em;
 }
@@ -707,8 +717,9 @@
 
 [data-variant="simple"]:not([data-simple-inline="true"])[data-open="true"] .nav__submenu-link {
   @apply block no-underline;
+  --nav-submenu-size: 1rem;
   padding: 0;
-  font-size: 1rem;
+  font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
   line-height: 1.25;
 }
 
@@ -811,6 +822,8 @@
 
 [data-variant="fullscreen"][data-open="true"] .nav__link {
   @apply text-xl font-bold uppercase;
+  --nav-link-size: 1.25rem;
+  font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
 }
 
 /* Fullscreen submenu */
@@ -831,6 +844,8 @@
 
 [data-variant="fullscreen"][data-open="true"] .nav__submenu-link {
   @apply block no-underline text-base;
+  --nav-submenu-size: 1rem;
+  font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
   padding: 0;
 }
 
@@ -902,6 +917,8 @@
 
 [data-variant="sidebar"][data-open="true"] .nav__item--has-submenu .nav__link {
   @apply text-xs font-semibold uppercase;
+  --nav-link-size: 0.75rem;
+  font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
   padding: 0;
   pointer-events: none;
   cursor: default;
@@ -916,9 +933,10 @@
 
 [data-variant="sidebar"][data-open="true"] .nav__submenu-link {
   @apply no-underline;
+  --nav-submenu-size: clamp(1.875rem, 6cqi, 2.25rem);
   display: block;
   padding: 0;
-  font-size: clamp(1.875rem, 6cqi, 2.25rem);
+  font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
   font-weight: 500;
   line-height: 1.3;
 }
@@ -930,9 +948,10 @@
 
 [data-variant="sidebar"][data-open="true"] .nav__item:not(.nav__item--has-submenu) .nav__link {
   @apply font-medium;
+  --nav-link-size: 1.25rem;
   display: block;
   padding: 16px 32px;
-  font-size: 1.25rem;
+  font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
   line-height: 1.3;
 }
 
@@ -1243,13 +1262,14 @@
 
 /* Each link becomes a square tile card */
 [data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__link {
+  --nav-link-size: 1.25rem;
   display: flex;
   align-items: center;
   aspect-ratio: 1;
   padding: 20px 16px;
   background: var(--text-color);
   color: var(--menu-color);
-  font-size: 1.25rem;
+  font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: 0.4px;
@@ -1313,9 +1333,10 @@
 
 [data-variant="tile"]:not([data-tile-inline="true"])[data-open="true"] .nav__submenu-link {
   @apply block no-underline;
+  --nav-submenu-size: 1.25rem;
   color: var(--menu-color);
   padding: 0;
-  font-size: 1.25rem;
+  font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.4px;
@@ -1380,6 +1401,7 @@
 
   /* Each nav tile: individual black box */
   .nav[data-variant="tile"] .nav__link {
+    --nav-link-size: 1rem;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1387,7 +1409,7 @@
     height: 56px;
     background: var(--menu-color);
     color: var(--text-color);
-    font-size: 1rem;
+    font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
     font-weight: 700;
     letter-spacing: 0.32px;
     white-space: nowrap;
@@ -1416,6 +1438,8 @@
 
   .nav[data-variant="tile"] .nav__submenu-link {
     @apply block text-sm;
+    --nav-submenu-size: 0.875rem;
+    font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
     padding: 6px 16px;
     white-space: nowrap;
   }
@@ -1634,13 +1658,14 @@
   }
 
   .nav[data-variant="tile"][data-tile-inline="false"][data-open="true"] .nav__item--has-submenu > .nav__link {
+    --nav-link-size: 1.25rem;
     background: var(--text-color);
     color: var(--menu-color);
     height: 56px;
     aspect-ratio: auto;
     padding: 20px 16px;
     border-radius: min(var(--border-radius, 0px), 16px);
-    font-size: 1.25rem;
+    font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
     font-weight: 700;
     line-height: 1.2;
     letter-spacing: 0.4px;
@@ -1660,7 +1685,8 @@
   }
 
   .nav[data-variant="tile"][data-tile-inline="false"][data-open="true"] .nav__submenu-link {
-    font-size: 0.875rem;
+    --nav-submenu-size: 0.875rem;
+    font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
     color: var(--menu-color);
     padding: 4px 0;
     white-space: normal;
@@ -1735,6 +1761,8 @@
 
   .nav[data-variant="simple"] .nav__link {
     @apply text-sm font-medium;
+    --nav-link-size: 0.875rem;
+    font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
     padding: 0;
     white-space: nowrap;
   }
@@ -1751,6 +1779,8 @@
 
   .nav[data-variant="simple"] .nav__submenu-link {
     @apply block text-sm;
+    --nav-submenu-size: 0.875rem;
+    font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
     padding: 6px 16px;
     white-space: nowrap;
   }
@@ -2339,4 +2369,3 @@
     padding: 0;
   }
 }
-

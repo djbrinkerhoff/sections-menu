@@ -26,6 +26,27 @@ async function setRangeValue(page: import('playwright/test').Page, name: string,
   }, value);
 }
 
+async function readNavTextSizes(
+  page: import('playwright/test').Page,
+  selectors: { link: string; submenu: string },
+) {
+  return page.evaluate(({ linkSelector, submenuSelector }) => {
+    const link = document.querySelector(linkSelector);
+    const submenu = document.querySelector(submenuSelector);
+    if (!(link instanceof HTMLElement) || !(submenu instanceof HTMLElement)) {
+      throw new Error('Expected nav link and submenu link');
+    }
+
+    return {
+      link: Number.parseFloat(getComputedStyle(link).fontSize),
+      submenu: Number.parseFloat(getComputedStyle(submenu).fontSize),
+    };
+  }, {
+    linkSelector: selectors.link,
+    submenuSelector: selectors.submenu,
+  });
+}
+
 async function selectedSlideshowIndex(page: import('playwright/test').Page) {
   return page.locator('.gallery__pagination [role="tab"]').evaluateAll((tabs) =>
     tabs.findIndex((tab) => tab.getAttribute('aria-selected') === 'true'),
@@ -654,9 +675,74 @@ test('viewport width persists across component switches', async ({ page }) => {
   await expect(preview).toHaveAttribute('style', /width:\s*1280px/);
 });
 
+test('font size slider scales nav text and persists across section switches', async ({ page }) => {
+  await page.locator('.nav__menu-toggle').click();
+
+  const defaultSizes = await readNavTextSizes(page, {
+    link: '.nav__item:not(.nav__item--has-submenu) .nav__link',
+    submenu: '#shop-submenu .nav__submenu-link',
+  });
+
+  await setRangeValue(page, 'font-size', 4);
+  await expect(page.locator('.nav')).toHaveAttribute('data-font-scale', '4');
+
+  const largerSizes = await readNavTextSizes(page, {
+    link: '.nav__item:not(.nav__item--has-submenu) .nav__link',
+    submenu: '#shop-submenu .nav__submenu-link',
+  });
+
+  expect(largerSizes.link).toBeGreaterThan(defaultSizes.link);
+  expect(largerSizes.submenu).toBeGreaterThan(defaultSizes.submenu);
+
+  await page.locator('.controls__picker').selectOption('gallery');
+  await page.locator('.controls__picker').selectOption('nav');
+  await page.locator('.nav__menu-toggle').click();
+
+  await expect(page.locator('input[name="font-size"]')).toHaveValue('4');
+
+  const restoredSizes = await readNavTextSizes(page, {
+    link: '.nav__item:not(.nav__item--has-submenu) .nav__link',
+    submenu: '#shop-submenu .nav__submenu-link',
+  });
+
+  expect(restoredSizes.link).toBe(largerSizes.link);
+  expect(restoredSizes.submenu).toBe(largerSizes.submenu);
+});
+
+test('font size slider scales sidebar text relative to the sidebar variant sizing', async ({ page }) => {
+  await checkRadio(page, 'variant', 'sidebar');
+  await page.locator('.nav__menu-toggle').click();
+
+  const defaultSizes = await readNavTextSizes(page, {
+    link: '.nav__item:not(.nav__item--has-submenu) .nav__link',
+    submenu: '.nav__item--has-submenu .nav__submenu-link',
+  });
+
+  await setRangeValue(page, 'font-size', 0);
+
+  const smallerSizes = await readNavTextSizes(page, {
+    link: '.nav__item:not(.nav__item--has-submenu) .nav__link',
+    submenu: '.nav__item--has-submenu .nav__submenu-link',
+  });
+
+  expect(smallerSizes.link).toBeLessThan(defaultSizes.link);
+  expect(smallerSizes.submenu).toBeLessThan(defaultSizes.submenu);
+
+  await setRangeValue(page, 'font-size', 4);
+
+  const largerSizes = await readNavTextSizes(page, {
+    link: '.nav__item:not(.nav__item--has-submenu) .nav__link',
+    submenu: '.nav__item--has-submenu .nav__submenu-link',
+  });
+
+  expect(largerSizes.link).toBeGreaterThan(defaultSizes.link);
+  expect(largerSizes.submenu).toBeGreaterThan(defaultSizes.submenu);
+});
+
 test('URL reflects the active section, viewport, and saved section state', async ({ page }) => {
   await checkRadio(page, 'variant', 'tile');
   await checkRadio(page, 'capitalization', 'uppercase');
+  await setRangeValue(page, 'font-size', 4);
   await page.locator('[data-control="nav-items"] button[aria-label="Increase Nav items"]').click();
   await page.locator('[data-viewport="768"]').click();
 
@@ -671,6 +757,8 @@ test('URL reflects the active section, viewport, and saved section state', async
   expect(params.viewport).toBe('768');
   expect(params['nav.variant']).toBe('tile');
   expect(params['nav.capitalization']).toBe('uppercase');
+  expect(params['nav.fontScale']).toBe('4');
+  expect(params['nav.css:--nav-font-scale']).toBe('1.15');
   expect(params['nav.custom:navItemCount']).toBe('5');
   expect(params['gallery.layout']).toBe('slideshow');
   expect(params['gallery.pagination']).toBe('counter');
@@ -680,6 +768,7 @@ test('URL reflects the active section, viewport, and saved section state', async
 test('URL state restores the active section, viewport, and both section states on reload', async ({ page }) => {
   await checkRadio(page, 'variant', 'tile');
   await checkRadio(page, 'capitalization', 'uppercase');
+  await setRangeValue(page, 'font-size', 4);
   await page.locator('[data-control="nav-items"] button[aria-label="Increase Nav items"]').click();
   await page.locator('[data-viewport="1280"]').click();
 
@@ -703,8 +792,10 @@ test('URL state restores the active section, viewport, and both section states o
   await page.locator('.controls__picker').selectOption('nav');
   await expect(page.locator('.nav')).toHaveAttribute('data-variant', 'tile');
   await expect(page.locator('.nav')).toHaveAttribute('data-capitalization', 'uppercase');
+  await expect(page.locator('.nav')).toHaveAttribute('data-font-scale', '4');
   await expect(page.locator('input[name="variant"][value="tile"]')).toBeChecked();
   await expect(page.locator('input[name="capitalization"][value="uppercase"]')).toBeChecked();
+  await expect(page.locator('input[name="font-size"]')).toHaveValue('4');
   await expect(page.locator('[data-control="nav-items"] input[aria-label="Nav items"]')).toHaveValue('5');
 });
 
@@ -728,6 +819,7 @@ test('URL state restores single-image border radius on reload', async ({ page })
 test('reset clears URL params and restores default shell and section state', async ({ page }) => {
   await checkRadio(page, 'variant', 'tile');
   await checkRadio(page, 'capitalization', 'uppercase');
+  await setRangeValue(page, 'font-size', 0);
   await page.locator('[data-control="nav-items"] button[aria-label="Increase Nav items"]').click();
   await page.locator('[data-viewport="1280"]').click();
 
@@ -744,8 +836,10 @@ test('reset clears URL params and restores default shell and section state', asy
   await expect(page.locator('#preview-root')).toHaveAttribute('style', /width:\s*375px/);
   await expect(page.locator('.nav')).toHaveAttribute('data-variant', 'simple');
   await expect(page.locator('.nav')).toHaveAttribute('data-capitalization', 'normal');
+  await expect(page.locator('.nav')).toHaveAttribute('data-font-scale', '2');
   await expect(page.locator('input[name="variant"][value="simple"]')).toBeChecked();
   await expect(page.locator('input[name="capitalization"][value="normal"]')).toBeChecked();
+  await expect(page.locator('input[name="font-size"]')).toHaveValue('2');
   await expect(page.locator('[data-control="nav-items"] input[aria-label="Nav items"]')).toHaveValue('4');
 
   await page.locator('.controls__picker').selectOption('gallery');
