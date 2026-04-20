@@ -315,6 +315,21 @@
   text-align: center;
 }
 
+.control-group__range-labels--ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 0;
+  padding-inline: 2px;
+}
+
+.control-group__range-labels--ends span:first-child {
+  text-align: left;
+}
+
+.control-group__range-labels--ends span:last-child {
+  text-align: right;
+}
+
 /* ─── Viewport bar ─── */
 .viewport-bar {
   @apply flex items-center justify-between gap-4 px-4 py-3;

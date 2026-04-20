@@ -4,6 +4,7 @@ interface LabeledRangeGroupOptions {
   initialValue?: number;
   initialIndex: number;
   label: string;
+  labelLayout?: 'grid' | 'ends';
   max?: number;
   min?: number;
   name: string;
@@ -19,6 +20,7 @@ export function createLabeledRangeGroup({
   initialValue,
   initialIndex,
   label,
+  labelLayout,
   max,
   min,
   name,
@@ -54,6 +56,9 @@ export function createLabeledRangeGroup({
 
   const labels = document.createElement('div');
   labels.className = 'control-group__range-labels';
+  if (labelLayout === 'ends') {
+    labels.classList.add('control-group__range-labels--ends');
+  }
   labels.style.setProperty('--range-label-count', String(steps.length));
 
   for (const stepLabel of steps) {
