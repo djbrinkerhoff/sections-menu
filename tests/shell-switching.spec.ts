@@ -63,6 +63,29 @@ async function readElementHeights(
   }, Object.entries(selectors));
 }
 
+async function readCurrentLogoMetrics(page: import('playwright/test').Page) {
+  return page.evaluate(() => {
+    const nav = document.querySelector('.nav');
+    if (!(nav instanceof HTMLElement)) {
+      throw new Error('Expected nav root');
+    }
+
+    const logoStyle = nav.dataset.logoStyle === 'stacked' ? 'stacked' : 'small';
+    const logoMark = nav.querySelector(`.nav__logo-mark[data-glyph="${logoStyle}"]`);
+    if (!(logoMark instanceof HTMLElement)) {
+      throw new Error(`Expected logo mark for style: ${logoStyle}`);
+    }
+
+    const rect = logoMark.getBoundingClientRect();
+
+    return {
+      style: logoStyle,
+      width: rect.width,
+      height: rect.height,
+    };
+  });
+}
+
 async function selectedSlideshowIndex(page: import('playwright/test').Page) {
   return page.locator('.gallery__pagination [role="tab"]').evaluateAll((tabs) =>
     tabs.findIndex((tab) => tab.getAttribute('aria-selected') === 'true'),
@@ -725,6 +748,30 @@ test('font size slider scales nav text and persists across section switches', as
   expect(restoredSizes.submenu).toBe(largerSizes.submenu);
 });
 
+test('logo size slider scales the current logo and persists across section switches', async ({ page }) => {
+  await page.locator('[data-viewport="1280"]').click();
+
+  const defaultLogo = await readCurrentLogoMetrics(page);
+  await expect(page.locator('input[name="logo-size"]')).toHaveValue('16');
+
+  await setRangeValue(page, 'logo-size', 28);
+  await expect(page.locator('input[name="logo-size"]')).toHaveValue('28');
+
+  await expect.poll(async () => (await readCurrentLogoMetrics(page)).height).toBeGreaterThan(defaultLogo.height);
+  await expect.poll(async () => (await readCurrentLogoMetrics(page)).width).toBeGreaterThan(defaultLogo.width);
+
+  const largerLogo = await readCurrentLogoMetrics(page);
+
+  await page.locator('.controls__picker').selectOption('gallery');
+  await page.locator('.controls__picker').selectOption('nav');
+
+  await expect(page.locator('input[name="logo-size"]')).toHaveValue('28');
+
+  const restoredLogo = await readCurrentLogoMetrics(page);
+  expect(restoredLogo.height).toBe(largerLogo.height);
+  expect(restoredLogo.width).toBe(largerLogo.width);
+});
+
 test('simple inline nav grows taller as font size increases', async ({ page }) => {
   await page.locator('[data-viewport="1280"]').click();
 
@@ -747,12 +794,15 @@ test('simple inline nav grows taller as font size increases', async ({ page }) =
 test('simple closed nav can grow from logo size changes', async ({ page }) => {
   await page.locator('[data-viewport="375"]').click();
 
+  await expect(page.locator('input[name="logo-size"]')).toHaveValue('16');
+
   const defaultHeights = await readElementHeights(page, {
     shell: '.nav__inner',
     logo: '.nav__logo',
   });
 
   await checkRadio(page, 'logo-style', 'stacked');
+  await expect(page.locator('input[name="logo-size"]')).toHaveValue('24');
 
   const stackedHeights = await readElementHeights(page, {
     shell: '.nav__inner',
@@ -851,6 +901,40 @@ test('font size slider scales sidebar text relative to the sidebar variant sizin
   expect(largerSizes.submenu).toBeGreaterThan(defaultSizes.submenu);
 });
 
+test('logo size slider restores from URL state on reload', async ({ page }) => {
+  await checkRadio(page, 'logo-style', 'stacked');
+  await setRangeValue(page, 'logo-size', 30);
+  await page.locator('[data-viewport="1280"]').click();
+
+  const params = await getSearchParams(page);
+  expect(params.section).toBe('nav');
+  expect(params.viewport).toBe('1280');
+  expect(params['nav.logoStyle']).toBe('stacked');
+  expect(params['nav.css:--nav-logo-height']).toBe('30px');
+
+  await page.goto(page.url());
+
+  await expect(page.locator('.controls__picker')).toHaveValue('nav');
+  await expect(page.locator('input[name="logo-style"][value="stacked"]')).toBeChecked();
+  await expect(page.locator('input[name="logo-size"]')).toHaveValue('30');
+
+  const restoredLogo = await readCurrentLogoMetrics(page);
+  expect(restoredLogo.style).toBe('stacked');
+  expect(restoredLogo.height).toBe(30);
+});
+
+test('rigid variants can clamp the rendered logo without changing the requested slider value', async ({ page }) => {
+  await setRangeValue(page, 'logo-size', 32);
+  await page.locator('[data-viewport="1280"]').click();
+  await checkRadio(page, 'variant', 'sidebar');
+
+  await expect(page.locator('input[name="logo-size"]')).toHaveValue('32');
+
+  const sidebarLogo = await readCurrentLogoMetrics(page);
+  expect(sidebarLogo.style).toBe('small');
+  expect(sidebarLogo.height).toBeLessThan(32);
+});
+
 test('URL reflects the active section, viewport, and saved section state', async ({ page }) => {
   await checkRadio(page, 'variant', 'tile');
   await checkRadio(page, 'capitalization', 'uppercase');
@@ -932,6 +1016,7 @@ test('reset clears URL params and restores default shell and section state', asy
   await checkRadio(page, 'variant', 'tile');
   await checkRadio(page, 'capitalization', 'uppercase');
   await setRangeValue(page, 'font-size', 0);
+  await setRangeValue(page, 'logo-size', 28);
   await page.locator('[data-control="nav-items"] button[aria-label="Increase Nav items"]').click();
   await page.locator('[data-viewport="1280"]').click();
 
@@ -952,6 +1037,7 @@ test('reset clears URL params and restores default shell and section state', asy
   await expect(page.locator('input[name="variant"][value="simple"]')).toBeChecked();
   await expect(page.locator('input[name="capitalization"][value="normal"]')).toBeChecked();
   await expect(page.locator('input[name="font-size"]')).toHaveValue('2');
+  await expect(page.locator('input[name="logo-size"]')).toHaveValue('16');
   await expect(page.locator('[data-control="nav-items"] input[aria-label="Nav items"]')).toHaveValue('4');
 
   await page.locator('.controls__picker').selectOption('gallery');

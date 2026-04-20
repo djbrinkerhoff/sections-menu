@@ -1,22 +1,30 @@
 interface LabeledRangeGroupOptions {
   controlName?: string;
   description?: string;
+  initialValue?: number;
   initialIndex: number;
   label: string;
+  max?: number;
+  min?: number;
   name: string;
-  onInput: (stepIndex: number) => void;
+  onInput: (value: number) => void;
   signal: AbortSignal;
+  step?: number;
   steps: readonly string[];
 }
 
 export function createLabeledRangeGroup({
   controlName,
   description,
+  initialValue,
   initialIndex,
   label,
+  max,
+  min,
   name,
   onInput,
   signal,
+  step,
   steps,
 }: LabeledRangeGroupOptions): HTMLFieldSetElement {
   const fieldset = document.createElement('fieldset');
@@ -35,13 +43,13 @@ export function createLabeledRangeGroup({
   range.className = 'control-group__range';
   range.type = 'range';
   range.name = name;
-  range.min = '0';
-  range.max = String(steps.length - 1);
-  range.step = '1';
-  range.value = String(initialIndex);
+  range.min = String(min ?? 0);
+  range.max = String(max ?? (steps.length - 1));
+  range.step = String(step ?? 1);
+  range.value = String(initialValue ?? initialIndex);
   range.ariaLabel = label;
   range.addEventListener('input', () => {
-    onInput(Number.parseInt(range.value, 10));
+    onInput(Number.parseFloat(range.value));
   }, { signal });
 
   const labels = document.createElement('div');

@@ -29,10 +29,17 @@ const NAV_FONT_SCALE_STOPS = [
   multiplier: string;
 }[];
 
+const LOGO_SIZE_MIN = 8;
+const LOGO_SIZE_MAX = 32;
+const DEFAULT_LOGO_HEIGHTS = {
+  small: 16,
+  stacked: 24,
+} as const;
+
 const HIDDEN_CONTROLS: Partial<Record<Variant, string[]>> = {
   top: ['button-style'],
   sidebar: ['inset', 'border-radius', 'alignment'],
-  tile: ['inset', 'logo-style', 'alignment', 'button-style'],
+  tile: ['inset', 'logo-style', 'logo-size', 'alignment', 'button-style'],
 };
 
 export function initControls(
@@ -60,6 +67,22 @@ export function initControls(
     }
   }
 
+  function readConfiguredLogoSize(): number {
+    const explicitHeight = Number.parseFloat(navRoot.style.getPropertyValue('--nav-logo-height'));
+    if (Number.isFinite(explicitHeight) && explicitHeight > 0) {
+      return Math.max(LOGO_SIZE_MIN, Math.min(LOGO_SIZE_MAX, Math.round(explicitHeight)));
+    }
+
+    const logoStyle = navRoot.dataset.logoStyle === 'stacked' ? 'stacked' : 'small';
+    return DEFAULT_LOGO_HEIGHTS[logoStyle];
+  }
+
+  function syncLogoSizeControl(): void {
+    const input = wrapper.querySelector<HTMLInputElement>('input[name="logo-size"]');
+    if (!input) return;
+    input.value = String(readConfiguredLogoSize());
+  }
+
   function setControl<K extends keyof ControlMap>(key: K, value: ControlMap[K]): void {
     if (key === 'variant') {
       resetEphemeralState(navRoot);
@@ -69,6 +92,9 @@ export function initControls(
     if (key === 'inset') {
       const on = value === 'true';
       navRoot.style.setProperty('--nav-inset', on ? '16px' : '0px');
+    }
+    if (key === 'logoStyle') {
+      syncLogoSizeControl();
     }
     if (key === 'variant') {
       syncControlVisibility();
@@ -220,6 +246,7 @@ export function initControls(
   const initialFontScaleIndex = NAV_FONT_SCALE_STOPS.findIndex(
     (stop) => stop.value === navRoot.dataset.fontScale,
   );
+  const initialLogoSize = readConfiguredLogoSize();
 
   // 1. Style (variant) — 2x2 thumbnail grid (hero section)
   wrapper.appendChild(createVariantGroup());
@@ -256,6 +283,24 @@ export function initControls(
     labels: { false: 'Off', true: 'On' },
     initialValue: navRoot.dataset.inset,
     onChange: (v) => setControl('inset', v as ControlMap['inset']),
+    signal,
+  }));
+
+  wrapper.appendChild(createLabeledRangeGroup({
+    controlName: 'logo-size',
+    name: 'logo-size',
+    label: 'Logo size',
+    steps: ['8px', '32px'],
+    min: LOGO_SIZE_MIN,
+    max: LOGO_SIZE_MAX,
+    step: 1,
+    initialIndex: 0,
+    initialValue: initialLogoSize,
+    onInput(value) {
+      const clampedValue = Math.max(LOGO_SIZE_MIN, Math.min(LOGO_SIZE_MAX, Math.round(value)));
+      navRoot.style.setProperty('--nav-logo-height', `${clampedValue}px`);
+      onStateChange();
+    },
     signal,
   }));
 

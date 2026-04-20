@@ -17,6 +17,15 @@ async function setStepperValue(page: import('playwright/test').Page, label: stri
   }
 }
 
+async function setRangeValue(page: import('playwright/test').Page, name: string, value: number) {
+  await page.locator(`input[name="${name}"]`).evaluate((input, nextValue) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error('Expected range input');
+    if (typeof nextValue !== 'number') throw new Error('Expected numeric range value');
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }, value);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
@@ -279,6 +288,39 @@ test('moves top variant links inline when there is room and stacks them when the
   expect(overflowed.primaryRect?.top).toBeGreaterThan(overflowed.logoRect?.bottom ?? 0);
 });
 
+test('falls back out of the top inline row when the logo grows too large', async ({ page }) => {
+  await setVariant(page, 'top');
+  await page.getByRole('button', { name: '768' }).click();
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('true');
+
+  await setStepperValue(page, 'Nav items', 10);
+  await setRangeValue(page, 'logo-size', 32);
+
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-top-inline')).toBe('false');
+
+  const layout = await page.evaluate(() => {
+    const nav = document.querySelector('.nav');
+    const logo = document.querySelector('.nav__logo');
+    const primary = document.querySelector('.nav__primary');
+    const search = document.querySelector('.nav__search');
+    const cart = document.querySelector('.nav__cart');
+    const rect = (element: Element | null) => element?.getBoundingClientRect() ?? null;
+
+    return {
+      topInline: nav instanceof HTMLElement ? nav.dataset.topInline : null,
+      logoRect: rect(logo),
+      primaryRect: rect(primary),
+      searchRect: rect(search),
+      cartRect: rect(cart),
+    };
+  });
+
+  expect(layout.topInline).toBe('false');
+  expect(layout.primaryRect?.top).toBeGreaterThan(layout.logoRect?.bottom ?? 0);
+  expect(layout.logoRect?.right).toBeLessThanOrEqual(layout.searchRect?.left ?? Number.MAX_SAFE_INTEGER);
+  expect(layout.cartRect?.left).toBeGreaterThanOrEqual(layout.logoRect?.right ?? 0);
+});
+
 test('lets nav__list scroll on desktop and toggles the sidebar logo per Figma', async ({ page }) => {
   await page.getByRole('button', { name: '1280' }).click();
 
@@ -371,6 +413,96 @@ test('keeps the closed mobile sidebar from widening the page', async ({ page }) 
 
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
   expect(metrics.scrollLeft).toBe(0);
+});
+
+test('desktop tile search open keeps the search field between the logo and cart', async ({ page }) => {
+  await page.getByRole('button', { name: '1280' }).click();
+  await setVariant(page, 'tile');
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-tile-inline')).toBe('true');
+
+  await page.locator('.nav__search-toggle').click();
+
+  const layout = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) return null;
+      const box = element.getBoundingClientRect();
+      return {
+        left: box.left,
+        right: box.right,
+        top: box.top,
+        bottom: box.bottom,
+        width: box.width,
+      };
+    };
+
+    return {
+      primaryDisplay: document.querySelector('.nav__primary') instanceof HTMLElement
+        ? getComputedStyle(document.querySelector('.nav__primary') as HTMLElement).display
+        : null,
+      toggleDisplay: document.querySelector('.nav__menu-toggle') instanceof HTMLElement
+        ? getComputedStyle(document.querySelector('.nav__menu-toggle') as HTMLElement).display
+        : null,
+      logoRect: rect('.nav__logo'),
+      searchRect: rect('.nav__search'),
+      inputRect: rect('.nav__search-input'),
+      cartRect: rect('.nav__cart'),
+    };
+  });
+
+  expect(layout.primaryDisplay).toBe('none');
+  expect(layout.toggleDisplay).toBe('none');
+  expect(layout.logoRect?.width).toBeGreaterThan(120);
+  expect(layout.searchRect?.left).toBeGreaterThanOrEqual(layout.logoRect?.right ?? 0);
+  expect(layout.searchRect?.right).toBeLessThanOrEqual(layout.cartRect?.left ?? Number.MAX_SAFE_INTEGER);
+  expect(layout.searchRect?.top).toBeLessThan(layout.logoRect?.bottom ?? Number.MAX_SAFE_INTEGER);
+  expect(layout.searchRect?.bottom).toBeGreaterThan(layout.logoRect?.top ?? 0);
+  expect(layout.inputRect?.width).toBeGreaterThan(120);
+});
+
+test('desktop collapsed tile search open still resolves to logo, search, and cart', async ({ page }) => {
+  await page.getByRole('button', { name: '1280' }).click();
+  await setVariant(page, 'tile');
+  await setStepperValue(page, 'Nav items', 20);
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-tile-inline')).toBe('false');
+
+  await page.locator('.nav__search-toggle').click();
+
+  const layout = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) return null;
+      const box = element.getBoundingClientRect();
+      return {
+        left: box.left,
+        right: box.right,
+        top: box.top,
+        bottom: box.bottom,
+        width: box.width,
+      };
+    };
+
+    const logo = document.querySelector('.nav__logo');
+    const toggle = document.querySelector('.nav__menu-toggle');
+
+    return {
+      logoDisplay: logo instanceof HTMLElement ? getComputedStyle(logo).display : null,
+      toggleDisplay: toggle instanceof HTMLElement ? getComputedStyle(toggle).display : null,
+      logoRect: rect('.nav__logo'),
+      searchRect: rect('.nav__search'),
+      inputRect: rect('.nav__search-input'),
+      cartRect: rect('.nav__cart'),
+    };
+  });
+
+  expect(layout.logoDisplay).not.toBe('none');
+  expect(layout.toggleDisplay).toBe('none');
+  expect(layout.logoRect?.width).toBeGreaterThan(120);
+  expect(layout.searchRect?.left).toBeGreaterThanOrEqual(layout.logoRect?.right ?? 0);
+  expect(layout.searchRect?.right).toBeLessThanOrEqual(layout.cartRect?.left ?? Number.MAX_SAFE_INTEGER);
+  expect(layout.searchRect?.top).toBeLessThan(layout.logoRect?.bottom ?? Number.MAX_SAFE_INTEGER);
+  expect(layout.searchRect?.bottom).toBeGreaterThan(layout.logoRect?.top ?? 0);
+  expect(layout.inputRect?.width).toBeGreaterThan(120);
 });
 
 async function setVariant(page: import('playwright/test').Page, variant: string) {

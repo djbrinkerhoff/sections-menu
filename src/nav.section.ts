@@ -6,7 +6,7 @@ import { initControls } from './controls';
 
 const EPHEMERAL_KEYS = new Set(['open', 'topInline', 'simpleInline', 'tileInline']);
 
-const CSS_PROPS = ['--menu-color', '--text-color', '--nav-font-scale', '--nav-inset', '--border-radius'] as const;
+const CSS_PROPS = ['--menu-color', '--text-color', '--nav-font-scale', '--nav-logo-height', '--nav-inset', '--border-radius'] as const;
 
 export const navSection: Section = {
   id: 'nav',

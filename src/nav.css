@@ -9,7 +9,12 @@
   --nav-font-scale: 1;
   --nav-link-size: 0.875rem;
   --nav-submenu-size: 0.75rem;
-  --nav-logo-box-min-block: 22px;
+  --nav-logo-default-height: 16px;
+  --nav-logo-aspect-ratio: 136 / 16;
+  --nav-logo-requested-height: clamp(8px, var(--nav-logo-height, var(--nav-logo-default-height)), 32px);
+  --nav-logo-fit-height: 32px;
+  --nav-logo-used-height: min(var(--nav-logo-requested-height), var(--nav-logo-fit-height));
+  --nav-logo-box-min-block: calc(var(--nav-logo-used-height) + 6px);
   --nav-inline-item-min-block: calc(1lh + 0.8em);
   --nav-inline-submenu-min-block: calc(1lh + 0.5em);
   --nav-panel-search-min-block: 46px;
@@ -48,6 +53,7 @@
 .nav__logo {
   @apply flex items-center gap-2 no-underline;
   color: var(--text-color);
+  min-width: 0;
   min-block-size: var(--nav-logo-box-min-block);
   transition: color 150ms ease, opacity 150ms ease;
 }
@@ -65,6 +71,11 @@
 
 .nav__logo-mark {
   display: none;
+  height: var(--nav-logo-used-height);
+  width: auto;
+  max-inline-size: 100%;
+  flex-shrink: 0;
+  aspect-ratio: var(--nav-logo-aspect-ratio);
   background-color: currentColor;
   -webkit-mask-size: contain;
   -webkit-mask-repeat: no-repeat;
@@ -74,26 +85,24 @@
 
 [data-logo-style="small"] .nav__logo-mark[data-glyph="small"] {
   @apply inline-block;
-  width: 136px;
-  height: 16px;
   -webkit-mask-image: url('/logos/bc-small.svg');
   mask-image: url('/logos/bc-small.svg');
 }
 
 [data-logo-style="small"] {
-  --nav-logo-box-min-block: 22px;
+  --nav-logo-default-height: 16px;
+  --nav-logo-aspect-ratio: 136 / 16;
 }
 
 [data-logo-style="stacked"] .nav__logo-mark[data-glyph="stacked"] {
   @apply inline-block;
-  width: 54px;
-  height: 24px;
   -webkit-mask-image: url('/logos/bc-stacked.svg');
   mask-image: url('/logos/bc-stacked.svg');
 }
 
 [data-logo-style="stacked"] {
-  --nav-logo-box-min-block: 30px;
+  --nav-logo-default-height: 24px;
+  --nav-logo-aspect-ratio: 54 / 24;
 }
 
 /* ─── Primary nav (closed state — hidden for simple/fullscreen) ─── */
@@ -1518,13 +1527,60 @@
     color: var(--text-color);
   }
 
-  /* Desktop search: hide tiles, search becomes a single black box filling the middle */
+  /* Desktop search: replace the link strip with logo | search | cart */
+  .nav[data-variant="tile"]:has(.nav__search[data-search-open="true"]) .nav__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 24px;
+  }
+
   .nav[data-variant="tile"]:has(.nav__search[data-search-open="true"]) .nav__primary {
     display: none;
   }
 
+  .nav[data-variant="tile"]:has(.nav__search[data-search-open="true"]) .nav__menu-toggle {
+    display: none;
+  }
+
+  .nav[data-variant="tile"]:has(.nav__search[data-search-open="true"]) .nav__logo {
+    display: flex;
+    grid-column: 1;
+    grid-row: 1;
+    min-inline-size: calc(var(--nav-logo-used-height) * var(--nav-logo-aspect-ratio) + 32px);
+    justify-content: flex-start;
+  }
+
+  .nav[data-variant="tile"]:has(.nav__search[data-search-open="true"]) .nav__logo-mark {
+    display: none;
+  }
+
+  .nav[data-variant="tile"]:not([data-logo-style="stacked"]):has(.nav__search[data-search-open="true"]) .nav__logo-mark[data-glyph="small"],
+  .nav[data-variant="tile"][data-logo-style="stacked"]:has(.nav__search[data-search-open="true"]) .nav__logo-mark[data-glyph="stacked"] {
+    display: inline-block;
+  }
+
   .nav[data-variant="tile"]:has(.nav__search[data-search-open="true"]) .nav__actions {
-    display: contents;
+    display: flex;
+    grid-column: 2 / 4;
+    grid-row: 1;
+    align-items: center;
+    justify-self: stretch;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .nav[data-variant="tile"]:has(.nav__search[data-search-open="true"]) .nav__search {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+  }
+
+  .nav[data-variant="tile"]:has(.nav__search[data-search-open="true"]) .nav__search-toggle + .nav__search-input {
+    display: block;
+  }
+
+  .nav[data-variant="tile"]:has(.nav__search[data-search-open="true"]) .nav__cart {
+    flex: 0 0 auto;
   }
 
   /* Search open: one big black box with search icon | input | close icon */
@@ -1573,8 +1629,10 @@
   }
 
   .nav[data-variant="tile"] .nav__search[data-search-open="true"] .nav__search-input {
+    flex: 1 1 auto;
+    min-width: 0;
     position: static;
-    width: 100%;
+    width: auto;
     opacity: 1;
     padding: 0;
     border: 0;
@@ -1682,6 +1740,29 @@
   .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"] .nav__cart,
   .nav[data-variant="tile"][data-tile-inline="false"] .nav__menu-toggle {
     border-radius: var(--border-radius, 0px);
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"]:has(.nav__search[data-search-open="true"]) .nav__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 24px;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"]:has(.nav__search[data-search-open="true"]) .nav__logo {
+    display: flex;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"]:has(.nav__search[data-search-open="true"]) .nav__actions {
+    grid-column: 2 / 4;
+    gap: 8px;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"]:has(.nav__search[data-search-open="true"]) .nav__menu-toggle {
+    display: none;
+  }
+
+  .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"]:has(.nav__search[data-search-open="true"]) .nav__search-toggle + .nav__search-input {
+    display: block;
   }
 
   /* Desktop collapsed open: submenu item should match regular link tiles,

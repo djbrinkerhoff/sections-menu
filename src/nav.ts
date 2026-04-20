@@ -100,6 +100,108 @@ interface NavMeasurements {
   gap: number;
 }
 
+const MIN_LOGO_HEIGHT = 8;
+const MAX_LOGO_HEIGHT = 32;
+const SMALL_LOGO_ASPECT_RATIO = 136 / 16;
+const STACKED_LOGO_ASPECT_RATIO = 54 / 24;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getLogoAspectRatio(root: HTMLElement): number {
+  return root.dataset.logoStyle === 'stacked'
+    ? STACKED_LOGO_ASPECT_RATIO
+    : SMALL_LOGO_ASPECT_RATIO;
+}
+
+function getRequestedLogoHeight(root: HTMLElement): number {
+  const explicitHeight = Number.parseFloat(root.style.getPropertyValue('--nav-logo-height'));
+  if (Number.isFinite(explicitHeight) && explicitHeight > 0) {
+    return clamp(explicitHeight, MIN_LOGO_HEIGHT, MAX_LOGO_HEIGHT);
+  }
+
+  return root.dataset.logoStyle === 'stacked' ? 24 : 16;
+}
+
+function getVisibleWidth(element: HTMLElement | null): number {
+  if (!element) return 0;
+  const styles = getComputedStyle(element);
+  if (styles.display === 'none') return 0;
+  return element.getBoundingClientRect().width;
+}
+
+function getContentMetrics(root: HTMLElement): { contentWidth: number; gap: number } | null {
+  const inner = root.querySelector<HTMLElement>('.nav__inner');
+  if (!inner) return null;
+
+  const styles = getComputedStyle(inner);
+  const paddingInline =
+    (Number.parseFloat(styles.paddingLeft) || 0) +
+    (Number.parseFloat(styles.paddingRight) || 0);
+  const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+
+  return {
+    contentWidth: inner.clientWidth - paddingInline,
+    gap,
+  };
+}
+
+function syncLogoFitState(root: HTMLElement): void {
+  const logo = root.querySelector<HTMLElement>('.nav__logo');
+  if (!logo) return;
+
+  const ratio = getLogoAspectRatio(root);
+  const metrics = getContentMetrics(root);
+  let maxInlineSize = Number.POSITIVE_INFINITY;
+  const variant = root.dataset.variant ?? 'simple';
+
+  if (variant === 'tile') {
+    maxInlineSize = 136;
+  } else if (variant === 'sidebar' && root.clientWidth >= 768) {
+    const styles = getComputedStyle(logo);
+    const paddingInline =
+      (Number.parseFloat(styles.paddingLeft) || 0) +
+      (Number.parseFloat(styles.paddingRight) || 0);
+    const logoBoxWidth = logo.clientWidth || logo.getBoundingClientRect().width;
+    maxInlineSize = Math.max(0, logoBoxWidth - paddingInline);
+  } else if (metrics) {
+    const actions = root.querySelector<HTMLElement>('.nav__actions');
+    const toggle = root.querySelector<HTMLElement>('.nav__menu-toggle');
+    const search = root.querySelector<HTMLElement>('.nav__search');
+    const cart = root.querySelector<HTMLElement>('.nav__cart');
+    const social = root.querySelector<HTMLElement>('.nav__social');
+    const actionsWidth = getVisibleWidth(actions);
+    const toggleWidth = getVisibleWidth(toggle);
+    const searchWidth = getVisibleWidth(search);
+    const cartWidth = getVisibleWidth(cart);
+    const socialWidth = root.dataset.socialLinks === 'true' ? getVisibleWidth(social) : 0;
+
+    if (variant === 'simple' && root.dataset.open === 'true' && root.dataset.simpleInline !== 'true') {
+      maxInlineSize = metrics.contentWidth - toggleWidth - metrics.gap;
+    } else if (variant === 'top') {
+      const fixedRowWidth = searchWidth + cartWidth + socialWidth;
+      const gapBudget = metrics.gap * (root.dataset.socialLinks === 'true' ? 4 : 3);
+      maxInlineSize = metrics.contentWidth - fixedRowWidth - gapBudget;
+    } else if (variant === 'simple' && root.clientWidth >= 768 && root.dataset.simpleInline === 'true') {
+      maxInlineSize = metrics.contentWidth - actionsWidth - metrics.gap * 2;
+    } else {
+      maxInlineSize = metrics.contentWidth - actionsWidth - toggleWidth - metrics.gap * 3;
+    }
+  }
+
+  const fitHeight = clamp(
+    Math.floor(Math.max(0, maxInlineSize) / ratio),
+    MIN_LOGO_HEIGHT,
+    MAX_LOGO_HEIGHT,
+  );
+  const nextValue = `${Math.min(getRequestedLogoHeight(root), fitHeight)}px`;
+
+  if (root.style.getPropertyValue('--nav-logo-fit-height').trim() !== nextValue) {
+    root.style.setProperty('--nav-logo-fit-height', nextValue);
+  }
+}
+
 function measureNavElements(root: HTMLElement): NavMeasurements | null {
   const inner = root.querySelector<HTMLElement>('.nav__inner');
   const list = root.querySelector<HTMLElement>('.nav__list');
@@ -109,12 +211,8 @@ function measureNavElements(root: HTMLElement): NavMeasurements | null {
 
   if (!inner || !list || !logo || !search || !cart) return null;
 
-  const styles = getComputedStyle(inner);
-  const paddingInline =
-    (Number.parseFloat(styles.paddingLeft) || 0) +
-    (Number.parseFloat(styles.paddingRight) || 0);
-  const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
-  const contentWidth = inner.clientWidth - paddingInline;
+  const metrics = getContentMetrics(root);
+  if (!metrics) return null;
   const fixedWidth =
     logo.getBoundingClientRect().width +
     search.getBoundingClientRect().width +
@@ -126,7 +224,13 @@ function measureNavElements(root: HTMLElement): NavMeasurements | null {
       ? social.getBoundingClientRect().width
       : 0;
 
-  return { contentWidth, fixedWidth, linkWidth, socialWidth, gap };
+  return {
+    contentWidth: metrics.contentWidth,
+    fixedWidth,
+    linkWidth,
+    socialWidth,
+    gap: metrics.gap,
+  };
 }
 
 // Hysteresis: require extra clearance to promote, collapse immediately.
@@ -493,9 +597,11 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
     if (inlineSyncFrame) cancelAnimationFrame(inlineSyncFrame);
     inlineSyncFrame = requestAnimationFrame(() => {
       inlineSyncFrame = 0;
+      syncLogoFitState(root);
       syncTopInlineState(root);
       syncSimpleInlineState(root);
       syncTileInlineState(root);
+      syncLogoFitState(root);
     });
   };
 
@@ -632,13 +738,20 @@ export function initNavBehavior(root: HTMLElement, preview: HTMLElement): () => 
 
   inlineMutationObserver.observe(root, {
     attributes: true,
-    attributeFilter: ['data-variant', 'data-alignment', 'data-logo-style', 'data-cart-count', 'data-social-links', 'data-open'],
+    attributeFilter: ['data-variant', 'data-alignment', 'data-logo-style', 'data-cart-count', 'data-social-links', 'data-open', 'style'],
   });
 
   if (primary) {
     inlineMutationObserver.observe(primary, {
       childList: true,
       subtree: true,
+    });
+  }
+
+  if (searchForm) {
+    inlineMutationObserver.observe(searchForm, {
+      attributes: true,
+      attributeFilter: ['data-search-open'],
     });
   }
 
