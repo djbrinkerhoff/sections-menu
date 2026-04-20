@@ -350,6 +350,29 @@ test('keeps the desktop sidebar logo container in sync with menu color', async (
   expect(colors.railBackground).toBe(colors.logoBackground);
 });
 
+test('keeps the closed mobile sidebar from widening the page', async ({ page }) => {
+  await page.getByRole('button', { name: '375' }).click();
+  await setVariant(page, 'sidebar');
+
+  const metrics = await page.evaluate(() => {
+    const scrollingElement = document.scrollingElement;
+    if (!(scrollingElement instanceof HTMLElement)) {
+      throw new Error('Expected document.scrollingElement');
+    }
+
+    scrollingElement.scrollLeft = 9999;
+
+    return {
+      clientWidth: scrollingElement.clientWidth,
+      scrollWidth: scrollingElement.scrollWidth,
+      scrollLeft: scrollingElement.scrollLeft,
+    };
+  });
+
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+  expect(metrics.scrollLeft).toBe(0);
+});
+
 async function setVariant(page: import('playwright/test').Page, variant: string) {
   await page.locator(`input[name="variant"][value="${variant}"]`).evaluate((input) => {
     if (!(input instanceof HTMLInputElement)) throw new Error('Expected variant input');

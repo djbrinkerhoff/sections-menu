@@ -9,6 +9,10 @@
   --nav-font-scale: 1;
   --nav-link-size: 0.875rem;
   --nav-submenu-size: 0.75rem;
+  --nav-logo-box-min-block: 22px;
+  --nav-inline-item-min-block: calc(1lh + 0.8em);
+  --nav-inline-submenu-min-block: calc(1lh + 0.5em);
+  --nav-panel-search-min-block: 46px;
   --sidebar-rail-width: 88px;
   --sidebar-panel-width: 425px;
   --sidebar-logo-box-width: 168px;
@@ -44,6 +48,7 @@
 .nav__logo {
   @apply flex items-center gap-2 no-underline;
   color: var(--text-color);
+  min-block-size: var(--nav-logo-box-min-block);
   transition: color 150ms ease, opacity 150ms ease;
 }
 
@@ -75,12 +80,20 @@
   mask-image: url('/logos/bc-small.svg');
 }
 
+[data-logo-style="small"] {
+  --nav-logo-box-min-block: 22px;
+}
+
 [data-logo-style="stacked"] .nav__logo-mark[data-glyph="stacked"] {
   @apply inline-block;
   width: 54px;
   height: 24px;
   -webkit-mask-image: url('/logos/bc-stacked.svg');
   mask-image: url('/logos/bc-stacked.svg');
+}
+
+[data-logo-style="stacked"] {
+  --nav-logo-box-min-block: 30px;
 }
 
 /* ─── Primary nav (closed state — hidden for simple/fullscreen) ─── */
@@ -463,8 +476,12 @@
 [data-variant="top"] > .nav__inner > .nav__submenu .nav__submenu-link {
   @apply text-sm no-underline;
   --nav-submenu-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
   font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
-  padding: 0;
+  line-height: 1.2;
+  min-block-size: var(--nav-inline-submenu-min-block);
+  padding: 0.15em 0;
   white-space: nowrap;
 }
 
@@ -484,8 +501,12 @@
 [data-variant="top"] .nav__link {
   @apply text-sm font-medium;
   --nav-link-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
   font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
-  padding: 0;
+  line-height: 1.2;
+  min-block-size: var(--nav-inline-item-min-block);
+  padding: 0.2em 0;
 }
 
 /* When the top links fit, promote them into the masthead row. */
@@ -823,7 +844,11 @@
 [data-variant="fullscreen"][data-open="true"] .nav__link {
   @apply text-xl font-bold uppercase;
   --nav-link-size: 1.25rem;
+  display: inline-flex;
+  align-items: center;
   font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
+  line-height: 1.1;
+  min-block-size: calc(1lh + 0.35em);
 }
 
 /* Fullscreen submenu */
@@ -845,8 +870,12 @@
 [data-variant="fullscreen"][data-open="true"] .nav__submenu-link {
   @apply block no-underline text-base;
   --nav-submenu-size: 1rem;
+  display: inline-flex;
+  align-items: center;
   font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
-  padding: 0;
+  line-height: 1.2;
+  min-block-size: calc(1lh + 0.25em);
+  padding: 0.125em 0;
 }
 
 /* Cart: centered column at bottom */
@@ -858,6 +887,10 @@
 /* ─── Sidebar variant ───
    Mobile: horizontal bar + right-slide panel.
    Desktop (≥768 cqi): vertical right strip + expanding panel. */
+
+[data-variant="sidebar"] {
+  overflow-x: clip;
+}
 
 /* Mobile: right-slide panel (overrides base display:none) */
 [data-variant="sidebar"] .nav__primary {
@@ -918,7 +951,11 @@
 [data-variant="sidebar"][data-open="true"] .nav__item--has-submenu .nav__link {
   @apply text-xs font-semibold uppercase;
   --nav-link-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
   font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
+  line-height: 1.2;
+  min-block-size: calc(1lh + 0.2em);
   padding: 0;
   pointer-events: none;
   cursor: default;
@@ -1762,8 +1799,12 @@
   .nav[data-variant="simple"] .nav__link {
     @apply text-sm font-medium;
     --nav-link-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
     font-size: calc(var(--nav-link-size, 0.875rem) * var(--nav-font-scale, 1));
-    padding: 0;
+    line-height: 1.2;
+    min-block-size: var(--nav-inline-item-min-block);
+    padding: 0.2em 0;
     white-space: nowrap;
   }
 
@@ -1780,8 +1821,12 @@
   .nav[data-variant="simple"] .nav__submenu-link {
     @apply block text-sm;
     --nav-submenu-size: 0.875rem;
+    display: flex;
+    align-items: center;
     font-size: calc(var(--nav-submenu-size, 0.75rem) * var(--nav-font-scale, 1));
-    padding: 6px 16px;
+    line-height: 1.2;
+    min-block-size: var(--nav-inline-submenu-min-block);
+    padding: 0.15em 16px;
     white-space: nowrap;
   }
 
@@ -1933,7 +1978,8 @@
     transform: translateY(-50%) scaleX(0);
     transform-origin: right center;
     width: 208px;
-    height: 46px;
+    min-height: var(--nav-panel-search-min-block);
+    height: auto;
     background-color: var(--menu-color);
     border-radius: 0;
     border: 0;

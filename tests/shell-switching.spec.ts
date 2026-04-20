@@ -47,6 +47,22 @@ async function readNavTextSizes(
   });
 }
 
+async function readElementHeights(
+  page: import('playwright/test').Page,
+  selectors: Record<string, string>,
+) {
+  return page.evaluate((entries) => {
+    return Object.fromEntries(entries.map(([name, selector]) => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Expected element for selector: ${selector}`);
+      }
+
+      return [name, element.getBoundingClientRect().height];
+    }));
+  }, Object.entries(selectors));
+}
+
 async function selectedSlideshowIndex(page: import('playwright/test').Page) {
   return page.locator('.gallery__pagination [role="tab"]').evaluateAll((tabs) =>
     tabs.findIndex((tab) => tab.getAttribute('aria-selected') === 'true'),
@@ -707,6 +723,102 @@ test('font size slider scales nav text and persists across section switches', as
 
   expect(restoredSizes.link).toBe(largerSizes.link);
   expect(restoredSizes.submenu).toBe(largerSizes.submenu);
+});
+
+test('simple inline nav grows taller as font size increases', async ({ page }) => {
+  await page.locator('[data-viewport="1280"]').click();
+
+  const defaultHeights = await readElementHeights(page, {
+    shell: '.nav__inner',
+    link: '.nav__list .nav__link',
+  });
+
+  await setRangeValue(page, 'font-size', 4);
+
+  const largerHeights = await readElementHeights(page, {
+    shell: '.nav__inner',
+    link: '.nav__list .nav__link',
+  });
+
+  expect(largerHeights.link).toBeGreaterThan(defaultHeights.link);
+  expect(largerHeights.shell).toBeGreaterThan(defaultHeights.shell);
+});
+
+test('simple closed nav can grow from logo size changes', async ({ page }) => {
+  await page.locator('[data-viewport="375"]').click();
+
+  const defaultHeights = await readElementHeights(page, {
+    shell: '.nav__inner',
+    logo: '.nav__logo',
+  });
+
+  await checkRadio(page, 'logo-style', 'stacked');
+
+  const stackedHeights = await readElementHeights(page, {
+    shell: '.nav__inner',
+    logo: '.nav__logo',
+  });
+
+  expect(stackedHeights.logo).toBeGreaterThan(defaultHeights.logo);
+  expect(stackedHeights.shell).toBeGreaterThan(defaultHeights.shell);
+});
+
+test('top nav link strip grows taller as font size increases', async ({ page }) => {
+  await checkRadio(page, 'variant', 'top');
+  await page.locator('[data-viewport="375"]').click();
+
+  const defaultHeights = await readElementHeights(page, {
+    strip: '.nav__primary',
+    link: '.nav__primary .nav__link',
+  });
+
+  await setRangeValue(page, 'font-size', 4);
+
+  const largerHeights = await readElementHeights(page, {
+    strip: '.nav__primary',
+    link: '.nav__primary .nav__link',
+  });
+
+  expect(largerHeights.link).toBeGreaterThan(defaultHeights.link);
+  expect(largerHeights.strip).toBeGreaterThan(defaultHeights.strip);
+});
+
+test('fullscreen shell stays fixed while link rows grow with font size', async ({ page }) => {
+  await checkRadio(page, 'variant', 'fullscreen');
+  await page.locator('.nav__menu-toggle').click();
+
+  const defaultHeights = await readElementHeights(page, {
+    shell: '.nav',
+    link: '.nav__list .nav__link',
+  });
+
+  await setRangeValue(page, 'font-size', 4);
+
+  const largerHeights = await readElementHeights(page, {
+    shell: '.nav',
+    link: '.nav__list .nav__link',
+  });
+
+  expect(largerHeights.link).toBeGreaterThan(defaultHeights.link);
+  expect(Math.abs(largerHeights.shell - defaultHeights.shell)).toBeLessThan(1);
+});
+
+test('tile keeps card height fixed when font size increases', async ({ page }) => {
+  await page.locator('[data-viewport="1280"]').click();
+  await checkRadio(page, 'variant', 'tile');
+  await expect.poll(async () => page.locator('.nav').getAttribute('data-tile-inline')).toBe('true');
+
+  const defaultHeights = await readElementHeights(page, {
+    link: '.nav__primary .nav__link',
+  });
+
+  await setRangeValue(page, 'font-size', 4);
+
+  const largerHeights = await readElementHeights(page, {
+    link: '.nav__primary .nav__link',
+  });
+
+  expect(Math.abs(largerHeights.link - defaultHeights.link)).toBeLessThan(1);
 });
 
 test('font size slider scales sidebar text relative to the sidebar variant sizing', async ({ page }) => {
