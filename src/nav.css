@@ -1744,8 +1744,8 @@
 
   .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"]:has(.nav__search[data-search-open="true"]) .nav__inner {
     grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 8px;
-    padding: 24px;
+    gap: 4px;
+    padding: 16px;
   }
 
   .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"]:has(.nav__search[data-search-open="true"]) .nav__logo {
@@ -1753,12 +1753,13 @@
   }
 
   .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"]:has(.nav__search[data-search-open="true"]) .nav__actions {
-    grid-column: 2 / 4;
-    gap: 8px;
+    grid-column: 2;
+    gap: 4px;
   }
 
   .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"]:has(.nav__search[data-search-open="true"]) .nav__menu-toggle {
-    display: none;
+    display: flex;
+    grid-column: 3;
   }
 
   .nav[data-variant="tile"][data-tile-inline="false"][data-open="false"]:has(.nav__search[data-search-open="true"]) .nav__search-toggle + .nav__search-input {

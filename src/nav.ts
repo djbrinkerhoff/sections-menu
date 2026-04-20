@@ -299,6 +299,8 @@ function syncTileInlineState(root: HTMLElement): void {
     return;
   }
   if (root.dataset.open === 'true') return;
+  const search = root.querySelector<HTMLElement>('.nav__search');
+  if (search?.dataset.searchOpen === 'true') return;
   if (root.clientWidth < 768) {
     root.dataset.tileInline = 'false';
     return;

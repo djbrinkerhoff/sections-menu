@@ -437,11 +437,17 @@ test('desktop tile search open keeps the search field between the logo and cart'
     };
 
     return {
+      tileInline: document.querySelector('.nav') instanceof HTMLElement
+        ? (document.querySelector('.nav') as HTMLElement).dataset.tileInline ?? null
+        : null,
       primaryDisplay: document.querySelector('.nav__primary') instanceof HTMLElement
         ? getComputedStyle(document.querySelector('.nav__primary') as HTMLElement).display
         : null,
       toggleDisplay: document.querySelector('.nav__menu-toggle') instanceof HTMLElement
         ? getComputedStyle(document.querySelector('.nav__menu-toggle') as HTMLElement).display
+        : null,
+      paddingLeft: document.querySelector('.nav__inner') instanceof HTMLElement
+        ? getComputedStyle(document.querySelector('.nav__inner') as HTMLElement).paddingLeft
         : null,
       logoRect: rect('.nav__logo'),
       searchRect: rect('.nav__search'),
@@ -450,8 +456,10 @@ test('desktop tile search open keeps the search field between the logo and cart'
     };
   });
 
+  expect(layout.tileInline).toBe('true');
   expect(layout.primaryDisplay).toBe('none');
   expect(layout.toggleDisplay).toBe('none');
+  expect(layout.paddingLeft).toBe('24px');
   expect(layout.logoRect?.width).toBeGreaterThan(120);
   expect(layout.searchRect?.left).toBeGreaterThanOrEqual(layout.logoRect?.right ?? 0);
   expect(layout.searchRect?.right).toBeLessThanOrEqual(layout.cartRect?.left ?? Number.MAX_SAFE_INTEGER);
@@ -460,7 +468,7 @@ test('desktop tile search open keeps the search field between the logo and cart'
   expect(layout.inputRect?.width).toBeGreaterThan(120);
 });
 
-test('desktop collapsed tile search open still resolves to logo, search, and cart', async ({ page }) => {
+test('desktop collapsed tile search open keeps logo, search, cart, and menu in one row', async ({ page }) => {
   await page.getByRole('button', { name: '1280' }).click();
   await setVariant(page, 'tile');
   await setStepperValue(page, 'Nav items', 20);
@@ -492,18 +500,53 @@ test('desktop collapsed tile search open still resolves to logo, search, and car
       searchRect: rect('.nav__search'),
       inputRect: rect('.nav__search-input'),
       cartRect: rect('.nav__cart'),
+      toggleRect: rect('.nav__menu-toggle'),
     };
   });
 
   expect(layout.logoDisplay).not.toBe('none');
-  expect(layout.toggleDisplay).toBe('none');
+  expect(layout.toggleDisplay).not.toBe('none');
   expect(layout.logoRect?.width).toBeGreaterThan(120);
   expect(layout.searchRect?.left).toBeGreaterThanOrEqual(layout.logoRect?.right ?? 0);
   expect(layout.searchRect?.right).toBeLessThanOrEqual(layout.cartRect?.left ?? Number.MAX_SAFE_INTEGER);
+  expect(layout.cartRect?.right).toBeLessThanOrEqual(layout.toggleRect?.left ?? Number.MAX_SAFE_INTEGER);
   expect(layout.searchRect?.top).toBeLessThan(layout.logoRect?.bottom ?? Number.MAX_SAFE_INTEGER);
   expect(layout.searchRect?.bottom).toBeGreaterThan(layout.logoRect?.top ?? 0);
+  expect(layout.toggleRect?.top).toBeLessThan(layout.searchRect?.bottom ?? Number.MAX_SAFE_INTEGER);
+  expect(layout.toggleRect?.bottom).toBeGreaterThan(layout.searchRect?.top ?? 0);
   expect(layout.inputRect?.width).toBeGreaterThan(120);
 });
+
+for (const viewport of ['768', '1280'] as const) {
+  test(`collapsed tile search open keeps 16px inner padding at ${viewport}`, async ({ page }) => {
+    await page.getByRole('button', { name: viewport }).click();
+    await setVariant(page, 'tile');
+    await setStepperValue(page, 'Nav items', 20);
+    await expect.poll(async () => page.locator('.nav').getAttribute('data-tile-inline')).toBe('false');
+
+    await page.locator('.nav__search-toggle').click();
+
+    const padding = await page.evaluate(() => {
+      const inner = document.querySelector('.nav__inner');
+      if (!(inner instanceof HTMLElement)) {
+        throw new Error('Expected nav inner');
+      }
+
+      const styles = getComputedStyle(inner);
+      return {
+        left: styles.paddingLeft,
+        right: styles.paddingRight,
+        top: styles.paddingTop,
+        bottom: styles.paddingBottom,
+      };
+    });
+
+    expect(padding.left).toBe('16px');
+    expect(padding.right).toBe('16px');
+    expect(padding.top).toBe('16px');
+    expect(padding.bottom).toBe('16px');
+  });
+}
 
 async function setVariant(page: import('playwright/test').Page, variant: string) {
   await page.locator(`input[name="variant"][value="${variant}"]`).evaluate((input) => {
