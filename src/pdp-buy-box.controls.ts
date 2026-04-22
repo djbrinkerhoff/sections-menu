@@ -70,9 +70,60 @@ export function initPdpBuyBoxControls(
     }));
   }
 
-  addToggle('showStock', 'Stock label', 'showStock');
-  addToggle('showBnpl', 'Buy now, pay later', 'showBnpl');
   addToggle('showVariants', 'Variants', 'showVariants');
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'stockStyle',
+    label: 'Stock label',
+    values: ['off', 'in-stock', 'limited', 'count'],
+    labels: { off: 'Off', 'in-stock': 'In stock', limited: 'Limited', count: 'X left' },
+    initialValue: root.dataset.stockStyle ?? 'in-stock',
+    onChange: (v) => {
+      root.dataset.stockStyle = v;
+      preview.syncStockLabel();
+      onStateChange();
+    },
+    signal,
+  }));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'priceDisplay',
+    label: 'Price display',
+    values: ['lowest', 'highest', 'range'],
+    labels: { lowest: 'Lowest', highest: 'Highest', range: 'Range' },
+    initialValue: root.dataset.priceDisplay ?? 'lowest',
+    onChange: (v) => {
+      root.dataset.priceDisplay = v;
+      preview.syncPrice();
+      onStateChange();
+    },
+    signal,
+  }));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'currencyNotation',
+    label: 'Currency notation',
+    values: ['sign', 'code', 'none'],
+    labels: { sign: '$', code: 'USD', none: 'None' },
+    initialValue: root.dataset.currencyNotation ?? 'sign',
+    onChange: (v) => {
+      root.dataset.currencyNotation = v;
+      preview.syncPrice();
+      onStateChange();
+    },
+    signal,
+  }));
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'priceFormat',
+    label: 'Price format',
+    values: ['decimal', 'whole'],
+    labels: { decimal: '100.00', whole: '100' },
+    initialValue: root.dataset.priceFormat ?? 'decimal',
+    onChange: (v) => {
+      root.dataset.priceFormat = v;
+      preview.syncPrice();
+      onStateChange();
+    },
+    signal,
+  }));
+  addToggle('showBnpl', 'Buy now, pay later', 'showBnpl');
 
   // ─── Gallery controls ───
 

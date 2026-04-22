@@ -5,16 +5,23 @@ export interface PdpBuyBoxImage {
   height: number;
 }
 
+export interface PdpBuyBoxOption {
+  label: string;
+  price: string;
+  /** true = always sold out; string[] = sold out only for these select-group values */
+  soldOut?: boolean | string[];
+}
+
 export interface PdpBuyBoxSelectGroup {
   label: string;
   placeholder: string;
-  options: string[];
+  options: PdpBuyBoxOption[];
   defaultValue: string;
 }
 
 export interface PdpBuyBoxChipGroup {
   label: string;
-  options: string[];
+  options: PdpBuyBoxOption[];
   defaultValue: string | null;
 }
 
@@ -56,12 +63,22 @@ export const PDP_BUY_BOX_PRODUCTS: PdpBuyBoxProduct[] = [
     selectGroup: {
       label: 'Color',
       placeholder: 'Choose...',
-      options: ['Charcoal', 'Bone', 'Mist', 'Clay'],
+      options: [
+        { label: 'Charcoal', price: '$12.00' },
+        { label: 'Bone', price: '$12.00' },
+        { label: 'Mist', price: '$14.00', soldOut: true },
+        { label: 'Clay', price: '$14.00' },
+      ],
       defaultValue: '',
     },
     chipGroup: {
       label: 'Size',
-      options: ['Small', 'Medium', 'Large', 'XL'],
+      options: [
+        { label: 'Small', price: '$12.00' },
+        { label: 'Medium', price: '$12.00' },
+        { label: 'Large', price: '$14.00', soldOut: ['Bone'] },
+        { label: 'XL', price: '$18.00', soldOut: ['Charcoal'] },
+      ],
       defaultValue: null,
     },
     quantityDefault: 1,
@@ -136,12 +153,22 @@ export const PDP_BUY_BOX_PRODUCTS: PdpBuyBoxProduct[] = [
     selectGroup: {
       label: 'Color',
       placeholder: 'Choose...',
-      options: ['Black', 'Moss', 'Cocoa', 'Clay'],
+      options: [
+        { label: 'Black', price: '$64.00' },
+        { label: 'Moss', price: '$64.00' },
+        { label: 'Cocoa', price: '$68.00', soldOut: true },
+        { label: 'Clay', price: '$68.00' },
+      ],
       defaultValue: '',
     },
     chipGroup: {
       label: 'Strap',
-      options: ['Short', 'Regular', 'Long', 'Crossbody'],
+      options: [
+        { label: 'Short', price: '$64.00' },
+        { label: 'Regular', price: '$64.00' },
+        { label: 'Long', price: '$72.00', soldOut: ['Black'] },
+        { label: 'Crossbody', price: '$78.00', soldOut: ['Moss'] },
+      ],
       defaultValue: null,
     },
     quantityDefault: 1,
@@ -216,12 +243,22 @@ export const PDP_BUY_BOX_PRODUCTS: PdpBuyBoxProduct[] = [
     selectGroup: {
       label: 'Color',
       placeholder: 'Choose...',
-      options: ['Graphite', 'Faded Navy', 'Oat', 'Pine'],
+      options: [
+        { label: 'Graphite', price: '$88.00' },
+        { label: 'Faded Navy', price: '$88.00' },
+        { label: 'Oat', price: '$92.00' },
+        { label: 'Pine', price: '$92.00', soldOut: true },
+      ],
       defaultValue: '',
     },
     chipGroup: {
       label: 'Size',
-      options: ['Small', 'Medium', 'Large', 'XL'],
+      options: [
+        { label: 'Small', price: '$88.00', soldOut: ['Graphite'] },
+        { label: 'Medium', price: '$88.00' },
+        { label: 'Large', price: '$92.00', soldOut: ['Faded Navy'] },
+        { label: 'XL', price: '$98.00' },
+      ],
       defaultValue: null,
     },
     quantityDefault: 1,
@@ -300,8 +337,8 @@ export function getPdpBuyBoxProduct(productId: string | undefined): PdpBuyBoxPro
       bnplMessage: '',
       shippingNote: '',
       ctaLabel: '',
-      selectGroup: { label: '', placeholder: '', options: [], defaultValue: '' },
-      chipGroup: { label: '', options: [], defaultValue: null },
+      selectGroup: { label: '', placeholder: '', options: [] as PdpBuyBoxOption[], defaultValue: '' },
+      chipGroup: { label: '', options: [] as PdpBuyBoxOption[], defaultValue: null },
       quantityDefault: 1,
       images: [],
       description: { title: '', body: '' },

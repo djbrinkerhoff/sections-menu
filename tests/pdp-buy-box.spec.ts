@@ -78,7 +78,7 @@ test('renders one select-style option group and one chip-style option group', as
 
 test('default product hydrates title, price, and hero image', async ({ page }) => {
   await expect(page.locator('.pdp-buy-box__title')).toHaveText('Very cool t-shirt');
-  await expect(page.locator('.pdp-buy-box__price')).toHaveText('$12.00');
+  await expect(page.locator('.pdp-buy-box__price')).toContainText('$12.00');
 
   const heroSrc = await page.locator('.gallery__item:not([data-gallery-clone]) .gallery__image').first().getAttribute('src');
   expect(heroSrc).toContain('summit-tee-01.png');
@@ -111,7 +111,7 @@ test('switching product from controls updates hero image, title, price, and opti
 
   await expect(page.locator('.pdp-buy-box')).toHaveAttribute('data-product-id', 'crescent-bag');
   await expect(page.locator('.pdp-buy-box__title')).toHaveText('Medium nylon crescent bag');
-  await expect(page.locator('.pdp-buy-box__price')).toHaveText('$64.00');
+  await expect(page.locator('.pdp-buy-box__price')).toContainText('$64.00');
 
   const heroSrc = await page.locator('.gallery__item:not([data-gallery-clone]) .gallery__image').first().getAttribute('src');
   expect(heroSrc).toContain('crescent-bag-01.png');
@@ -130,7 +130,7 @@ test('switching product resets select, chip selection, and quantity', async ({ p
 
   // Increase quantity
   await page.locator('[data-quantity-action="increment"]').click();
-  await expect(page.locator('.pdp-buy-box__quantity-value')).toHaveText('2');
+  await expect(page.locator('.pdp-buy-box__quantity-value')).toHaveValue('2');
 
   // Switch product
   await page.locator('select[name="productId"]').selectOption('ridge-hoodie');
@@ -141,7 +141,7 @@ test('switching product resets select, chip selection, and quantity', async ({ p
   for (let i = 0; i < 4; i++) {
     await expect(chips.nth(i)).toHaveAttribute('data-selected', 'false');
   }
-  await expect(page.locator('.pdp-buy-box__quantity-value')).toHaveText('1');
+  await expect(page.locator('.pdp-buy-box__quantity-value')).toHaveValue('1');
 });
 
 test('all three products render with correct info sections', async ({ page }) => {
@@ -184,21 +184,21 @@ test('chip toggle selects and deselects', async ({ page }) => {
 
 test('quantity increment and decrement within bounds', async ({ page }) => {
   const value = page.locator('.pdp-buy-box__quantity-value');
-  await expect(value).toHaveText('1');
+  await expect(value).toHaveValue('1');
 
   // Decrement at 1 stays at 1
   await page.locator('[data-quantity-action="decrement"]').click();
-  await expect(value).toHaveText('1');
+  await expect(value).toHaveValue('1');
 
   // Increment
   await page.locator('[data-quantity-action="increment"]').click();
-  await expect(value).toHaveText('2');
+  await expect(value).toHaveValue('2');
   await page.locator('[data-quantity-action="increment"]').click();
-  await expect(value).toHaveText('3');
+  await expect(value).toHaveValue('3');
 
   // Decrement
   await page.locator('[data-quantity-action="decrement"]').click();
-  await expect(value).toHaveText('2');
+  await expect(value).toHaveValue('2');
 });
 
 test('quantity caps at 9', async ({ page }) => {
@@ -209,7 +209,7 @@ test('quantity caps at 9', async ({ page }) => {
     await increment.click();
   }
 
-  await expect(value).toHaveText('9');
+  await expect(value).toHaveValue('9');
 });
 
 // ─── State persistence ───

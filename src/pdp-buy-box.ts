@@ -34,6 +34,8 @@ export interface PdpBuyBoxHandle {
   setProduct(productId: string): void;
   getCurrentProductId(): string;
   syncLayout(): void;
+  syncStockLabel(): void;
+  syncPrice(): void;
 }
 
 function queryRequired<T extends Element>(root: HTMLElement, selector: string): T {
@@ -134,24 +136,45 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
 
     for (const option of currentProduct.selectGroup.options) {
       const optionElement = document.createElement('option');
-      optionElement.value = option;
-      optionElement.textContent = option;
+      optionElement.value = option.label;
+      optionElement.textContent = option.soldOut ? `${option.label} (Sold out)` : option.label;
       elements.selectInput.appendChild(optionElement);
     }
 
     elements.selectInput.value = selectedSelectValue;
   }
 
+  function isSelectedVariantSoldOut(): boolean {
+    if (!selectedSelectValue) return false;
+    const match = currentProduct.selectGroup.options.find((o) => o.label === selectedSelectValue);
+    return match?.soldOut === true;
+  }
+
+  function isChipSoldOut(option: { soldOut?: boolean | string[] }): boolean {
+    if (option.soldOut === true) return true;
+    if (Array.isArray(option.soldOut)) {
+      return !!selectedSelectValue && option.soldOut.includes(selectedSelectValue);
+    }
+    return false;
+  }
+
   function renderChipOptions(): void {
     elements.chipRow.replaceChildren();
+    const variantSoldOut = isSelectedVariantSoldOut();
 
     for (const option of currentProduct.chipGroup.options) {
       const button = document.createElement('button');
       button.className = 'pdp-buy-box__chip';
       button.type = 'button';
-      button.dataset.chipValue = option;
-      button.textContent = option;
-      const isSelected = selectedChipValue === option;
+      button.dataset.chipValue = option.label;
+      button.textContent = option.label;
+      const isSoldOut = isChipSoldOut(option) || variantSoldOut;
+      if (isSoldOut) {
+        button.dataset.soldOut = 'true';
+        button.disabled = true;
+        button.setAttribute('aria-disabled', 'true');
+      }
+      const isSelected = !isSoldOut && selectedChipValue === option.label;
       button.dataset.selected = isSelected ? 'true' : 'false';
       button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
       elements.chipRow.appendChild(button);
@@ -168,6 +191,64 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     }
   }
 
+  function syncStockLabel(): void {
+    const style = root.dataset.stockStyle ?? 'in-stock';
+    switch (style) {
+      case 'off':
+        elements.stock.textContent = '';
+        break;
+      case 'in-stock':
+        elements.stock.textContent = 'In stock';
+        break;
+      case 'limited':
+        elements.stock.textContent = 'Limited quantities available';
+        break;
+      case 'count':
+        elements.stock.textContent = `${3 + (currentProduct.id.length % 5)} left in stock`;
+        break;
+    }
+  }
+
+  function parsePriceCents(price: string): number {
+    return Math.round(Number.parseFloat(price.replace(/[^0-9.]/g, '')) * 100);
+  }
+
+  function formatCents(cents: number): string {
+    const notation = root.dataset.currencyNotation ?? 'sign';
+    const fmt = root.dataset.priceFormat ?? 'decimal';
+    const raw = cents / 100;
+    const number = fmt === 'whole' ? String(Math.round(raw)) : raw.toFixed(2);
+    if (notation === 'code') return `${number} USD`;
+    if (notation === 'none') return number;
+    return `$${number}`;
+  }
+
+  function syncPrice(): void {
+    const chipPrices = currentProduct.chipGroup.options.map((o) => parsePriceCents(o.price));
+
+    // If a chip is selected, show its exact price
+    if (selectedChipValue) {
+      const match = currentProduct.chipGroup.options.find((o) => o.label === selectedChipValue);
+      if (match) {
+        elements.price.textContent = formatCents(parsePriceCents(match.price));
+        return;
+      }
+    }
+
+    // No chip selected — use display mode
+    const mode = root.dataset.priceDisplay ?? 'lowest';
+    const min = Math.min(...chipPrices);
+    const max = Math.max(...chipPrices);
+
+    if (min === max || mode === 'lowest') {
+      elements.price.textContent = formatCents(min);
+    } else if (mode === 'highest') {
+      elements.price.textContent = formatCents(max);
+    } else {
+      elements.price.textContent = `${formatCents(min)}–${formatCents(max)}`;
+    }
+  }
+
   function renderQuantity(): void {
     elements.quantityValue.value = String(quantity);
   }
@@ -177,8 +258,8 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     root.dataset.productId = currentProduct.id || DEFAULT_PDP_BUY_BOX_PRODUCT_ID;
 
     elements.title.textContent = currentProduct.title;
-    elements.price.textContent = currentProduct.price;
-    elements.stock.textContent = currentProduct.stockLabel;
+    syncPrice();
+    syncStockLabel();
     elements.bnplMessage.textContent = currentProduct.bnplMessage;
     elements.shippingNote.textContent = currentProduct.shippingNote;
     elements.selectLabel.textContent = currentProduct.selectGroup.label;
@@ -214,6 +295,8 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     const target = event.target;
     if (!(target instanceof HTMLSelectElement) || target !== elements.selectInput) return;
     selectedSelectValue = target.value;
+    renderChipOptions();
+    syncPrice();
   }, { signal });
 
   root.addEventListener('click', (event) => {
@@ -239,6 +322,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     if (!nextValue) return;
     selectedChipValue = selectedChipValue === nextValue ? null : nextValue;
     renderChipOptions();
+    syncPrice();
   }, { signal });
 
   elements.quantityValue.addEventListener('change', () => {
@@ -266,5 +350,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     syncLayout() {
       slideshowHandle?.syncLayout();
     },
+    syncStockLabel,
+    syncPrice,
   };
 }

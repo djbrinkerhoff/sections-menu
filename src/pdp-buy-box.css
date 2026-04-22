@@ -6,7 +6,7 @@
   container-type: inline-size;
 }
 
-.pdp-buy-box[data-show-stock="false"] .pdp-buy-box__stock {
+.pdp-buy-box[data-stock-style="off"] .pdp-buy-box__stock {
   display: none;
 }
 
@@ -200,6 +200,26 @@ legend.pdp-buy-box__option-label {
   background: #10100b;
   color: #ffffff;
   border-color: #10100b;
+}
+
+.pdp-buy-box__chip[data-sold-out="true"] {
+  position: relative;
+  opacity: 0.4;
+  cursor: not-allowed;
+  overflow: hidden;
+}
+
+.pdp-buy-box__chip[data-sold-out="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 0.5px),
+    rgba(16, 16, 11, 0.52) calc(50% - 0.5px),
+    rgba(16, 16, 11, 0.52) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
 }
 
 .pdp-buy-box__purchase-row {
