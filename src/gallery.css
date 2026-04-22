@@ -4,6 +4,8 @@
   color: var(--gallery-accent, #000000);
   min-height: 100%;
   position: relative;
+  container-type: inline-size;
+  container-name: gallery-section;
 
   /* Section width grid — 7-column named-lines ("Layout Breakouts" pattern) */
   display: grid;
@@ -299,6 +301,13 @@
   display: flex;
 }
 
+@container gallery-section (max-width: 499px) {
+  [data-layout="slideshow"] .gallery__prev,
+  [data-layout="slideshow"] .gallery__next {
+    display: none;
+  }
+}
+
 /* ─── Pagination ─── */
 
 .gallery__pagination {
@@ -373,13 +382,37 @@
 /* Thumbnail indicators */
 [data-pagination="thumbnails"] .gallery__pagination {
   --pagination-gap: 4px;
-  --pagination-slot-size: 32px;
+  --pagination-slot-size: 43px;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  justify-content: safe center;
+}
+
+/* Full-bleed on narrow containers so thumbnails scroll edge-to-edge */
+@container gallery-section (max-width: 499px) {
+  [data-pagination="thumbnails"] .gallery__pagination {
+    margin-inline: -16px;
+    padding-inline: 16px;
+    inline-size: auto;
+    max-inline-size: none;
+    justify-content: start;
+  }
+}
+
+[data-pagination="thumbnails"] .gallery__pagination::-webkit-scrollbar {
+  display: none;
+}
+
+[data-pagination="thumbnails"] .gallery__indicator-btn {
+  flex: 0 0 auto;
+  inline-size: auto;
 }
 
 [data-pagination="thumbnails"] .gallery__indicator {
-  inline-size: min(32px, 100%);
+  block-size: 32px;
+  inline-size: auto;
   aspect-ratio: 4 / 3;
-  block-size: auto;
   border-radius: var(--image-radius, 8px);
   background-color: var(--gallery-accent, #000000);
   background-size: cover;

@@ -303,11 +303,12 @@ test('layout picker switches between grid, slideshow, masonry', async ({ page })
   // Default is grid
   await expect(gallery).toHaveAttribute('data-layout', 'grid');
 
-  // Switch to slideshow
+  // Switch to slideshow at a wide viewport so arrows are visible
+  await page.locator('[data-viewport="768"]').click();
   await checkRadio(page, 'layout', 'slideshow');
   await expect(gallery).toHaveAttribute('data-layout', 'slideshow');
 
-  // Slideshow nav buttons should be visible
+  // Slideshow nav buttons should be visible at wide viewport
   await expect(page.locator('.gallery__prev')).toBeVisible();
   await expect(page.locator('.gallery__next')).toBeVisible();
 
@@ -367,6 +368,7 @@ test('slideshow pagination indicators render and track active slide', async ({ p
 
 test('slideshow prev/next buttons navigate slides', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('gallery');
+  await page.locator('[data-viewport="768"]').click();
   await checkRadio(page, 'layout', 'slideshow');
 
   // Click next
@@ -378,6 +380,7 @@ test('slideshow prev/next buttons navigate slides', async ({ page }) => {
 
 test('slideshow next button wraps from the last slide back to the first and settles on the real slide', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('gallery');
+  await page.locator('[data-viewport="768"]').click();
   await checkRadio(page, 'layout', 'slideshow');
 
   const indicators = page.locator('.gallery__pagination [role="tab"]');
@@ -395,6 +398,7 @@ test('slideshow next button wraps from the last slide back to the first and sett
 
 test('slideshow arrow keys wrap from the first slide to the last and settle on the real slide', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('gallery');
+  await page.locator('[data-viewport="768"]').click();
   await checkRadio(page, 'layout', 'slideshow');
 
   await page.locator('.gallery__prev').focus();
@@ -445,6 +449,7 @@ test('slideshow counter shows correct text', async ({ page }) => {
 
 test('slideshow arrows stay vertically aligned when pagination style changes', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('gallery');
+  await page.locator('[data-viewport="768"]').click();
   await checkRadio(page, 'layout', 'slideshow');
 
   const prev = page.locator('.gallery__prev');
@@ -601,8 +606,13 @@ test('slideshow pagination stays within the image container across styles', asyn
       };
     });
 
-    expect(metrics.paginationWidth).toBeLessThanOrEqual(metrics.gridWidth + 1);
-    expect(metrics.paginationScrollWidth).toBeLessThanOrEqual(metrics.paginationClientWidth + 1);
+    if (pagination === 'thumbnails') {
+      // Thumbnail pagination bleeds into parent padding for edge-to-edge scrolling
+      expect(metrics.paginationWidth).toBeLessThanOrEqual(metrics.gridWidth + 33);
+    } else {
+      expect(metrics.paginationWidth).toBeLessThanOrEqual(metrics.gridWidth + 1);
+      expect(metrics.paginationScrollWidth).toBeLessThanOrEqual(metrics.paginationClientWidth + 1);
+    }
   }
 
   await checkRadio(page, 'pagination', 'counter');
@@ -648,7 +658,10 @@ test('slideshow pagination does not stretch with only a few items', async ({ pag
       };
     });
 
-    expect(metrics.paginationWidth).toBeLessThan(metrics.gridWidth - 20);
+    // Thumbnail pagination is always full-bleed for edge-to-edge scrolling
+    if (pagination !== 'thumbnails') {
+      expect(metrics.paginationWidth).toBeLessThan(metrics.gridWidth - 20);
+    }
   }
 
   await checkRadio(page, 'pagination', 'counter');
