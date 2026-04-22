@@ -382,11 +382,12 @@
 /* Thumbnail indicators */
 [data-pagination="thumbnails"] .gallery__pagination {
   --pagination-gap: 4px;
-  --pagination-slot-size: 43px;
+  --pagination-slot-size: 32px;
   display: flex;
   overflow-x: auto;
   scrollbar-width: none;
   justify-content: safe center;
+  padding-top: var(--pagination-gap);
 }
 
 /* Full-bleed on narrow containers so thumbnails scroll edge-to-edge */
@@ -396,7 +397,7 @@
     padding-inline: 16px;
     inline-size: auto;
     max-inline-size: none;
-    justify-content: start;
+    justify-content: safe center;
   }
 }
 
@@ -407,12 +408,13 @@
 [data-pagination="thumbnails"] .gallery__indicator-btn {
   flex: 0 0 auto;
   inline-size: auto;
+  padding: 0;
 }
 
 [data-pagination="thumbnails"] .gallery__indicator {
   block-size: 32px;
   inline-size: auto;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1;
   border-radius: var(--image-radius, 8px);
   background-color: var(--gallery-accent, #000000);
   background-size: cover;

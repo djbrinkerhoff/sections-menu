@@ -80,7 +80,7 @@ test('default product hydrates title, price, and hero image', async ({ page }) =
   await expect(page.locator('.pdp-buy-box__title')).toHaveText('Very cool t-shirt');
   await expect(page.locator('.pdp-buy-box__price')).toHaveText('$12.00');
 
-  const heroSrc = await page.locator('.pdp-buy-box__image').getAttribute('src');
+  const heroSrc = await page.locator('.gallery__item:not([data-gallery-clone]) .gallery__image').first().getAttribute('src');
   expect(heroSrc).toContain('summit-tee-01.png');
 });
 
@@ -113,7 +113,7 @@ test('switching product from controls updates hero image, title, price, and opti
   await expect(page.locator('.pdp-buy-box__title')).toHaveText('Medium nylon crescent bag');
   await expect(page.locator('.pdp-buy-box__price')).toHaveText('$64.00');
 
-  const heroSrc = await page.locator('.pdp-buy-box__image').getAttribute('src');
+  const heroSrc = await page.locator('.gallery__item:not([data-gallery-clone]) .gallery__image').first().getAttribute('src');
   expect(heroSrc).toContain('crescent-bag-01.png');
 
   // Chip group should show bag-specific options
@@ -264,7 +264,7 @@ test('section is readable in fluid viewport', async ({ page }) => {
 
   await expect(page.locator('.pdp-buy-box')).toBeVisible();
   await expect(page.locator('.pdp-buy-box__title')).toBeVisible();
-  await expect(page.locator('.pdp-buy-box__image')).toBeVisible();
+  await expect(page.locator('.gallery__image').first()).toBeVisible();
 });
 
 // ─── Responsive layout ───

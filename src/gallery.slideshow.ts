@@ -306,6 +306,9 @@ export function initSlideshow(galleryRoot: HTMLElement, parentSignal: AbortSigna
     scrollSettleId = window.setTimeout(() => {
       scrollSettleId = undefined;
       normalizeLoopPosition();
+      requestAnimationFrame(() => {
+        updateArrowPosition();
+      });
     }, 80);
   }
 

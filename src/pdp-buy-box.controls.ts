@@ -1,4 +1,8 @@
 import { PDP_BUY_BOX_PRODUCTS } from './pdp-buy-box.data';
+import { createSegmentedGroup } from './control-builders';
+import { createLabeledRangeGroup } from './range-control';
+import { applyImageRadius, getImageRadiusIndex, IMAGE_RADIUS_STOPS } from './image-radius';
+import type { PdpBuyBoxHandle } from './pdp-buy-box';
 
 export interface PdpBuyBoxControlsHandle {
   cleanup(): void;
@@ -7,7 +11,7 @@ export interface PdpBuyBoxControlsHandle {
 export function initPdpBuyBoxControls(
   root: HTMLElement,
   container: HTMLElement,
-  setProduct: (productId: string) => void,
+  preview: PdpBuyBoxHandle,
   onStateChange: () => void = () => {},
 ): PdpBuyBoxControlsHandle {
   const abortController = new AbortController();
@@ -15,6 +19,8 @@ export function initPdpBuyBoxControls(
 
   const wrapper = document.createElement('div');
   wrapper.className = 'controls';
+
+  // ─── Product picker ───
 
   const group = document.createElement('fieldset');
   group.className = 'control-group';
@@ -38,13 +44,82 @@ export function initPdpBuyBoxControls(
 
   select.value = root.dataset.productId ?? PDP_BUY_BOX_PRODUCTS[0]?.id ?? '';
   select.addEventListener('change', () => {
-    setProduct(select.value);
+    preview.setProduct(select.value);
     onStateChange();
   }, { signal });
 
   group.appendChild(description);
   group.appendChild(select);
   wrapper.appendChild(group);
+
+  // ─── Toggle helpers ───
+
+  function addToggle(name: string, label: string, dataAttr: string): void {
+    wrapper.appendChild(createSegmentedGroup({
+      name,
+      label,
+      values: ['false', 'true'],
+      labels: { false: 'Off', true: 'On' },
+      initialValue: root.dataset[dataAttr] ?? 'true',
+      onChange: (v) => {
+        root.dataset[dataAttr] = v;
+        onStateChange();
+      },
+      signal,
+    }));
+  }
+
+  addToggle('showStock', 'Stock label', 'showStock');
+  addToggle('showBnpl', 'Buy now, pay later', 'showBnpl');
+  addToggle('showVariants', 'Variants', 'showVariants');
+
+  // ─── Gallery controls ───
+
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'aspect',
+    label: 'Aspect ratio',
+    values: ['square', 'landscape', 'portrait', 'auto'],
+    labels: { square: 'Square', landscape: 'Landscape', portrait: 'Portrait', auto: 'Auto' },
+    initialValue: root.dataset.aspect ?? 'square',
+    onChange: (v) => {
+      root.dataset.aspect = v;
+      preview.syncLayout();
+      onStateChange();
+    },
+    signal,
+  }));
+
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'fit',
+    label: 'Fill',
+    values: ['cover', 'contain'],
+    labels: { cover: 'Cover', contain: 'Contain' },
+    initialValue: root.dataset.fit ?? 'cover',
+    onChange: (v) => {
+      root.dataset.fit = v;
+      preview.syncLayout();
+      onStateChange();
+    },
+    signal,
+  }));
+
+  wrapper.appendChild(createLabeledRangeGroup({
+    name: 'radius',
+    label: 'Border radius',
+    steps: IMAGE_RADIUS_STOPS.map((s) => s.label),
+    initialIndex: getImageRadiusIndex(root.dataset.radius),
+    onInput: (index) => {
+      const stop = IMAGE_RADIUS_STOPS[index];
+      if (!stop) return;
+      applyImageRadius(root, stop.value);
+      preview.syncLayout();
+      onStateChange();
+    },
+    signal,
+  }));
+
+  addToggle('lightbox', 'Lightbox', 'lightbox');
+
   container.appendChild(wrapper);
 
   return {

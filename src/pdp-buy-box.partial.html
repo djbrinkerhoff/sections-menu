@@ -1,15 +1,21 @@
-<section class="pdp-buy-box" data-product-id="summit-tee">
+<section class="pdp-buy-box" data-product-id="summit-tee" data-show-stock="true" data-show-bnpl="true" data-show-variants="true" data-aspect="square" data-fit="cover" data-radius="8" data-lightbox="true" style="--image-radius: 8px; --image-button-radius: 9999px;">
   <div class="pdp-buy-box__layout">
-    <figure class="pdp-buy-box__media">
-      <img
-        class="pdp-buy-box__image"
-        src=""
-        alt=""
-        width="1400"
-        height="1400"
-        loading="lazy"
-        data-pdp-slot="hero-image"
-      />
+    <figure class="pdp-buy-box__media" data-layout="slideshow" data-pagination="thumbnails">
+      <div class="gallery__viewport">
+        <div class="gallery__grid" data-pdp-slot="gallery-grid"></div>
+        <button class="gallery__prev" aria-label="Previous image">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15,18 9,12 15,6"/>
+          </svg>
+        </button>
+        <button class="gallery__next" aria-label="Next image">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9,6 15,12 9,18"/>
+          </svg>
+        </button>
+        <div class="gallery__pagination" role="tablist" aria-label="Choose image"></div>
+        <div class="gallery__counter" aria-live="polite"></div>
+      </div>
     </figure>
 
     <div class="pdp-buy-box__details">
@@ -53,19 +59,23 @@
 
       <p class="pdp-buy-box__shipping-note" data-pdp-slot="shipping-note"></p>
 
-      <section class="pdp-buy-box__info">
-        <h3 class="pdp-buy-box__info-title" data-pdp-slot="description-title"></h3>
+      <details class="pdp-buy-box__info">
+        <summary class="pdp-buy-box__info-summary">
+          <h3 class="pdp-buy-box__info-title" data-pdp-slot="description-title"></h3>
+        </summary>
         <p class="pdp-buy-box__info-body" data-pdp-slot="description-body"></p>
         <ul class="pdp-buy-box__info-list" data-pdp-slot="description-bullets"></ul>
-      </section>
+      </details>
 
-      <section class="pdp-buy-box__info">
-        <h3 class="pdp-buy-box__info-title" data-pdp-slot="shipping-title"></h3>
+      <details class="pdp-buy-box__info">
+        <summary class="pdp-buy-box__info-summary">
+          <h3 class="pdp-buy-box__info-title" data-pdp-slot="shipping-title"></h3>
+        </summary>
         <p class="pdp-buy-box__info-lead" data-pdp-slot="shipping-lead"></p>
         <p class="pdp-buy-box__info-body" data-pdp-slot="shipping-body"></p>
         <p class="pdp-buy-box__info-lead" data-pdp-slot="returns-lead"></p>
         <p class="pdp-buy-box__info-body" data-pdp-slot="returns-body"></p>
-      </section>
+      </details>
     </div>
   </div>
 </section>

@@ -7,6 +7,59 @@ import type { ColorName, ColorValue } from './colors';
 import { createStepperGroup, createSegmentedGroup } from './control-builders';
 import { createLabeledRangeGroup } from './range-control';
 
+// ─── Image set data ───
+
+interface GalleryImageDef {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  caption: string;
+}
+
+const IMAGE_SETS: Record<string, { label: string; images: GalleryImageDef[] }> = {
+  unsplash: {
+    label: 'Unsplash',
+    images: [
+      { src: '/images/alexander-korte-Oj0ykWKf5To-unsplash.jpg', alt: 'Film photograph by Alexander Korte', width: 1200, height: 795, caption: 'Alexander Korte' },
+      { src: '/images/brave-sneakers-HPW_Hjzw6ZA-unsplash.jpg', alt: 'Film photograph by Brave Sneakers', width: 1200, height: 800, caption: 'Brave Sneakers' },
+      { src: '/images/bruce-barrow-9dmb89VrlsQ-unsplash.jpg', alt: 'Film photograph by Bruce Barrow', width: 1200, height: 860, caption: 'Bruce Barrow' },
+      { src: '/images/bruce-barrow-n-CpmMFXj9s-unsplash.jpg', alt: 'Film photograph by Bruce Barrow', width: 1200, height: 1673, caption: 'Bruce Barrow' },
+      { src: '/images/john-zhou-KTPoP4cyAdw-unsplash.jpg', alt: 'Film photograph by John Zhou', width: 1200, height: 1810, caption: 'John Zhou' },
+      { src: '/images/lei-hwang-K59VVouNOaE-unsplash.jpg', alt: 'Film photograph by Lei Hwang', width: 1200, height: 783, caption: 'Lei Hwang' },
+      { src: '/images/maximilian-bungart-QzlQHPG7cUY-unsplash.jpg', alt: 'Film photograph by Maximilian Bungart', width: 1200, height: 1790, caption: 'Maximilian Bungart' },
+      { src: '/images/severin-demchuk-jllQYsBvFnA-unsplash.jpg', alt: 'Film photograph by Severin Demchuk', width: 1200, height: 1771, caption: 'Severin Demchuk' },
+      { src: '/images/tanya-barrow-4fmlPygqRmo-unsplash.jpg', alt: 'Film photograph by Tanya Barrow', width: 1200, height: 1794, caption: 'Tanya Barrow' },
+      { src: '/images/tanya-barrow-bXXEC99WyI8-unsplash.jpg', alt: 'Film photograph by Tanya Barrow', width: 1200, height: 1794, caption: 'Tanya Barrow' },
+      { src: '/images/tanya-barrow-O90NM4fkFg8-unsplash.jpg', alt: 'Film photograph by Tanya Barrow', width: 1200, height: 802, caption: 'Tanya Barrow' },
+      { src: '/images/tom-caillarec-lv6Z1Ae4Jhg-unsplash.jpg', alt: 'Film photograph by Tom Caillarec', width: 1200, height: 800, caption: 'Tom Caillarec' },
+    ],
+  },
+  'seller-1': {
+    label: 'Seller 1',
+    images: [
+      { src: '/images/seller-1/20251009_1936_Sensual_Perfume_Mist_simple_compose_01k75rpm24esgsct20y87k31gj_with_bgc.png.webp', alt: 'Sensual Perfume Mist', width: 1200, height: 1200, caption: 'Sensual Perfume Mist' },
+      { src: '/images/seller-1/20251009_1943_Elegant_Perfume_Mist_simple_compose_01k75s2q2yf5a9gw19htd56f2d_with_bgc.png.webp', alt: 'Elegant Perfume Mist', width: 1200, height: 1200, caption: 'Elegant Perfume Mist' },
+      { src: '/images/seller-1/20251009_1943_Elegant_Perfume_Mist_simple_compose_01k75s2q2zehbscrpscenev84w_with_bgc.png.webp', alt: 'Elegant Perfume Mist variant', width: 1200, height: 1200, caption: 'Elegant Perfume Mist' },
+      { src: '/images/seller-1/20251009_1947_Perfume_Mist_Elegance_simple_compose_01k75sb2xefm381k705z7ffm47_with_bgc.png.webp', alt: 'Perfume Mist Elegance', width: 1200, height: 1200, caption: 'Perfume Mist Elegance' },
+      { src: '/images/seller-1/20251009_1957_PerfumeMistElegance_simple_compose_01k75svvbnea5syc5j6b4ngy1k_with_bgc.png.webp', alt: 'Perfume Mist Elegance angle', width: 1200, height: 1200, caption: 'Perfume Mist Elegance' },
+      { src: '/images/seller-1/20251009_1957_PerfumeMistElegance_simple_compose_01k75svvbnea5syc5j6b4ngy1k_with_bgc+_1_.png.webp', alt: 'Perfume Mist Elegance detail', width: 1200, height: 1200, caption: 'Perfume Mist Elegance' },
+      { src: '/images/seller-1/20251009_1959_Elegant_Perfume_Mist_simple_compose_01k75szcmyfsztxb5swtvfed2j_with_bgc.png.webp', alt: 'Elegant Perfume Mist close-up', width: 1200, height: 1200, caption: 'Elegant Perfume Mist' },
+      { src: '/images/seller-1/20251009_2001_Perfume_Mist_Elegance_simple_compose_01k75t3dkvfq3sssext7xbmykm_with_bgc.png.webp', alt: 'Perfume Mist Elegance studio', width: 1200, height: 1200, caption: 'Perfume Mist Elegance' },
+    ],
+  },
+  'seller-2': {
+    label: 'Seller 2',
+    images: [
+      { src: '/images/seller-2/1000009297.jpg.webp', alt: 'Seller 2 product photo', width: 1200, height: 1200, caption: '' },
+      { src: '/images/seller-2/1000034493.jpg.webp', alt: 'Seller 2 product photo', width: 1200, height: 1200, caption: '' },
+      { src: '/images/seller-2/IMG_20230621_174447__01__02.jpg.webp', alt: 'Seller 2 product photo', width: 1200, height: 1200, caption: '' },
+    ],
+  },
+};
+
+const IMAGE_SET_IDS = Object.keys(IMAGE_SETS);
+
 // Gallery control schema
 const LAYOUTS = ['grid', 'slideshow', 'masonry'] as const;
 const COLUMNS = ['2', '3', '4'] as const;
@@ -68,9 +121,49 @@ export function initGalleryControls(
     },
   });
 
-  const allItems = Array.from(galleryRoot.querySelectorAll<HTMLElement>('.gallery__item'));
-  const totalImages = allItems.length;
+  const gridEl = galleryRoot.querySelector<HTMLElement>('.gallery__grid');
+  if (!gridEl) throw new Error('Gallery controls: .gallery__grid not found');
+  const grid: HTMLElement = gridEl;
+
+  let currentSetId = galleryRoot.dataset.imageSet ?? 'unsplash';
+  let allItems = Array.from(galleryRoot.querySelectorAll<HTMLElement>('.gallery__item'));
+  let totalImages = allItems.length;
   let currentImageCount = Number(galleryRoot.dataset.images) || totalImages;
+
+  function buildGalleryItems(setId: string): void {
+    const set = IMAGE_SETS[setId];
+    if (!set) return;
+    grid.innerHTML = '';
+    for (const img of set.images) {
+      const figure = document.createElement('figure');
+      figure.className = 'gallery__item';
+
+      const trigger = document.createElement('button');
+      trigger.className = 'gallery__trigger image-lightbox__trigger';
+      trigger.type = 'button';
+      trigger.dataset.zoomTarget = 'true';
+      trigger.dataset.zoomGroup = 'gallery';
+
+      const image = document.createElement('img');
+      image.className = 'gallery__image';
+      image.src = img.src;
+      image.alt = img.alt;
+      image.width = img.width;
+      image.height = img.height;
+      image.loading = 'lazy';
+
+      const caption = document.createElement('figcaption');
+      caption.className = 'gallery__caption';
+      caption.textContent = img.caption;
+
+      trigger.appendChild(image);
+      figure.appendChild(trigger);
+      figure.appendChild(caption);
+      grid.appendChild(figure);
+    }
+    allItems = Array.from(grid.querySelectorAll<HTMLElement>('.gallery__item'));
+    totalImages = allItems.length;
+  }
 
   // animate:false is critical — must complete synchronously before
   // the caller mutates dataset or reinits the slideshow.
@@ -113,7 +206,10 @@ export function initGalleryControls(
     onStateChange();
   }
 
-  // Apply initial visibility
+  // Build initial image set (always rebuild from data so sets restore correctly)
+  buildGalleryItems(currentSetId);
+  currentImageCount = Math.min(currentImageCount, totalImages);
+  galleryRoot.dataset.images = String(currentImageCount);
   syncImageVisibility();
 
   // ─── Layout switching lifecycle ───
@@ -304,13 +400,69 @@ export function initGalleryControls(
     signal, description: 'Visible at wider viewports.',
   }));
 
-  // 2. Images
-  wrapper.appendChild(createStepperGroup({
+  // 2. Image set picker
+  {
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'control-group';
+    fieldset.dataset.control = 'imageSet';
+    fieldset.innerHTML = `<legend class="control-group__label">Image set</legend>`;
+
+    const select = document.createElement('select');
+    select.className = 'control-group__input';
+    select.name = 'imageSet';
+    select.ariaLabel = 'Image set';
+
+    for (const id of IMAGE_SET_IDS) {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = IMAGE_SETS[id]?.label ?? id;
+      select.appendChild(opt);
+    }
+    select.value = currentSetId;
+    select.addEventListener('change', () => setImageSet(select.value), { signal });
+
+    fieldset.appendChild(select);
+    wrapper.appendChild(fieldset);
+  }
+
+  // 3. Image count stepper (recreated when set changes)
+  let stepperFieldset = createStepperGroup({
     name: 'images', label: 'Images',
     initialValue: currentImageCount, min: 1, max: totalImages,
     onStep: setImageCount, getDisplayValue: () => String(currentImageCount),
     signal,
-  }));
+  });
+  wrapper.appendChild(stepperFieldset);
+
+  function rebuildStepper(): void {
+    const newFieldset = createStepperGroup({
+      name: 'images', label: 'Images',
+      initialValue: currentImageCount, min: 1, max: totalImages,
+      onStep: setImageCount, getDisplayValue: () => String(currentImageCount),
+      signal,
+    });
+    stepperFieldset.replaceWith(newFieldset);
+    stepperFieldset = newFieldset;
+  }
+
+  function setImageSet(setId: string): void {
+    closeLightboxForMutation();
+    if (slideshowHandle) {
+      slideshowHandle.cleanup();
+      slideshowHandle = null;
+    }
+    currentSetId = setId;
+    galleryRoot.dataset.imageSet = setId;
+    buildGalleryItems(setId);
+    currentImageCount = Math.min(currentImageCount, totalImages);
+    galleryRoot.dataset.images = String(currentImageCount);
+    syncImageVisibility();
+    rebuildStepper();
+    if (galleryRoot.dataset.layout === 'slideshow') {
+      slideshowHandle = initSlideshow(galleryRoot, signal);
+    }
+    onStateChange();
+  }
 
   // 3. Heading
   {

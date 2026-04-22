@@ -17,7 +17,7 @@ export const pdpBuyBoxSection: Section = {
     if (!root) throw new Error('PDP buy box root .pdp-buy-box not found in previewHtml');
 
     const preview = initPdpBuyBox(root);
-    const controls = initPdpBuyBoxControls(root, controlsContainer, preview.setProduct, onStateChange);
+    const controls = initPdpBuyBoxControls(root, controlsContainer, preview, onStateChange);
 
     return {
       destroy() {
@@ -27,6 +27,13 @@ export const pdpBuyBoxSection: Section = {
       saveState() {
         return {
           productId: preview.getCurrentProductId(),
+          showStock: root.dataset.showStock ?? 'true',
+          showBnpl: root.dataset.showBnpl ?? 'true',
+          showVariants: root.dataset.showVariants ?? 'true',
+          aspect: root.dataset.aspect ?? 'square',
+          fit: root.dataset.fit ?? 'cover',
+          radius: root.dataset.radius ?? '8',
+          lightbox: root.dataset.lightbox ?? 'true',
         };
       },
     };
