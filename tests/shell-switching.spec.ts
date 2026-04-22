@@ -168,13 +168,14 @@ test('boots with Navigation as default and shows picker', async ({ page }) => {
   await expect(page.locator('.nav')).toBeVisible();
 });
 
-test('picker shows Navigation, Image Gallery, and Single Image options', async ({ page }) => {
+test('picker shows Navigation, Image Gallery, Single Image, and PDP Buy Box options', async ({ page }) => {
   const picker = page.locator('.controls__picker');
   const options = picker.locator('option');
-  await expect(options).toHaveCount(3);
+  await expect(options).toHaveCount(4);
   await expect(options.nth(0)).toHaveText('Navigation');
   await expect(options.nth(1)).toHaveText('Image Gallery');
   await expect(options.nth(2)).toHaveText('Single Image');
+  await expect(options.nth(3)).toHaveText('PDP Buy Box');
 });
 
 test('switching to gallery unmounts nav and shows gallery', async ({ page }) => {
@@ -183,6 +184,13 @@ test('switching to gallery unmounts nav and shows gallery', async ({ page }) => 
   await expect(page.locator('.nav')).toHaveCount(0);
   await expect(page.locator('.gallery')).toBeVisible();
   await expect(page.locator('.gallery__item')).not.toHaveCount(0);
+});
+
+test('switching to PDP Buy Box unmounts nav and shows the buy box', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('pdp-buy-box');
+
+  await expect(page.locator('.nav')).toHaveCount(0);
+  await expect(page.locator('.pdp-buy-box')).toBeVisible();
 });
 
 test('gallery controls update data attributes', async ({ page }) => {

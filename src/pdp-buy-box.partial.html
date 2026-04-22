@@ -1,0 +1,71 @@
+<section class="pdp-buy-box" data-product-id="summit-tee">
+  <div class="pdp-buy-box__layout">
+    <figure class="pdp-buy-box__media">
+      <img
+        class="pdp-buy-box__image"
+        src=""
+        alt=""
+        width="1400"
+        height="1400"
+        loading="lazy"
+        data-pdp-slot="hero-image"
+      />
+    </figure>
+
+    <div class="pdp-buy-box__details">
+      <header class="pdp-buy-box__header">
+        <h2 class="pdp-buy-box__title" data-pdp-slot="title"></h2>
+        <div class="pdp-buy-box__price-row">
+          <p class="pdp-buy-box__price" data-pdp-slot="price"></p>
+          <p class="pdp-buy-box__stock" data-pdp-slot="stock"></p>
+        </div>
+      </header>
+
+      <section class="pdp-buy-box__bnpl" aria-label="Buy now, pay later options">
+        <div class="pdp-buy-box__bnpl-logos" aria-hidden="true">
+          <span class="pdp-buy-box__bnpl-badge pdp-buy-box__bnpl-badge--afterpay">Afterpay</span>
+          <span class="pdp-buy-box__bnpl-badge pdp-buy-box__bnpl-badge--affirm">Affirm</span>
+          <span class="pdp-buy-box__bnpl-badge pdp-buy-box__bnpl-badge--klarna">Klarna</span>
+        </div>
+        <p class="pdp-buy-box__bnpl-note" data-pdp-slot="bnpl-message"></p>
+      </section>
+
+      <div class="pdp-buy-box__option-group">
+        <label class="pdp-buy-box__option-label" for="pdp-buy-box-select" data-pdp-slot="select-label"></label>
+        <div class="pdp-buy-box__select-wrap">
+          <select id="pdp-buy-box-select" class="pdp-buy-box__select" name="variant-select"></select>
+        </div>
+      </div>
+
+      <fieldset class="pdp-buy-box__option-group">
+        <legend class="pdp-buy-box__option-label" data-pdp-slot="chip-label"></legend>
+        <div class="pdp-buy-box__chip-row" data-pdp-slot="chip-row"></div>
+      </fieldset>
+
+      <div class="pdp-buy-box__purchase-row">
+        <div class="pdp-buy-box__quantity" aria-label="Quantity selector">
+          <button class="pdp-buy-box__quantity-btn" type="button" aria-label="Decrease quantity" data-quantity-action="decrement">−</button>
+          <span class="pdp-buy-box__quantity-value" data-pdp-slot="quantity-value">1</span>
+          <button class="pdp-buy-box__quantity-btn" type="button" aria-label="Increase quantity" data-quantity-action="increment">+</button>
+        </div>
+        <button class="pdp-buy-box__cta" type="button" data-pdp-slot="cta-label"></button>
+      </div>
+
+      <p class="pdp-buy-box__shipping-note" data-pdp-slot="shipping-note"></p>
+
+      <section class="pdp-buy-box__info">
+        <h3 class="pdp-buy-box__info-title" data-pdp-slot="description-title"></h3>
+        <p class="pdp-buy-box__info-body" data-pdp-slot="description-body"></p>
+        <ul class="pdp-buy-box__info-list" data-pdp-slot="description-bullets"></ul>
+      </section>
+
+      <section class="pdp-buy-box__info">
+        <h3 class="pdp-buy-box__info-title" data-pdp-slot="shipping-title"></h3>
+        <p class="pdp-buy-box__info-lead" data-pdp-slot="shipping-lead"></p>
+        <p class="pdp-buy-box__info-body" data-pdp-slot="shipping-body"></p>
+        <p class="pdp-buy-box__info-lead" data-pdp-slot="returns-lead"></p>
+        <p class="pdp-buy-box__info-body" data-pdp-slot="returns-body"></p>
+      </section>
+    </div>
+  </div>
+</section>
