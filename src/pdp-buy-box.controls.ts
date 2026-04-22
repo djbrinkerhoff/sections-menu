@@ -19,6 +19,7 @@ export function initPdpBuyBoxControls(
 
   const wrapper = document.createElement('div');
   wrapper.className = 'controls';
+  applyImageRadius(root, root.dataset.radius);
 
   // ─── Product picker ───
 

@@ -168,7 +168,7 @@ legend.pdp-buy-box__option-label {
   inline-size: 100%;
   min-height: 55px;
   border: 1px solid rgba(16, 16, 11, 0.52);
-  border-radius: 0;
+  border-radius: var(--image-button-radius, 0px);
   background: #ffffff;
   color: #10100b;
   font: inherit;
@@ -176,19 +176,22 @@ legend.pdp-buy-box__option-label {
 }
 
 .pdp-buy-box__chip-row {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .pdp-buy-box__chip {
+  flex: 0 0 auto;
   min-height: 55px;
   border: 1px solid rgba(16, 16, 11, 0.52);
+  border-radius: var(--image-button-radius, 0px);
   background: #ffffff;
   color: #10100b;
   font: inherit;
   font-size: 15px;
   line-height: 1.5;
+  padding: 0 12px;
   cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
@@ -210,6 +213,7 @@ legend.pdp-buy-box__option-label {
 .pdp-buy-box__quantity {
   min-height: 55px;
   border: 1px solid rgba(16, 16, 11, 0.52);
+  border-radius: var(--image-button-radius, 0px);
   display: grid;
   grid-template-columns: 28px 1fr 28px;
   align-items: center;
@@ -226,14 +230,21 @@ legend.pdp-buy-box__option-label {
 }
 
 .pdp-buy-box__quantity-value {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   font-size: 15px;
   line-height: 1.5;
   font-variant-numeric: tabular-nums;
+  text-align: center;
+  width: 100%;
 }
 
 .pdp-buy-box__cta {
   min-height: 55px;
   border: 0;
+  border-radius: var(--image-button-radius, 0px);
   background: #10100b;
   color: #ffffff;
   font: inherit;

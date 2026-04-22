@@ -17,7 +17,7 @@ interface PdpBuyBoxElements {
   selectInput: HTMLSelectElement;
   chipLabel: HTMLElement;
   chipRow: HTMLElement;
-  quantityValue: HTMLElement;
+  quantityValue: HTMLInputElement;
   ctaLabel: HTMLElement;
   descriptionTitle: HTMLElement;
   descriptionBody: HTMLElement;
@@ -169,7 +169,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
   }
 
   function renderQuantity(): void {
-    elements.quantityValue.textContent = String(quantity);
+    elements.quantityValue.value = String(quantity);
   }
 
   function renderProduct(): void {
@@ -239,6 +239,16 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     if (!nextValue) return;
     selectedChipValue = selectedChipValue === nextValue ? null : nextValue;
     renderChipOptions();
+  }, { signal });
+
+  elements.quantityValue.addEventListener('change', () => {
+    const parsed = Number.parseInt(elements.quantityValue.value, 10);
+    quantity = Number.isFinite(parsed) ? Math.max(1, Math.min(MAX_QUANTITY, parsed)) : 1;
+    renderQuantity();
+  }, { signal });
+
+  elements.quantityValue.addEventListener('blur', () => {
+    renderQuantity();
   }, { signal });
 
   setProduct(root.dataset.productId ?? DEFAULT_PDP_BUY_BOX_PRODUCT_ID);
