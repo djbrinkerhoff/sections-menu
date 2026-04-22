@@ -74,9 +74,9 @@ export function initPdpBuyBoxControls(
   wrapper.appendChild(createSegmentedGroup({
     name: 'stockStyle',
     label: 'Stock label',
-    values: ['off', 'in-stock', 'limited', 'count'],
-    labels: { off: 'Off', 'in-stock': 'In stock', limited: 'Limited', count: 'X left' },
-    initialValue: root.dataset.stockStyle ?? 'in-stock',
+    values: ['off', 'limited', 'count'],
+    labels: { off: 'Off', limited: 'Limited', count: 'X left' },
+    initialValue: root.dataset.stockStyle ?? 'off',
     onChange: (v) => {
       root.dataset.stockStyle = v;
       preview.syncStockLabel();

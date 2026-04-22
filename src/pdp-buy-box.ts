@@ -192,13 +192,10 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
   }
 
   function syncStockLabel(): void {
-    const style = root.dataset.stockStyle ?? 'in-stock';
+    const style = root.dataset.stockStyle ?? 'off';
     switch (style) {
       case 'off':
         elements.stock.textContent = '';
-        break;
-      case 'in-stock':
-        elements.stock.textContent = 'In stock';
         break;
       case 'limited':
         elements.stock.textContent = 'Limited quantities available';

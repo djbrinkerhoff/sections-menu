@@ -27,7 +27,7 @@ export const pdpBuyBoxSection: Section = {
       saveState() {
         return {
           productId: preview.getCurrentProductId(),
-          stockStyle: root.dataset.stockStyle ?? 'in-stock',
+          stockStyle: root.dataset.stockStyle ?? 'off',
           priceDisplay: root.dataset.priceDisplay ?? 'lowest',
           currencyNotation: root.dataset.currencyNotation ?? 'sign',
           priceFormat: root.dataset.priceFormat ?? 'decimal',
