@@ -1,3 +1,4 @@
+import { initSlideshow, type SlideshowHandle } from './gallery.slideshow';
 import type { PdpBuyBoxImage } from './pdp-buy-box.data';
 
 export interface PdpBuyBoxMediaHandle {
@@ -32,129 +33,128 @@ export function initPdpBuyBoxMedia(
   const abortController = new AbortController();
   const { signal } = abortController;
 
-  const heroButton = queryRequired<HTMLButtonElement>(root, '[data-pdp-slot="media-hero"]');
-  const heroImage = queryRequired<HTMLImageElement>(root, '[data-pdp-slot="media-hero-image"]');
-  const strip = queryRequired<HTMLElement>(root, '[data-pdp-slot="media-strip"]');
+  const mediaRoot = queryRequired<HTMLElement>(root, '.pdp-buy-box__media');
+  const grid = queryRequired<HTMLElement>(mediaRoot, '[data-pdp-slot="media-grid"]');
 
   let images: readonly PdpBuyBoxImage[] = [];
-  let activeIndex = 0;
+  let slideshowHandle: SlideshowHandle | null = null;
 
-  function syncHero(): void {
-    const activeImage = images[activeIndex];
-    if (!activeImage) {
-      heroImage.removeAttribute('src');
-      heroImage.removeAttribute('alt');
-      heroImage.removeAttribute('width');
-      heroImage.removeAttribute('height');
-      heroButton.removeAttribute('aria-label');
-      heroButton.removeAttribute('aria-haspopup');
-      heroButton.removeAttribute('aria-expanded');
-      return;
-    }
-
-    heroImage.src = activeImage.src;
-    heroImage.alt = activeImage.alt;
-    heroImage.width = activeImage.width;
-    heroImage.height = activeImage.height;
-    heroImage.loading = 'eager';
-
-    if (options.isLightboxEnabled()) {
-      heroButton.setAttribute('aria-label', `Open image ${activeIndex + 1} of ${images.length}`);
-      heroButton.setAttribute('aria-haspopup', 'dialog');
-      heroButton.setAttribute('aria-expanded', 'false');
-    } else {
-      heroButton.setAttribute('aria-label', `Selected image ${activeIndex + 1} of ${images.length}`);
-      heroButton.removeAttribute('aria-haspopup');
-      heroButton.removeAttribute('aria-expanded');
-    }
+  function cleanupSlideshow(): void {
+    slideshowHandle?.cleanup();
+    slideshowHandle = null;
   }
 
-  function syncThumbs(): void {
-    const thumbButtons = strip.querySelectorAll<HTMLButtonElement>('.pdp-buy-box__media-thumb');
-    thumbButtons.forEach((button, index) => {
-      const selected = index === activeIndex;
-      button.dataset.selected = selected ? 'true' : 'false';
-      button.setAttribute('aria-pressed', selected ? 'true' : 'false');
-      button.setAttribute('aria-current', selected ? 'true' : 'false');
-      if (selected) {
-        button.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  function getTriggerSelector(index: number): string {
+    return `.gallery__item:not([data-gallery-clone]) .gallery__trigger[data-index="${index}"]`;
+  }
+
+  function syncTriggerAttributes(): void {
+    const triggers = grid.querySelectorAll<HTMLButtonElement>('.gallery__trigger');
+    const lightboxEnabled = options.isLightboxEnabled();
+
+    triggers.forEach((button, index) => {
+      const imageIndex = Number.parseInt(button.dataset.index ?? String(index), 10);
+      const displayIndex = Number.isFinite(imageIndex) ? imageIndex : index;
+      if (lightboxEnabled) {
+        button.setAttribute('aria-label', `Open image ${displayIndex + 1} of ${images.length}`);
+        button.setAttribute('aria-haspopup', 'dialog');
+        if (button.getAttribute('aria-expanded') !== 'true') {
+          button.setAttribute('aria-expanded', 'false');
+        }
+      } else {
+        button.setAttribute('aria-label', `Image ${displayIndex + 1} of ${images.length}`);
+        button.removeAttribute('aria-haspopup');
+        button.removeAttribute('aria-expanded');
       }
     });
   }
 
-  function syncSelection(): void {
-    syncHero();
-    syncThumbs();
-  }
-
-  function renderStrip(): void {
-    strip.replaceChildren();
+  function buildSlides(): void {
+    grid.replaceChildren();
 
     for (const [index, image] of images.entries()) {
-      const button = document.createElement('button');
-      button.className = 'pdp-buy-box__media-thumb';
-      button.type = 'button';
-      button.dataset.index = String(index);
-      button.setAttribute('aria-label', `Show image ${index + 1} of ${images.length}`);
+      const figure = document.createElement('figure');
+      figure.className = 'gallery__item';
 
-      const thumb = document.createElement('img');
-      thumb.className = 'pdp-buy-box__media-thumb-image';
-      thumb.src = image.src;
-      thumb.alt = image.alt;
-      thumb.width = image.width;
-      thumb.height = image.height;
-      thumb.loading = 'lazy';
+      const trigger = document.createElement('button');
+      trigger.className = 'gallery__trigger';
+      trigger.type = 'button';
+      trigger.dataset.index = String(index);
 
-      button.appendChild(thumb);
-      strip.appendChild(button);
+      const slideImage = document.createElement('img');
+      slideImage.className = 'gallery__image';
+      slideImage.src = image.src;
+      slideImage.alt = image.alt;
+      slideImage.width = image.width;
+      slideImage.height = image.height;
+      slideImage.loading = index === 0 ? 'eager' : 'lazy';
+
+      trigger.appendChild(slideImage);
+      figure.appendChild(trigger);
+      grid.appendChild(figure);
     }
+  }
 
-    syncThumbs();
+  function initOrReinitSlideshow(activeIndex = 0): void {
+    cleanupSlideshow();
+    slideshowHandle = initSlideshow(mediaRoot, signal);
+    slideshowHandle.goToIndex(clampIndex(activeIndex, images.length), {
+      immediate: true,
+      resetAutoplay: false,
+    });
+    syncTriggerAttributes();
+  }
+
+  function resolveInvoker(button: HTMLButtonElement, index: number): HTMLElement {
+    const isCloneTrigger = button.closest<HTMLElement>('[data-gallery-clone]') !== null;
+    if (!isCloneTrigger) return button;
+
+    return grid.querySelector<HTMLElement>(getTriggerSelector(index)) ?? button;
+  }
+
+  function getActiveIndex(): number {
+    return clampIndex(slideshowHandle?.activeIndex ?? 0, images.length);
   }
 
   function setActiveIndex(index: number): void {
-    if (images.length === 0) return;
-    activeIndex = clampIndex(index, images.length);
-    syncSelection();
+    if (!slideshowHandle || images.length === 0) return;
+    slideshowHandle.goToIndex(clampIndex(index, images.length), {
+      immediate: true,
+      resetAutoplay: false,
+    });
   }
 
   function setImages(nextImages: readonly PdpBuyBoxImage[]): void {
     images = nextImages.slice();
-    activeIndex = 0;
-    renderStrip();
-    syncSelection();
+    buildSlides();
+    initOrReinitSlideshow(0);
   }
 
-  heroButton.addEventListener('click', () => {
-    if (!options.isLightboxEnabled() || images.length === 0) return;
-    options.onOpen(activeIndex, heroButton);
-  }, { signal });
-
-  strip.addEventListener('click', (event) => {
+  grid.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
 
-    const button = target.closest<HTMLButtonElement>('.pdp-buy-box__media-thumb');
-    if (!button) return;
+    const button = target.closest<HTMLButtonElement>('.gallery__trigger');
+    if (!button || !options.isLightboxEnabled()) return;
 
     const index = Number.parseInt(button.dataset.index ?? '', 10);
     if (!Number.isFinite(index)) return;
 
-    setActiveIndex(index);
+    options.onOpen(index, resolveInvoker(button, index));
   }, { signal });
 
   return {
     cleanup() {
+      cleanupSlideshow();
       abortController.abort();
     },
-    getActiveIndex() {
-      return activeIndex;
-    },
+    getActiveIndex,
     getImages() {
       return images;
     },
     refresh() {
-      syncSelection();
+      slideshowHandle?.syncLayout();
+      syncTriggerAttributes();
     },
     setActiveIndex,
     setImages,

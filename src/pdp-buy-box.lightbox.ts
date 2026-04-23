@@ -263,6 +263,12 @@ export function initPdpBuyBoxLightbox(
     updateRailControls();
   }
 
+  function getFigureScrollTop(figure: HTMLElement): number {
+    const stackRect = stack.getBoundingClientRect();
+    const figureRect = figure.getBoundingClientRect();
+    return figureRect.top - stackRect.top + stack.scrollTop;
+  }
+
   function syncActiveIndexFromScroll(): void {
     scrollSyncFrame = 0;
     if (!activeState || activeState.figures.length === 0) return;
@@ -272,7 +278,7 @@ export function initPdpBuyBoxLightbox(
     let closestDistance = Number.POSITIVE_INFINITY;
 
     for (const [index, figure] of activeState.figures.entries()) {
-      const distance = Math.abs(figure.offsetTop - scrollTop);
+      const distance = Math.abs(getFigureScrollTop(figure) - scrollTop);
       if (distance < closestDistance) {
         closestDistance = distance;
         closestIndex = index;
@@ -324,7 +330,7 @@ export function initPdpBuyBoxLightbox(
     syncActiveIndex(nextIndex);
     pauseScrollSync();
     stack.scrollTo({
-      top: target.offsetTop,
+      top: getFigureScrollTop(target),
       behavior: immediate || prefersReducedMotion.matches ? 'auto' : 'smooth',
     });
   }

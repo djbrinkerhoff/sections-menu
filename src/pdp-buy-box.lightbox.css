@@ -148,9 +148,9 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  display: grid;
-  align-content: start;
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 16px;
   padding-right: 8px;
 }
@@ -158,20 +158,13 @@
 .pdp-buy-box-lightbox__figure {
   width: min(100%, 640px);
   margin: 0;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1 / 1;
-  padding: 20px;
-  border-radius: var(--image-radius, 8px);
-  overflow: hidden;
-  background: #f5f1ea;
 }
 
 .pdp-buy-box-lightbox__image {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  height: auto;
+  border-radius: var(--image-radius, 8px);
   background: #f5f1ea;
 }
 
@@ -198,5 +191,4 @@
 
 .pdp-buy-box-lightbox[data-mode="mobile"] .pdp-buy-box-lightbox__figure {
   width: 100%;
-  padding: 16px;
 }
