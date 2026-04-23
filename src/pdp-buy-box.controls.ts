@@ -21,21 +21,58 @@ export function initPdpBuyBoxControls(
   wrapper.className = 'controls';
   applyImageRadius(root, root.dataset.radius);
 
-  // ─── Layout picker ───
+  // ─── Layout picker (thumbnail grid) ───
 
-  wrapper.appendChild(createSegmentedGroup({
-    name: 'pdpLayout',
-    label: 'Layout',
-    values: ['carousel', 'column', 'split'],
-    labels: { carousel: 'Carousel', column: 'Column', split: 'Split' },
-    initialValue: root.dataset.pdpLayout ?? 'column',
-    onChange: (v) => {
-      root.dataset.pdpLayout = v;
-      preview.syncLayout();
-      onStateChange();
-    },
-    signal,
-  }));
+  function createLayoutGroup(): HTMLFieldSetElement {
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'control-group control-group--style';
+    fieldset.dataset.control = 'pdpLayout';
+    fieldset.innerHTML = `<legend class="control-group__label">Layout</legend>`;
+
+    const options = document.createElement('div');
+    options.className = 'control-group__options control-group__options--layout';
+
+    const layouts = ['carousel', 'column', 'split'] as const;
+    const previews: Record<string, string> = {
+      carousel: `<svg viewBox="0 0 56 36" fill="none"><rect x="2" y="2" width="30" height="32" rx="1.5" fill="currentColor" opacity=".2"/><path d="M5 18l3-2.5v5z" fill="currentColor" opacity=".3"/><path d="M29 18l-3-2.5v5z" fill="currentColor" opacity=".3"/><circle cx="14" cy="31" r="1.2" fill="currentColor" opacity=".3"/><circle cx="17" cy="31" r="1.2" fill="currentColor" opacity=".5"/><circle cx="20" cy="31" r="1.2" fill="currentColor" opacity=".3"/><rect x="35" y="2" width="19" height="3" rx=".5" fill="currentColor" opacity=".25"/><rect x="35" y="7" width="12" height="2" rx=".5" fill="currentColor" opacity=".18"/><rect x="35" y="13" width="19" height="6" rx="1" fill="currentColor" opacity=".15"/><rect x="35" y="22" width="14" height="2" rx=".5" fill="currentColor" opacity=".12"/><rect x="35" y="26" width="10" height="2" rx=".5" fill="currentColor" opacity=".12"/></svg>`,
+      column: `<svg viewBox="0 0 56 36" fill="none"><rect x="2" y="2" width="30" height="16" rx="1" fill="currentColor" opacity=".25"/><rect x="2" y="20" width="14.5" height="14" rx="1" fill="currentColor" opacity=".18"/><rect x="17.5" y="20" width="14.5" height="14" rx="1" fill="currentColor" opacity=".18"/><rect x="35" y="2" width="19" height="3" rx=".5" fill="currentColor" opacity=".25"/><rect x="35" y="7" width="12" height="2" rx=".5" fill="currentColor" opacity=".18"/><rect x="35" y="13" width="19" height="6" rx="1" fill="currentColor" opacity=".15"/><rect x="35" y="22" width="14" height="2" rx=".5" fill="currentColor" opacity=".12"/><rect x="35" y="26" width="10" height="2" rx=".5" fill="currentColor" opacity=".12"/></svg>`,
+      split: `<svg viewBox="0 0 56 36" fill="none"><rect x="15" y="2" width="26" height="14" rx="1" fill="currentColor" opacity=".25"/><rect x="15" y="18" width="26" height="14" rx="1" fill="currentColor" opacity=".18"/><rect x="1" y="10" width="12" height="3" rx=".5" fill="currentColor" opacity=".22"/><rect x="1" y="15" width="9" height="2" rx=".5" fill="currentColor" opacity=".15"/><rect x="1" y="19" width="11" height="2" rx=".5" fill="currentColor" opacity=".12"/><rect x="43" y="10" width="12" height="6" rx="1" fill="currentColor" opacity=".18"/><rect x="43" y="18" width="8" height="2" rx=".5" fill="currentColor" opacity=".12"/><rect x="43" y="22" width="10" height="2" rx=".5" fill="currentColor" opacity=".12"/></svg>`,
+    };
+
+    for (const v of layouts) {
+      const label = document.createElement('label');
+      label.className = 'variant-thumb';
+
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'pdpLayout';
+      input.value = v;
+      input.checked = v === (root.dataset.pdpLayout ?? 'column');
+      input.addEventListener('change', () => {
+        root.dataset.pdpLayout = v;
+        preview.syncLayout();
+        onStateChange();
+      }, { signal });
+
+      const thumb = document.createElement('span');
+      thumb.className = 'variant-thumb__preview';
+      thumb.innerHTML = previews[v] ?? '';
+
+      const text = document.createElement('span');
+      text.className = 'variant-thumb__label';
+      text.textContent = v;
+
+      label.appendChild(input);
+      label.appendChild(thumb);
+      label.appendChild(text);
+      options.appendChild(label);
+    }
+
+    fieldset.appendChild(options);
+    return fieldset;
+  }
+
+  wrapper.appendChild(createLayoutGroup());
 
   // ─── Product picker ───
 
