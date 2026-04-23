@@ -1,21 +1,10 @@
 <section class="pdp-buy-box" data-product-id="summit-tee" data-stock-style="off" data-price-display="lowest" data-currency-notation="sign" data-price-format="decimal" data-show-bnpl="true" data-show-variants="true" data-aspect="square" data-fit="cover" data-radius="8" data-lightbox="true" style="--image-radius: 8px; --image-button-radius: 9999px;">
   <div class="pdp-buy-box__layout">
-    <figure class="pdp-buy-box__media" data-layout="slideshow" data-pagination="thumbnails">
-      <div class="gallery__viewport">
-        <div class="gallery__grid" data-pdp-slot="gallery-grid"></div>
-        <button class="gallery__prev" aria-label="Previous image">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15,18 9,12 15,6"/>
-          </svg>
-        </button>
-        <button class="gallery__next" aria-label="Next image">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9,6 15,12 9,18"/>
-          </svg>
-        </button>
-        <div class="gallery__pagination" role="tablist" aria-label="Choose image"></div>
-        <div class="gallery__counter" aria-live="polite"></div>
-      </div>
+    <figure class="pdp-buy-box__media">
+      <button class="pdp-buy-box__media-hero" type="button" data-pdp-slot="media-hero">
+        <img class="pdp-buy-box__media-hero-image" data-pdp-slot="media-hero-image" alt="" />
+      </button>
+      <div class="pdp-buy-box__media-strip" data-pdp-slot="media-strip" aria-label="Choose product image"></div>
     </figure>
 
     <div class="pdp-buy-box__details">

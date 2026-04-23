@@ -1,4 +1,5 @@
 .pdp-buy-box {
+  position: relative;
   min-height: 100%;
   color: #10100b;
   background: #ffffff;
@@ -32,8 +33,98 @@
 
 .pdp-buy-box__media {
   margin: 0;
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 12px;
   container-type: inline-size;
   container-name: gallery-section;
+}
+
+.pdp-buy-box__media-hero,
+.pdp-buy-box__media-thumb {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: #f5f1ea;
+  overflow: hidden;
+}
+
+.pdp-buy-box__media-hero {
+  border-radius: var(--image-radius, 8px);
+  cursor: zoom-in;
+}
+
+.pdp-buy-box[data-lightbox="false"] .pdp-buy-box__media-hero {
+  cursor: default;
+}
+
+.pdp-buy-box__media-hero:focus-visible,
+.pdp-buy-box__media-thumb:focus-visible {
+  outline: 2px solid #10100b;
+  outline-offset: 2px;
+}
+
+.pdp-buy-box__media-hero-image,
+.pdp-buy-box__media-thumb-image {
+  display: block;
+  width: 100%;
+  background: #f5f1ea;
+}
+
+.pdp-buy-box__media-hero-image {
+  object-fit: cover;
+}
+
+.pdp-buy-box[data-fit="contain"] .pdp-buy-box__media-hero-image,
+.pdp-buy-box[data-fit="contain"] .pdp-buy-box__media-thumb-image {
+  object-fit: contain;
+}
+
+.pdp-buy-box[data-aspect="square"] .pdp-buy-box__media-hero-image {
+  aspect-ratio: 1 / 1;
+}
+
+.pdp-buy-box[data-aspect="landscape"] .pdp-buy-box__media-hero-image {
+  aspect-ratio: 4 / 3;
+}
+
+.pdp-buy-box[data-aspect="portrait"] .pdp-buy-box__media-hero-image {
+  aspect-ratio: 3 / 4;
+}
+
+.pdp-buy-box[data-aspect="auto"] .pdp-buy-box__media-hero-image {
+  aspect-ratio: auto;
+}
+
+.pdp-buy-box__media-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(72px, 1fr);
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.pdp-buy-box__media-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.pdp-buy-box__media-thumb {
+  border-radius: 16px;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(16, 16, 11, 0.12);
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+.pdp-buy-box__media-thumb[data-selected="true"] {
+  box-shadow: 0 0 0 1.5px #10100b;
+}
+
+.pdp-buy-box__media-thumb-image {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
 }
 
 .pdp-buy-box__details {
@@ -368,6 +459,10 @@ legend.pdp-buy-box__option-label {
 
   .pdp-buy-box__details {
     grid-column: 7 / -1;
+  }
+
+  .pdp-buy-box__media-strip {
+    grid-auto-columns: 88px;
   }
 }
 

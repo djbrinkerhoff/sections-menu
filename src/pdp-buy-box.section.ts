@@ -1,4 +1,5 @@
 import type { MountedSection, Section, SectionInitContext } from './shell';
+import { setOnViewportChange } from './shell';
 import pdpBuyBoxHtml from './pdp-buy-box.partial.html?raw';
 import { initPdpBuyBoxControls } from './pdp-buy-box.controls';
 import { initPdpBuyBox } from './pdp-buy-box';
@@ -18,6 +19,7 @@ export const pdpBuyBoxSection: Section = {
 
     const preview = initPdpBuyBox(root);
     const controls = initPdpBuyBoxControls(root, controlsContainer, preview, onStateChange);
+    setOnViewportChange(() => preview.handleViewportChange());
 
     return {
       destroy() {

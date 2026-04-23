@@ -1,13 +1,10 @@
 import { DEFAULT_PDP_BUY_BOX_PRODUCT_ID, getPdpBuyBoxProduct } from './pdp-buy-box.data';
-import type { PdpBuyBoxImage } from './pdp-buy-box.data';
-import { initSlideshow, type SlideshowHandle } from './gallery.slideshow';
-import { initImageLightbox } from './image.lightbox';
+import { initPdpBuyBoxLightbox } from './pdp-buy-box.lightbox';
+import { initPdpBuyBoxMedia, type PdpBuyBoxMediaHandle } from './pdp-buy-box.media';
 
 const MAX_QUANTITY = 9;
 
 interface PdpBuyBoxElements {
-  galleryGrid: HTMLElement;
-  mediaEl: HTMLElement;
   title: HTMLElement;
   price: HTMLElement;
   stock: HTMLElement;
@@ -33,6 +30,7 @@ export interface PdpBuyBoxHandle {
   cleanup(): void;
   setProduct(productId: string): void;
   getCurrentProductId(): string;
+  handleViewportChange(): void;
   syncLayout(): void;
   syncStockLabel(): void;
   syncPrice(): void;
@@ -46,8 +44,6 @@ function queryRequired<T extends Element>(root: HTMLElement, selector: string): 
 
 function getElements(root: HTMLElement): PdpBuyBoxElements {
   return {
-    galleryGrid: queryRequired(root, '[data-pdp-slot="gallery-grid"]'),
-    mediaEl: queryRequired(root, '.pdp-buy-box__media'),
     title: queryRequired(root, '[data-pdp-slot="title"]'),
     price: queryRequired(root, '[data-pdp-slot="price"]'),
     stock: queryRequired(root, '[data-pdp-slot="stock"]'),
@@ -70,56 +66,28 @@ function getElements(root: HTMLElement): PdpBuyBoxElements {
   };
 }
 
-function buildGalleryItems(grid: HTMLElement, images: PdpBuyBoxImage[]): void {
-  grid.innerHTML = '';
-  for (const img of images) {
-    const figure = document.createElement('figure');
-    figure.className = 'gallery__item';
-
-    const trigger = document.createElement('button');
-    trigger.className = 'gallery__trigger image-lightbox__trigger';
-    trigger.type = 'button';
-    trigger.dataset.zoomTarget = 'true';
-    trigger.dataset.zoomGroup = 'pdp';
-
-    const image = document.createElement('img');
-    image.className = 'gallery__image';
-    image.src = img.src;
-    image.alt = img.alt;
-    image.width = img.width;
-    image.height = img.height;
-    image.loading = 'lazy';
-
-    trigger.appendChild(image);
-    figure.appendChild(trigger);
-    grid.appendChild(figure);
-  }
-}
-
 export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
   const abortController = new AbortController();
   const { signal } = abortController;
   const elements = getElements(root);
 
-  let slideshowHandle: SlideshowHandle | null = null;
+  let media: PdpBuyBoxMediaHandle | null = null;
 
-  const lightbox = initImageLightbox(elements.mediaEl, {
+  const lightbox = initPdpBuyBoxLightbox(root, {
+    getActiveIndex: () => media?.getActiveIndex() ?? 0,
+    getImages: () => media?.getImages() ?? [],
     isEnabled: () => root.dataset.lightbox === 'true',
-    onIndexChange(session) {
-      slideshowHandle?.goToIndex(session.activeIndex, { immediate: true, resetAutoplay: false });
-    },
-    onOpen() { slideshowHandle?.pauseAutoplay(); },
-    onClose(session) {
-      slideshowHandle?.goToIndex(session.activeIndex, { immediate: true, resetAutoplay: false });
-      slideshowHandle?.resumeAutoplay();
+    onActiveIndexChange(index) {
+      media?.setActiveIndex(index);
     },
   });
 
-  function initGallery(): void {
-    slideshowHandle?.cleanup();
-    buildGalleryItems(elements.galleryGrid, currentProduct.images);
-    slideshowHandle = initSlideshow(elements.mediaEl, signal);
-  }
+  media = initPdpBuyBoxMedia(root, {
+    isLightboxEnabled: () => root.dataset.lightbox === 'true',
+    onOpen(index, invoker) {
+      lightbox.open(index, invoker);
+    },
+  });
 
   let currentProduct = getPdpBuyBoxProduct(root.dataset.productId);
   let selectedSelectValue = currentProduct.selectGroup.defaultValue;
@@ -251,7 +219,8 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
   }
 
   function renderProduct(): void {
-    initGallery();
+    lightbox.close({ animate: false, restoreFocus: false });
+    media?.setImages(currentProduct.images);
     root.dataset.productId = currentProduct.id || DEFAULT_PDP_BUY_BOX_PRODUCT_ID;
 
     elements.title.textContent = currentProduct.title;
@@ -336,7 +305,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
 
   return {
     cleanup() {
-      slideshowHandle?.cleanup();
+      media?.cleanup();
       lightbox.cleanup();
       abortController.abort();
     },
@@ -344,8 +313,14 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     getCurrentProductId() {
       return currentProduct.id;
     },
+    handleViewportChange() {
+      lightbox.handleViewportChange();
+    },
     syncLayout() {
-      slideshowHandle?.syncLayout();
+      if (root.dataset.lightbox !== 'true') {
+        lightbox.close({ animate: false, restoreFocus: false });
+      }
+      media?.refresh();
     },
     syncStockLabel,
     syncPrice,

@@ -1,0 +1,202 @@
+.pdp-buy-box-lightbox {
+  position: absolute;
+  inset-inline: 0;
+  z-index: 40;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.pdp-buy-box-lightbox::backdrop {
+  display: none;
+}
+
+.pdp-buy-box-lightbox[open] {
+  display: block;
+}
+
+.pdp-buy-box-lightbox[open][data-state="opening"],
+.pdp-buy-box-lightbox[open][data-state="open"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pdp-buy-box-lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.pdp-buy-box-lightbox__surface {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+  background: #ffffff;
+  overflow: hidden;
+  transform: translateY(12px);
+  transition: transform 180ms ease;
+}
+
+.pdp-buy-box-lightbox[open][data-state="opening"] .pdp-buy-box-lightbox__surface,
+.pdp-buy-box-lightbox[open][data-state="open"] .pdp-buy-box-lightbox__surface {
+  transform: translateY(0);
+}
+
+.pdp-buy-box-lightbox__close,
+.pdp-buy-box-lightbox__rail-control,
+.pdp-buy-box-lightbox__rail-thumb {
+  border: 0;
+  background: #ffffff;
+  color: #10100b;
+  cursor: pointer;
+}
+
+.pdp-buy-box-lightbox__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 1px rgba(16, 16, 11, 0.12);
+}
+
+.pdp-buy-box-lightbox__body {
+  display: grid;
+  grid-template-columns: minmax(84px, 96px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 20px;
+  height: 100%;
+  min-height: 0;
+  padding: 72px 24px 24px 20px;
+}
+
+.pdp-buy-box-lightbox__rail-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  min-height: 0;
+}
+
+.pdp-buy-box-lightbox__rail-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 34px;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 1px rgba(16, 16, 11, 0.12);
+}
+
+.pdp-buy-box-lightbox__rail-control[disabled] {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.pdp-buy-box-lightbox__rail-viewport {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.pdp-buy-box-lightbox__rail-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.pdp-buy-box-lightbox__rail {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.pdp-buy-box-lightbox__rail-thumb {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(16, 16, 11, 0.12);
+}
+
+.pdp-buy-box-lightbox__rail-thumb[data-selected="true"] {
+  box-shadow: 0 0 0 1.5px #10100b;
+}
+
+.pdp-buy-box-lightbox__rail-thumb-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  background: #f5f1ea;
+}
+
+.pdp-buy-box-lightbox__stack {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 16px;
+  padding-right: 8px;
+}
+
+.pdp-buy-box-lightbox__figure {
+  width: min(100%, 640px);
+  margin: 0;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  padding: 20px;
+  border-radius: var(--image-radius, 8px);
+  overflow: hidden;
+  background: #f5f1ea;
+}
+
+.pdp-buy-box-lightbox__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #f5f1ea;
+}
+
+.pdp-buy-box-lightbox__close:focus-visible,
+.pdp-buy-box-lightbox__rail-control:focus-visible,
+.pdp-buy-box-lightbox__rail-thumb:focus-visible {
+  outline: 2px solid #10100b;
+  outline-offset: 2px;
+}
+
+.pdp-buy-box-lightbox[data-mode="mobile"] .pdp-buy-box-lightbox__body {
+  grid-template-columns: 1fr;
+  padding: 64px 16px 20px;
+}
+
+.pdp-buy-box-lightbox[data-mode="mobile"] .pdp-buy-box-lightbox__rail-shell {
+  display: none;
+}
+
+.pdp-buy-box-lightbox[data-mode="mobile"] .pdp-buy-box-lightbox__stack {
+  gap: 12px;
+  padding-right: 0;
+}
+
+.pdp-buy-box-lightbox[data-mode="mobile"] .pdp-buy-box-lightbox__figure {
+  width: 100%;
+  padding: 16px;
+}

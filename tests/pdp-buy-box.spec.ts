@@ -1,5 +1,13 @@
 import { expect, test } from 'playwright/test';
 
+async function checkRadio(page: import('playwright/test').Page, name: string, value: string) {
+  await page.locator(`input[name="${name}"][value="${value}"]`).evaluate((input) => {
+    if (!(input instanceof HTMLInputElement)) throw new Error('Expected input');
+    input.checked = true;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.locator('.controls__picker').selectOption('pdp-buy-box');
@@ -80,7 +88,7 @@ test('default product hydrates title, price, and hero image', async ({ page }) =
   await expect(page.locator('.pdp-buy-box__title')).toHaveText('Very cool t-shirt');
   await expect(page.locator('.pdp-buy-box__price')).toContainText('$12.00');
 
-  const heroSrc = await page.locator('.gallery__item:not([data-gallery-clone]) .gallery__image').first().getAttribute('src');
+  const heroSrc = await page.locator('.pdp-buy-box__media-hero-image').getAttribute('src');
   expect(heroSrc).toContain('summit-tee-01.png');
 });
 
@@ -113,7 +121,7 @@ test('switching product from controls updates hero image, title, price, and opti
   await expect(page.locator('.pdp-buy-box__title')).toHaveText('Medium nylon crescent bag');
   await expect(page.locator('.pdp-buy-box__price')).toContainText('$64.00');
 
-  const heroSrc = await page.locator('.gallery__item:not([data-gallery-clone]) .gallery__image').first().getAttribute('src');
+  const heroSrc = await page.locator('.pdp-buy-box__media-hero-image').getAttribute('src');
   expect(heroSrc).toContain('crescent-bag-01.png');
 
   // Chip group should show bag-specific options
@@ -212,6 +220,23 @@ test('quantity caps at 9', async ({ page }) => {
   await expect(value).toHaveValue('9');
 });
 
+test('clicking a source thumbnail updates the active page image and selected state', async ({ page }) => {
+  const thumbs = page.locator('.pdp-buy-box__media-thumb');
+  await thumbs.nth(3).click();
+
+  await expect(thumbs.nth(3)).toHaveAttribute('data-selected', 'true');
+  await expect(page.locator('.pdp-buy-box__media-hero-image')).toHaveAttribute('src', /summit-tee-04\.png$/);
+});
+
+test('disabling the lightbox keeps source-gallery image switching working without opening an overlay', async ({ page }) => {
+  await checkRadio(page, 'lightbox', 'false');
+  await page.locator('.pdp-buy-box__media-thumb').nth(2).click();
+
+  await expect(page.locator('.pdp-buy-box__media-hero-image')).toHaveAttribute('src', /summit-tee-03\.png$/);
+  await page.locator('.pdp-buy-box__media-hero').click();
+  await expect(page.locator('.pdp-buy-box-lightbox[open]')).toHaveCount(0);
+});
+
 // ─── State persistence ───
 
 test('selected product persists across section switches', async ({ page }) => {
@@ -264,7 +289,7 @@ test('section is readable in fluid viewport', async ({ page }) => {
 
   await expect(page.locator('.pdp-buy-box')).toBeVisible();
   await expect(page.locator('.pdp-buy-box__title')).toBeVisible();
-  await expect(page.locator('.gallery__image').first()).toBeVisible();
+  await expect(page.locator('.pdp-buy-box__media-hero-image')).toBeVisible();
 });
 
 // ─── Responsive layout ───
