@@ -135,32 +135,9 @@
   flex-wrap: wrap;
 }
 
-.pdp-buy-box__bnpl-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 20px;
-  padding: 0 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.01em;
-}
-
-.pdp-buy-box__bnpl-badge--afterpay {
-  background: #28c76f;
-  color: #ffffff;
-}
-
-.pdp-buy-box__bnpl-badge--affirm {
-  background: #5c6cff;
-  color: #ffffff;
-}
-
-.pdp-buy-box__bnpl-badge--klarna {
-  background: #ffb6cf;
-  color: #10100b;
+.pdp-buy-box__bnpl-logo {
+  height: 20px;
+  width: auto;
 }
 
 .pdp-buy-box__bnpl-note {
