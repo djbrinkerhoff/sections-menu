@@ -1,4 +1,15 @@
 import type { PdpBuyBoxImage } from './pdp-buy-box.data';
+import {
+  clampIndex,
+  clearInert,
+  collectInertChildren,
+  findScrollContainer,
+  getFocusableElements,
+  lockScroll,
+  setTriggerExpanded,
+  syncDialogPosition as syncDialogPositionShared,
+  unlockScroll,
+} from './lightbox.shared';
 
 const CLOSE_DURATION_MS = 180;
 const DESKTOP_MIN_WIDTH = 736;
@@ -32,25 +43,6 @@ export interface PdpBuyBoxLightboxHandle {
   handleViewportChange(): void;
   isOpen(): boolean;
   open(index: number, invoker: HTMLElement): void;
-}
-
-function clampIndex(index: number, length: number): number {
-  if (length <= 0) return 0;
-  return Math.min(length - 1, Math.max(0, index));
-}
-
-function getFocusableElements(root: HTMLElement): HTMLElement[] {
-  const selector = [
-    'button:not([disabled])',
-    '[href]',
-    'input:not([disabled])',
-    'select:not([disabled])',
-    'textarea:not([disabled])',
-    '[tabindex]:not([tabindex="-1"])',
-  ].join(',');
-
-  return Array.from(root.querySelectorAll<HTMLElement>(selector))
-    .filter((element) => !element.hidden && element.tabIndex !== -1);
 }
 
 function createDialog() {
@@ -161,62 +153,29 @@ export function initPdpBuyBoxLightbox(
     return host.clientWidth >= DESKTOP_MIN_WIDTH ? 'desktop' : 'mobile';
   }
 
-  function findScrollContainer(): HTMLElement | null {
-    let current = host.parentElement;
-    while (current) {
-      const style = window.getComputedStyle(current);
-      if (/(auto|scroll|overlay)/.test(style.overflowY)) return current;
-      current = current.parentElement;
-    }
-    return null;
+  function resolveScrollContainer(): HTMLElement | null {
+    if (!scrollContainer) scrollContainer = findScrollContainer(host);
+    return scrollContainer;
   }
 
   function syncDialogPosition(): void {
-    if (!scrollContainer) {
-      scrollContainer = findScrollContainer();
-    }
-    if (!scrollContainer) return;
-
-    dialog.style.top = `${scrollContainer.scrollTop}px`;
-    dialog.style.height = `${scrollContainer.clientHeight}px`;
+    const container = resolveScrollContainer();
+    if (!container) return;
+    syncDialogPositionShared(dialog, container);
   }
 
-  function lockScroll(): void {
-    if (!scrollContainer) {
-      scrollContainer = findScrollContainer();
-    }
-    if (scrollContainer) {
-      scrollContainer.style.overflow = 'hidden';
-    }
+  function doLockScroll(): void {
+    const container = resolveScrollContainer();
+    if (container) lockScroll(container);
   }
 
-  function unlockScroll(): void {
-    if (scrollContainer) {
-      scrollContainer.style.overflow = '';
-    }
-  }
-
-  function clearInert(): void {
-    for (const child of inertedChildren) {
-      child.removeAttribute('inert');
-      child.removeAttribute('aria-hidden');
-    }
-    inertedChildren = [];
+  function doUnlockScroll(): void {
+    unlockScroll(scrollContainer);
   }
 
   function applyInert(): void {
-    clearInert();
-    for (const child of Array.from(host.children)) {
-      if (!(child instanceof HTMLElement) || child === dialog) continue;
-      child.setAttribute('inert', '');
-      child.setAttribute('aria-hidden', 'true');
-      inertedChildren.push(child);
-    }
-  }
-
-  function setTriggerExpanded(trigger: HTMLElement, expanded: boolean): void {
-    trigger.setAttribute('aria-haspopup', 'dialog');
-    trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    clearInert(inertedChildren);
+    inertedChildren = collectInertChildren(host, dialog);
   }
 
   function clearContent(): void {
@@ -451,8 +410,9 @@ export function initPdpBuyBoxLightbox(
     dialog.removeAttribute('data-mode');
     dialog.removeAttribute('data-state');
     clearContent();
-    unlockScroll();
-    clearInert();
+    doUnlockScroll();
+    clearInert(inertedChildren);
+    inertedChildren = [];
 
     if (restoreFocus && restoreTarget && restoreTarget.isConnected) {
       restoreTarget.focus();
@@ -629,7 +589,7 @@ export function initPdpBuyBoxLightbox(
       setTriggerExpanded(invoker, true);
       dialog.dataset.mode = activeState.mode;
       syncDialogPosition();
-      lockScroll();
+      doLockScroll();
       applyInert();
       if (!dialog.open) {
         dialog.show();

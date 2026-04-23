@@ -1,5 +1,6 @@
 import { initSlideshow, type SlideshowHandle } from './gallery.slideshow';
 import type { PdpBuyBoxImage } from './pdp-buy-box.data';
+import { clampIndex } from './lightbox.shared';
 
 export interface PdpBuyBoxMediaHandle {
   cleanup(): void;
@@ -19,11 +20,6 @@ function queryRequired<T extends Element>(root: HTMLElement, selector: string): 
   const element = root.querySelector<T>(selector);
   if (!element) throw new Error(`Missing required PDP buy box media element: ${selector}`);
   return element;
-}
-
-function clampIndex(index: number, length: number): number {
-  if (length <= 0) return 0;
-  return Math.min(length - 1, Math.max(0, index));
 }
 
 export function initPdpBuyBoxMedia(

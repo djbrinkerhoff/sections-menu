@@ -1,8 +1,17 @@
 import { getZoomTrigger, resolveZoomCollection, type ZoomTarget } from './image.targets';
+import {
+  clearInert,
+  collectInertChildren,
+  findScrollContainer,
+  getFocusableElements,
+  lockScroll,
+  setTriggerExpanded,
+  syncDialogPosition as syncDialogPositionShared,
+  unlockScroll,
+} from './lightbox.shared';
 
 const SCROLL_CLOSE_THRESHOLD = 40;
 const SWIPE_CLOSE_GUARD = 56;
-const SWIPE_VERTICAL_RATIO = 1.2;
 const OPEN_DURATION_MS = 280;
 const CLOSE_DURATION_MS = 220;
 const OPEN_EASING = 'cubic-bezier(0.16, 1, 0.3, 1)';
@@ -89,20 +98,6 @@ async function preloadImage(src: string): Promise<void> {
     image.onerror = () => reject(new Error(`Failed to load ${src}`));
     image.src = src;
   });
-}
-
-function getFocusableElements(root: HTMLElement): HTMLElement[] {
-  const selector = [
-    'button:not([disabled])',
-    '[href]',
-    'input:not([disabled])',
-    'select:not([disabled])',
-    'textarea:not([disabled])',
-    '[tabindex]:not([tabindex="-1"])',
-  ].join(',');
-
-  return Array.from(root.querySelectorAll<HTMLElement>(selector))
-    .filter((element) => !element.hidden && element.tabIndex !== -1);
 }
 
 /**
@@ -227,45 +222,30 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   let scrollContainer: HTMLElement | null = null;
   let wheelCloseDistance = 0;
 
-  function findScrollContainer(): HTMLElement | null {
-    let current = host.parentElement;
-    while (current) {
-      const style = window.getComputedStyle(current);
-      if (/(auto|scroll|overlay)/.test(style.overflowY)) return current;
-      current = current.parentElement;
-    }
-    return null;
+  function resolveScrollContainer(): HTMLElement | null {
+    if (!scrollContainer) scrollContainer = findScrollContainer(host);
+    return scrollContainer;
   }
 
   function syncDialogPosition(): void {
-    if (!scrollContainer) {
-      scrollContainer = findScrollContainer();
-    }
-    if (!scrollContainer) return;
-    const top = scrollContainer.scrollTop;
-    const height = scrollContainer.clientHeight;
-    dialog.style.top = `${top}px`;
-    dialog.style.height = `${height}px`;
+    const container = resolveScrollContainer();
+    if (!container) return;
+    syncDialogPositionShared(dialog, container);
   }
 
-  function lockScroll(): void {
-    if (!scrollContainer) scrollContainer = findScrollContainer();
-    if (scrollContainer) scrollContainer.style.overflow = 'hidden';
+  function doLockScroll(): void {
+    const container = resolveScrollContainer();
+    if (container) lockScroll(container);
   }
 
-  function unlockScroll(): void {
-    if (scrollContainer) scrollContainer.style.overflow = '';
+  function doUnlockScroll(): void {
+    unlockScroll(scrollContainer);
   }
 
   function isOpen(): boolean {
     // True when dialog is visible OR an open() is in-flight (activeState set,
     // awaiting renderIndex before dialog.show). Mutations must cancel both.
     return dialog.open || activeState !== null;
-  }
-
-  function setTriggerExpanded(trigger: HTMLElement, expanded: boolean): void {
-    trigger.setAttribute('aria-haspopup', 'dialog');
-    trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   }
 
   function syncChrome(): void {
@@ -281,22 +261,9 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     counter.textContent = isCollection ? `${activeIndex + 1} of ${total}` : '';
   }
 
-  function clearInert(): void {
-    for (const child of inertedChildren) {
-      child.removeAttribute('inert');
-      child.removeAttribute('aria-hidden');
-    }
-    inertedChildren = [];
-  }
-
   function applyInert(): void {
-    clearInert();
-    for (const child of Array.from(host.children)) {
-      if (!(child instanceof HTMLElement) || child === dialog) continue;
-      child.setAttribute('inert', '');
-      child.setAttribute('aria-hidden', 'true');
-      inertedChildren.push(child);
-    }
+    clearInert(inertedChildren);
+    inertedChildren = collectInertChildren(host, dialog);
   }
 
   function getScrollSources(): EventTarget[] {
@@ -329,13 +296,20 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     }
   }
 
-  function onWheelClose(event: WheelEvent): void {
-    if (!activeState || activeState.targets.length > 1) return;
-    wheelCloseDistance += Math.abs(event.deltaY) + Math.abs(event.deltaX);
-    if (wheelCloseDistance >= SCROLL_CLOSE_THRESHOLD) {
-      event.preventDefault();
-      void close();
+  function onWheel(event: WheelEvent): void {
+    if (!activeState) return;
+
+    // Single-image: scroll to close
+    if (activeState.targets.length <= 1) {
+      wheelCloseDistance += Math.abs(event.deltaY) + Math.abs(event.deltaX);
+      if (wheelCloseDistance >= SCROLL_CLOSE_THRESHOLD) {
+        event.preventDefault();
+        void close();
+      }
+      return;
     }
+
+    // Collection: no wheel navigation
   }
 
   function startScrollClose(): void {
@@ -441,6 +415,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
 
     activeState.activeIndex = index;
     syncChrome();
+
     // Defer neighbor preloads so they don't compete with current image
     if (typeof requestIdleCallback === 'function') {
       requestIdleCallback(() => preloadNeighbors());
@@ -558,9 +533,9 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     clearStaleAnimations();
     syncDialogPosition();
     if (activeState.targets.length > 1) {
-      lockScroll();
+      doLockScroll();
     } else {
-      unlockScroll();
+      doUnlockScroll();
     }
     if (!dialog.open) dialog.show();
     applyInert();
@@ -618,8 +593,9 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     activeState = null;
     isClosing = false;
     if (dialog.open) dialog.close();
-    unlockScroll();
-    clearInert();
+    doUnlockScroll();
+    clearInert(inertedChildren);
+    inertedChildren = [];
     setChromeVisible(true);
     setTriggerExpanded(state.invoker, false);
     if (restoreFocus && state.invoker.isConnected) {
@@ -673,6 +649,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     if (!activeState || isClosing || activeState.targets.length <= 1) return;
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
     if (swipeState !== null) return;
+    if (event.target instanceof Element && event.target.closest('button')) return;
 
     swipeState = {
       pointerId: event.pointerId,
@@ -690,7 +667,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     swipeState = null;
 
     if (Math.abs(deltaX) < SWIPE_CLOSE_GUARD) return;
-    if (Math.abs(deltaX) < Math.abs(deltaY) * SWIPE_VERTICAL_RATIO) return;
+    if (Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
 
     if (deltaX < 0) {
       void goToIndex(activeState.activeIndex + 1);
@@ -706,7 +683,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   }
 
   dialog.addEventListener('keydown', handleKeyboard, { signal });
-  dialog.addEventListener('wheel', onWheelClose, { passive: false, signal });
+  dialog.addEventListener('wheel', onWheel, { passive: false, signal });
   closeButton.addEventListener('click', () => { void close(); }, { signal });
   prevButton.addEventListener('click', () => {
     if (!activeState) return;
@@ -763,9 +740,10 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
       clearStaleAnimations();
       abortController.abort();
       stopScrollClose();
-      unlockScroll();
+      doUnlockScroll();
       showSourceThumbnail();
-      clearInert();
+      clearInert(inertedChildren);
+      inertedChildren = [];
       setChromeVisible(true);
       if (state) {
         setTriggerExpanded(state.invoker, false);
