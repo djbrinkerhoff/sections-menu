@@ -42,7 +42,7 @@ Multi-component shell with two panels: a preview canvas (left) and a controls pa
 - `src/pdp-buy-box.section.ts` — Section wrapper: init/destroy/saveState
 - `src/pdp-buy-box.partial.html` — product detail page markup (media + details)
 - `src/pdp-buy-box.ts` — core buy box behavior: product rendering, variant selection, pricing, stock labels, quantity
-- `src/pdp-buy-box.controls.ts` — controls for product picker, variant toggles, pricing display, aspect ratio, lightbox
+- `src/pdp-buy-box.controls.ts` — controls for layout (carousel/column/split), product picker, variant toggles, pricing display, aspect ratio, lightbox
 - `src/pdp-buy-box.media.ts` — media slideshow: builds slides from product images, wires triggers for lightbox
 - `src/pdp-buy-box.lightbox.ts` — Huckberry-style stacked lightbox with desktop thumbnail rail and mobile scroll
 - `src/pdp-buy-box.data.ts` — product definitions with variants, stock counts, pricing, sold-out states

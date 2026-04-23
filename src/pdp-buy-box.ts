@@ -437,7 +437,9 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
       lightbox.handleViewportChange();
     },
     syncLayout() {
-      lightbox.close({ animate: false, restoreFocus: false });
+      if (lightbox.isOpen()) {
+        lightbox.close({ animate: false, restoreFocus: false });
+      }
       media?.refresh();
     },
     syncStockLabel,
