@@ -2,7 +2,6 @@
 
 .gallery {
   color: var(--gallery-accent, #000000);
-  min-height: 100%;
   position: relative;
   container-type: inline-size;
   container-name: gallery-section;
