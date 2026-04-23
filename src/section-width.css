@@ -1,31 +1,45 @@
 /* ─── Shared section width system ───
  *
- * 7-column named-lines grid ("Layout Breakouts" pattern).
- * Any section using data-bg-width / data-content-width gets these rules.
+ * 6/12-column grid: 6 equal-width columns at mobile, 12 at 768px+.
+ * Content-width tiers are column spans, not fixed pixel values.
  * Children carry .sw-bg and .sw-body for grid placement.
  *
- * Tier values:  narrow = 480px, medium = 768px, wide = 1200px, full = 100%
- * Change a value here and it propagates to every section.
+ * The root always has 16px padding — this defines the grid boundary.
+ * "Wide" content is constrained to the grid. "Full" extends to the
+ * viewport edge via negative margin. Change column spans here and
+ * every section updates.
  */
+
+/* #preview-root must be a named container so @container preview queries
+   resolve against the preview viewport width, not the section root's
+   content-box (which shrinks with padding). */
+#preview-root {
+  container-type: inline-size;
+  container-name: preview;
+}
+
+/* ─── Grid: 6 cols mobile, 12 at 768px+ ─── */
 
 [data-bg-width][data-content-width] {
   display: grid;
-  grid-template-columns:
-    [full-start] minmax(0, 1fr)
-    [wide-start] minmax(0, calc((1200px - 768px) / 2))
-    [medium-start] minmax(0, calc((768px - 480px) / 2))
-    [narrow-start] min(480px, 100%) [narrow-end]
-    minmax(0, calc((768px - 480px) / 2)) [medium-end]
-    minmax(0, calc((1200px - 768px) / 2)) [wide-end]
-    minmax(0, 1fr) [full-end];
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  column-gap: 16px;
+  padding: 16px;
+}
+
+@container preview (min-width: 768px) {
+  [data-bg-width][data-content-width] {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
 }
 
 /* ─── Background layer ─── */
 
 .sw-bg {
   grid-row: 1;
-  grid-column: full;
+  grid-column: 1 / -1;
   z-index: 0;
+  margin-inline: -16px;
 }
 
 [data-bg-width="hug"] > .sw-bg {
@@ -41,11 +55,33 @@
 
 .sw-body {
   grid-row: 1;
+  grid-column: 1 / -1;
   z-index: 1;
   padding: 16px;
 }
 
-[data-content-width="full"] > .sw-body    { grid-column: full; }
-[data-content-width="wide"] > .sw-body    { grid-column: wide; }
-[data-content-width="medium"] > .sw-body  { grid-column: medium; }
-[data-content-width="narrow"] > .sw-body  { grid-column: narrow; }
+/* Full: content extends past the grid to the viewport edge */
+[data-content-width="full"] > .sw-body {
+  margin-inline: -16px;
+  padding-inline: 0;
+}
+
+/* Wide: content constrained to the grid (1 / -1, no escape) */
+/* — default placement, no override needed */
+
+/* Medium + Narrow: column placement at 768px+ */
+@container preview (min-width: 768px) {
+  [data-content-width="medium"] > .sw-body {
+    grid-column: 3 / span 8;
+  }
+  [data-content-width="narrow"] > .sw-body {
+    grid-column: 4 / span 6;
+  }
+}
+
+/* Narrow tightens at desktop */
+@container preview (min-width: 1280px) {
+  [data-content-width="narrow"] > .sw-body {
+    grid-column: 5 / span 4;
+  }
+}
