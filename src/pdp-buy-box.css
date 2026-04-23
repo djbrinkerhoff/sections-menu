@@ -482,13 +482,14 @@ legend.pdp-buy-box__option-label {
     display: contents;
   }
 
-  /* Info rail: left 3 columns, sticky */
+  /* Info rail: left 3 columns, sticky + vertically centered */
   [data-pdp-layout="split"] .pdp-buy-box__info-group {
     grid-column: 1 / span 3;
     grid-row: 1;
     position: sticky;
-    top: 48px;
-    align-self: start;
+    top: 0;
+    height: var(--pdp-scroll-vh, 667px);
+    align-content: center;
   }
 
   /* Media: center 6 columns */
@@ -497,12 +498,13 @@ legend.pdp-buy-box__option-label {
     grid-row: 1;
   }
 
-  /* Buy rail: right 3 columns, sticky */
+  /* Buy rail: right 3 columns, sticky + vertically centered */
   [data-pdp-layout="split"] .pdp-buy-box__buy {
     grid-column: 10 / -1;
     grid-row: 1;
     position: sticky;
-    top: 48px;
-    align-self: start;
+    top: 0;
+    height: var(--pdp-scroll-vh, 667px);
+    align-content: center;
   }
 }

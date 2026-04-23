@@ -85,6 +85,14 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
   const { signal } = abortController;
   const elements = getElements(root);
 
+  function syncScrollViewportHeight(): void {
+    const scrollParent = root.parentElement;
+    if (scrollParent) {
+      root.style.setProperty('--pdp-scroll-vh', `${scrollParent.clientHeight}px`);
+    }
+  }
+  syncScrollViewportHeight();
+
   let media: PdpBuyBoxMediaHandle | null = null;
 
   const lightbox = initPdpBuyBoxLightbox(root, {
@@ -434,6 +442,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
       return currentProduct.id;
     },
     handleViewportChange() {
+      syncScrollViewportHeight();
       lightbox.handleViewportChange();
       media?.refresh();
     },
