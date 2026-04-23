@@ -388,8 +388,6 @@ legend.pdp-buy-box__option-label {
 
 @container (min-width: 736px) {
   .pdp-buy-box__layout {
-    max-inline-size: 712px;
-    margin-inline: auto;
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 32px 16px;
     padding: 48px 0;
@@ -406,8 +404,6 @@ legend.pdp-buy-box__option-label {
 
 @container (min-width: 1100px) {
   .pdp-buy-box__layout {
-    max-inline-size: none;
-    margin-inline: 0;
     gap: 32px;
     padding: 48px 24px;
   }
