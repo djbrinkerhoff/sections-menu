@@ -1,13 +1,5 @@
 import { expect, test } from 'playwright/test';
-
-// Helper to check a hidden radio input by dispatching a change event
-async function checkRadio(page: import('playwright/test').Page, name: string, value: string) {
-  await page.locator(`input[name="${name}"][value="${value}"]`).evaluate((input) => {
-    if (!(input instanceof HTMLInputElement)) throw new Error('Expected input');
-    input.checked = true;
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-}
+import { checkRadio, setRangeValue } from './helpers';
 
 async function selectedSlideshowIndex(page: import('playwright/test').Page) {
   return page.locator('.gallery__pagination [role="tab"]').evaluateAll((tabs) =>
@@ -39,15 +31,6 @@ async function expectLightboxContainedWithinHost(page: import('playwright/test')
       }),
     )
     .toBe(true);
-}
-
-async function setRangeValue(page: import('playwright/test').Page, name: string, value: number) {
-  await page.locator(`input[name="${name}"]`).evaluate((input, nextValue) => {
-    if (!(input instanceof HTMLInputElement)) throw new Error('Expected range input');
-    if (typeof nextValue !== 'number') throw new Error('Expected numeric range value');
-    input.value = String(nextValue);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-  }, value);
 }
 
 function galleryTriggers(page: import('playwright/test').Page) {

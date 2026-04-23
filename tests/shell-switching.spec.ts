@@ -1,29 +1,12 @@
 import { expect, test } from 'playwright/test';
+import { checkRadio, setRangeValue } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
-// Helper to check a hidden radio input by dispatching a change event
-async function checkRadio(page: import('playwright/test').Page, name: string, value: string) {
-  await page.locator(`input[name="${name}"][value="${value}"]`).evaluate((input) => {
-    if (!(input instanceof HTMLInputElement)) throw new Error('Expected input');
-    input.checked = true;
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-}
-
 async function getSearchParams(page: import('playwright/test').Page) {
   return page.evaluate(() => Object.fromEntries(new URLSearchParams(window.location.search).entries()));
-}
-
-async function setRangeValue(page: import('playwright/test').Page, name: string, value: number) {
-  await page.locator(`input[name="${name}"]`).evaluate((input, nextValue) => {
-    if (!(input instanceof HTMLInputElement)) throw new Error('Expected range input');
-    if (typeof nextValue !== 'number') throw new Error('Expected numeric range value');
-    input.value = String(nextValue);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-  }, value);
 }
 
 async function readNavTextSizes(

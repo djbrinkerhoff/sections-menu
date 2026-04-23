@@ -1,12 +1,5 @@
 import { expect, test } from 'playwright/test';
-
-async function checkRadio(page: import('playwright/test').Page, name: string, value: string) {
-  await page.locator(`input[name="${name}"][value="${value}"]`).evaluate((input) => {
-    if (!(input instanceof HTMLInputElement)) throw new Error('Expected input');
-    input.checked = true;
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-}
+import { checkRadio } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
