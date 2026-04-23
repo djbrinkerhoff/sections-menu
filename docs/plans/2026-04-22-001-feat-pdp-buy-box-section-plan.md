@@ -1,7 +1,7 @@
 ---
 title: feat: Add PDP buy box section
 type: feat
-status: active
+status: completed
 date: 2026-04-22
 deepened: 2026-04-22
 ---

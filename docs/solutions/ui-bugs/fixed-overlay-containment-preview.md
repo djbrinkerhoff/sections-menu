@@ -1,6 +1,7 @@
 ---
 title: "Fix Overlay Containment in Preview Container"
 category: ui-bugs
+problem_type: ui_bug
 component: "Nav prototype shell — CSS containment architecture"
 tags:
   - css-containment
