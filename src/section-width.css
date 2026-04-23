@@ -51,6 +51,17 @@
   overflow: clip;
 }
 
+/* At 768px+ the body is narrower than the grid, so add padding
+   inside the hug background for breathing room. The body's
+   background fills through its padding — that IS the visual
+   extension beyond the content. At mobile, root padding alone
+   handles the edge inset (no double padding). */
+@container preview (min-width: 768px) {
+  [data-bg-width="hug"] > .sw-body {
+    padding: 16px;
+  }
+}
+
 /* ─── Content layer ─── */
 
 .sw-body {
