@@ -57,13 +57,11 @@
   grid-row: 1;
   grid-column: 1 / -1;
   z-index: 1;
-  padding: 16px;
 }
 
 /* Full: content extends past the grid to the viewport edge */
 [data-content-width="full"] > .sw-body {
   margin-inline: -16px;
-  padding-inline: 0;
 }
 
 /* Wide: content constrained to the grid (1 / -1, no escape) */
