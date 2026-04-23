@@ -99,6 +99,20 @@ export function initSingleImageControls(
 
   wrapper.appendChild(createShapeGroup());
 
+  // Caption toggle
+  const CAPTION_VALUES = ['true', 'false'] as const;
+  const CAPTION_LABELS: Record<string, string> = { true: 'Show', false: 'Hide' };
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'caption', label: 'Caption', values: CAPTION_VALUES,
+    labels: CAPTION_LABELS,
+    initialValue: singleImageRoot.dataset.caption ?? 'false',
+    onChange(v) {
+      singleImageRoot.dataset.caption = v;
+      onStateChange();
+    },
+    signal,
+  }));
+
   // Section width controls (shared schema from section-width.ts)
   wrapper.appendChild(createSegmentedGroup({
     name: 'bgWidth', label: 'Background width', values: BG_WIDTHS,

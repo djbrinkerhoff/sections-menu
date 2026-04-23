@@ -103,6 +103,10 @@
   opacity: 0.72;
 }
 
+.single-image[data-caption="false"] .single-image__caption {
+  display: none;
+}
+
 @container (max-width: 500px) {
   .single-image__body {
     padding: 20px;
