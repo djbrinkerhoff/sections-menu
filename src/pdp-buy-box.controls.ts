@@ -225,6 +225,20 @@ export function initPdpBuyBoxControls(
 
   addToggle('lightbox', 'Lightbox', 'lightbox');
 
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'infoDisplay',
+    label: 'Product info',
+    values: ['accordion', 'tabs'],
+    labels: { accordion: 'Accordion', tabs: 'Tabs' },
+    initialValue: root.dataset.infoDisplay ?? 'accordion',
+    onChange: (v) => {
+      root.dataset.infoDisplay = v;
+      preview.syncInfoDisplay();
+      onStateChange();
+    },
+    signal,
+  }));
+
   container.appendChild(wrapper);
 
   return {

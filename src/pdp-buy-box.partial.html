@@ -1,4 +1,4 @@
-<section class="pdp-buy-box" data-pdp-layout="column" data-product-id="summit-tee" data-stock-style="off" data-price-display="lowest" data-currency-notation="sign" data-price-format="decimal" data-show-bnpl="true" data-aspect="square" data-fit="cover" data-radius="8" data-lightbox="true" style="--image-radius: 8px; --image-button-radius: 9999px;">
+<section class="pdp-buy-box" data-pdp-layout="column" data-product-id="summit-tee" data-stock-style="off" data-price-display="lowest" data-currency-notation="sign" data-price-format="decimal" data-show-bnpl="true" data-aspect="square" data-fit="cover" data-radius="8" data-lightbox="true" data-info-display="accordion" style="--image-radius: 8px; --image-button-radius: 9999px;">
   <div class="pdp-buy-box__layout">
     <figure class="pdp-buy-box__media" data-layout="slideshow" data-pagination="thumbnails" data-gap="md">
       <div class="gallery__viewport">
@@ -65,7 +65,12 @@
       </div>
 
       <div class="pdp-buy-box__info-group">
-        <details class="pdp-buy-box__info">
+        <div class="pdp-buy-box__tab-bar" role="tablist" aria-label="Product information">
+          <button class="pdp-buy-box__tab" role="tab" type="button" data-tab-index="0" aria-selected="true" data-pdp-slot="tab-label-0"></button>
+          <button class="pdp-buy-box__tab" role="tab" type="button" data-tab-index="1" aria-selected="false" data-pdp-slot="tab-label-1"></button>
+        </div>
+
+        <details class="pdp-buy-box__info" data-info-index="0" open>
           <summary class="pdp-buy-box__info-summary">
             <h3 class="pdp-buy-box__info-title" data-pdp-slot="description-title"></h3>
           </summary>
@@ -73,7 +78,7 @@
           <ul class="pdp-buy-box__info-list" data-pdp-slot="description-bullets"></ul>
         </details>
 
-        <details class="pdp-buy-box__info">
+        <details class="pdp-buy-box__info" data-info-index="1" open>
           <summary class="pdp-buy-box__info-summary">
             <h3 class="pdp-buy-box__info-title" data-pdp-slot="shipping-title"></h3>
           </summary>

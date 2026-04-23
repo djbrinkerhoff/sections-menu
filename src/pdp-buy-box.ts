@@ -27,6 +27,8 @@ interface PdpBuyBoxElements {
   shippingBody: HTMLElement;
   returnsLead: HTMLElement;
   returnsBody: HTMLElement;
+  tabLabels: HTMLButtonElement[];
+  infoSections: HTMLDetailsElement[];
 }
 
 export interface PdpBuyBoxHandle {
@@ -37,6 +39,7 @@ export interface PdpBuyBoxHandle {
   syncLayout(): void;
   syncStockLabel(): void;
   syncPrice(): void;
+  syncInfoDisplay(): void;
 }
 
 function queryRequired<T extends Element>(root: HTMLElement, selector: string): T {
@@ -77,6 +80,8 @@ function getElements(root: HTMLElement): PdpBuyBoxElements {
     shippingBody: queryRequired(root, '[data-pdp-slot="shipping-body"]'),
     returnsLead: queryRequired(root, '[data-pdp-slot="returns-lead"]'),
     returnsBody: queryRequired(root, '[data-pdp-slot="returns-body"]'),
+    tabLabels: Array.from(root.querySelectorAll<HTMLButtonElement>('.pdp-buy-box__tab')),
+    infoSections: Array.from(root.querySelectorAll<HTMLDetailsElement>('.pdp-buy-box__info')),
   };
 }
 
@@ -183,6 +188,20 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
       const item = document.createElement('li');
       item.textContent = bullet;
       elements.descriptionBullets.appendChild(item);
+    }
+  }
+
+  function activateTab(index: number): void {
+    for (const btn of elements.tabLabels) {
+      btn.setAttribute('aria-selected', btn.dataset.tabIndex === String(index) ? 'true' : 'false');
+    }
+    for (const section of elements.infoSections) {
+      if (section.dataset.infoIndex === String(index)) {
+        section.dataset.tabActive = '';
+        section.open = true;
+      } else {
+        delete section.dataset.tabActive;
+      }
     }
   }
 
@@ -360,6 +379,11 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     elements.returnsLead.textContent = currentProduct.returns.title;
     elements.returnsBody.textContent = currentProduct.returns.body;
 
+    const tabLabel0 = elements.tabLabels[0];
+    const tabLabel1 = elements.tabLabels[1];
+    if (tabLabel0) tabLabel0.textContent = currentProduct.description.title;
+    if (tabLabel1) tabLabel1.textContent = currentProduct.shipping.title;
+
     renderSelectOptions();
     renderChipOptions();
     renderDescriptionBullets();
@@ -395,6 +419,12 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
 
+    const tabButton = target.closest<HTMLButtonElement>('.pdp-buy-box__tab');
+    if (tabButton && tabButton.dataset.tabIndex !== undefined) {
+      activateTab(Number(tabButton.dataset.tabIndex));
+      return;
+    }
+
     const quantityAction = target.closest<HTMLElement>('[data-quantity-action]')?.dataset.quantityAction;
     if (quantityAction === 'increment') {
       quantity = Math.min(MAX_QUANTITY, quantity + 1);
@@ -428,7 +458,38 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     renderQuantity();
   }, { signal });
 
+  const tabBar = root.querySelector<HTMLElement>('.pdp-buy-box__tab-bar');
+  if (tabBar) {
+    tabBar.addEventListener('keydown', (event) => {
+      const tabs = elements.tabLabels;
+      const current = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
+      let next: number | undefined;
+
+      if (event.key === 'ArrowRight') next = (current + 1) % tabs.length;
+      else if (event.key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = tabs.length - 1;
+
+      if (next !== undefined) {
+        event.preventDefault();
+        activateTab(next);
+        tabs[next]?.focus();
+      }
+    }, { signal });
+  }
+
+  function syncInfoDisplay(): void {
+    if (root.dataset.infoDisplay === 'tabs') {
+      activateTab(0);
+    } else {
+      for (const section of elements.infoSections) {
+        delete section.dataset.tabActive;
+      }
+    }
+  }
+
   setProduct(root.dataset.productId ?? DEFAULT_PDP_BUY_BOX_PRODUCT_ID);
+  syncInfoDisplay();
 
   return {
     cleanup() {
@@ -453,5 +514,6 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     },
     syncStockLabel,
     syncPrice,
+    syncInfoDisplay,
   };
 }

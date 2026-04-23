@@ -373,9 +373,9 @@ test('375 viewport matches the planned mobile geometry', async ({ page }) => {
   expect(Math.abs(metrics.mediaWidth - 343)).toBeLessThanOrEqual(1);
   expect(Math.abs(metrics.detailsWidth - 343)).toBeLessThanOrEqual(1);
   expect(metrics.detailsTop).toBeGreaterThan(metrics.mediaBottom);
-  expect(Math.abs(metrics.quantityWidth - 104)).toBeLessThanOrEqual(1);
+  expect(Math.abs(metrics.quantityWidth - 88)).toBeLessThanOrEqual(1);
   expect(Math.abs(metrics.purchaseGap - 11)).toBeLessThanOrEqual(1);
-  expect(Math.abs(metrics.ctaWidth - 228)).toBeLessThanOrEqual(1);
+  expect(Math.abs(metrics.ctaWidth - 244)).toBeLessThanOrEqual(1);
 });
 
 test('768 viewport matches the planned medium geometry', async ({ page }) => {
@@ -397,9 +397,9 @@ test('1280 viewport matches the planned large geometry', async ({ page }) => {
   expect(Math.abs(metrics.mediaWidth - 705)).toBeLessThanOrEqual(1);
   expect(Math.abs(metrics.detailsWidth - 495)).toBeLessThanOrEqual(1);
   expect(Math.abs(metrics.columnGap - 32)).toBeLessThanOrEqual(1);
-  expect(Math.abs(metrics.quantityWidth - 151)).toBeLessThanOrEqual(1);
+  expect(Math.abs(metrics.quantityWidth - 96)).toBeLessThanOrEqual(1);
   expect(Math.abs(metrics.purchaseGap - 16)).toBeLessThanOrEqual(1);
-  expect(Math.abs(metrics.ctaWidth - 328)).toBeLessThanOrEqual(1);
+  expect(Math.abs(metrics.ctaWidth - 383)).toBeLessThanOrEqual(1);
 });
 
 test('viewport changes preserve selected product', async ({ page }) => {
