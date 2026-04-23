@@ -76,14 +76,9 @@
 
 /* ─── Shape masks ─── */
 
-.single-image[data-mask]:not([data-mask="none"]) .single-image__figure {
-  aspect-ratio: var(--mask-aspect-ratio);
-  max-width: fit-content;
-  margin-inline: auto;
-}
-
 .single-image[data-mask]:not([data-mask="none"]) .single-image__trigger {
   box-shadow: none;
+  aspect-ratio: var(--mask-aspect-ratio);
   -webkit-mask-image: var(--mask-src);
   mask-image: var(--mask-src);
   -webkit-mask-size: contain;
