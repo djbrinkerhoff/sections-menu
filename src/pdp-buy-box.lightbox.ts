@@ -80,7 +80,7 @@ function createDialog() {
   const railUp = document.createElement('button');
   railUp.className = 'pdp-buy-box-lightbox__rail-control pdp-buy-box-lightbox__rail-control--up';
   railUp.type = 'button';
-  railUp.setAttribute('aria-label', 'Scroll thumbnails up');
+  railUp.setAttribute('aria-label', 'Show previous image');
   railUp.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,10 8,6 12,10"/></svg>';
 
   const railViewport = document.createElement('div');
@@ -93,7 +93,7 @@ function createDialog() {
   const railDown = document.createElement('button');
   railDown.className = 'pdp-buy-box-lightbox__rail-control pdp-buy-box-lightbox__rail-control--down';
   railDown.type = 'button';
-  railDown.setAttribute('aria-label', 'Scroll thumbnails down');
+  railDown.setAttribute('aria-label', 'Show next image');
   railDown.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,6 8,10 12,6"/></svg>';
 
   railShell.appendChild(railUp);
@@ -150,9 +150,11 @@ export function initPdpBuyBoxLightbox(
   let destroyed = false;
   let ignoreScrollSync = false;
   let inertedChildren: HTMLElement[] = [];
+  let pendingScrollTargetTop: number | null = null;
   let resumeScrollSyncFrame = 0;
   let settleScrollSyncFrame = 0;
   let scrollContainer: HTMLElement | null = null;
+  let scrollSyncFallbackTimer = 0;
   let scrollSyncFrame = 0;
 
   function getMode(): LightboxMode {
@@ -230,13 +232,13 @@ export function initPdpBuyBoxLightbox(
     }
 
     railShell.hidden = false;
-    const overflow = railViewport.scrollHeight > railViewport.clientHeight + 1;
+    const hasMultipleImages = activeState.images.length > 1;
 
-    railUp.hidden = !overflow;
-    railDown.hidden = !overflow;
-    railUp.disabled = !overflow || railViewport.scrollTop <= 1;
-    railDown.disabled = !overflow
-      || railViewport.scrollTop + railViewport.clientHeight >= railViewport.scrollHeight - 1;
+    railUp.hidden = !hasMultipleImages;
+    railDown.hidden = !hasMultipleImages;
+    railUp.disabled = !hasMultipleImages || activeState.activeIndex <= 0;
+    railDown.disabled = !hasMultipleImages
+      || activeState.activeIndex >= activeState.images.length - 1;
   }
 
   function syncActiveIndex(index: number): void {
@@ -299,9 +301,7 @@ export function initPdpBuyBoxLightbox(
     scrollSyncFrame = window.requestAnimationFrame(syncActiveIndexFromScroll);
   }
 
-  function pauseScrollSync(): void {
-    ignoreScrollSync = true;
-
+  function clearPendingScrollSyncResume(): void {
     if (resumeScrollSyncFrame !== 0) {
       window.cancelAnimationFrame(resumeScrollSyncFrame);
       resumeScrollSyncFrame = 0;
@@ -311,14 +311,41 @@ export function initPdpBuyBoxLightbox(
       window.cancelAnimationFrame(settleScrollSyncFrame);
       settleScrollSyncFrame = 0;
     }
+    if (scrollSyncFallbackTimer !== 0) {
+      window.clearTimeout(scrollSyncFallbackTimer);
+      scrollSyncFallbackTimer = 0;
+    }
+  }
+
+  function resumeScrollSync(): void {
+    clearPendingScrollSyncResume();
+    pendingScrollTargetTop = null;
+    ignoreScrollSync = false;
+    scheduleScrollSync();
+  }
+
+  function pauseScrollSync(): void {
+    ignoreScrollSync = true;
+    pendingScrollTargetTop = null;
+    clearPendingScrollSyncResume();
 
     resumeScrollSyncFrame = window.requestAnimationFrame(() => {
       resumeScrollSyncFrame = 0;
       settleScrollSyncFrame = window.requestAnimationFrame(() => {
         settleScrollSyncFrame = 0;
-        ignoreScrollSync = false;
+        resumeScrollSync();
       });
     });
+  }
+
+  function pauseScrollSyncUntilTarget(targetTop: number): void {
+    ignoreScrollSync = true;
+    pendingScrollTargetTop = targetTop;
+    clearPendingScrollSyncResume();
+    scrollSyncFallbackTimer = window.setTimeout(() => {
+      scrollSyncFallbackTimer = 0;
+      resumeScrollSync();
+    }, 600);
   }
 
   function goToIndex(index: number, immediate = false): void {
@@ -327,12 +354,18 @@ export function initPdpBuyBoxLightbox(
     const nextIndex = clampIndex(index, activeState.images.length);
     const target = activeState.figures[nextIndex];
     if (!target) return;
+    const targetTop = getFigureScrollTop(target);
+    const shouldScrollImmediately = immediate || prefersReducedMotion.matches;
 
     syncActiveIndex(nextIndex);
-    pauseScrollSync();
+    if (shouldScrollImmediately) {
+      pauseScrollSync();
+    } else {
+      pauseScrollSyncUntilTarget(targetTop);
+    }
     stack.scrollTo({
-      top: getFigureScrollTop(target),
-      behavior: immediate || prefersReducedMotion.matches ? 'auto' : 'smooth',
+      top: targetTop,
+      behavior: shouldScrollImmediately ? 'auto' : 'smooth',
     });
   }
 
@@ -383,6 +416,12 @@ export function initPdpBuyBoxLightbox(
       figures.push(figure);
     }
 
+    const backToTopButton = document.createElement('button');
+    backToTopButton.className = 'pdp-buy-box-lightbox__back-to-top';
+    backToTopButton.type = 'button';
+    backToTopButton.textContent = 'Back to top';
+    stack.appendChild(backToTopButton);
+
     activeState.figures = figures;
     activeState.thumbButtons = thumbButtons;
     syncActiveIndex(activeState.activeIndex);
@@ -401,16 +440,8 @@ export function initPdpBuyBoxLightbox(
       scrollSyncFrame = 0;
     }
 
-    if (resumeScrollSyncFrame !== 0) {
-      window.cancelAnimationFrame(resumeScrollSyncFrame);
-      resumeScrollSyncFrame = 0;
-    }
-
-    if (settleScrollSyncFrame !== 0) {
-      window.cancelAnimationFrame(settleScrollSyncFrame);
-      settleScrollSyncFrame = 0;
-    }
-
+    clearPendingScrollSyncResume();
+    pendingScrollTargetTop = null;
     ignoreScrollSync = false;
 
     if (dialog.open) {
@@ -500,8 +531,25 @@ export function initPdpBuyBoxLightbox(
   closeButton.addEventListener('click', () => {
     close();
   }, { signal });
-  stack.addEventListener('scroll', scheduleScrollSync, { signal });
-  railViewport.addEventListener('scroll', updateRailControls, { signal });
+  stack.addEventListener('scroll', () => {
+    if (ignoreScrollSync && pendingScrollTargetTop !== null) {
+      if (Math.abs(stack.scrollTop - pendingScrollTargetTop) <= 1) {
+        resumeScrollSync();
+      }
+      return;
+    }
+
+    scheduleScrollSync();
+  }, { signal });
+  stack.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    const button = target.closest<HTMLButtonElement>('.pdp-buy-box-lightbox__back-to-top');
+    if (!button) return;
+
+    goToIndex(0);
+  }, { signal });
   rail.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
@@ -515,16 +563,12 @@ export function initPdpBuyBoxLightbox(
     goToIndex(index);
   }, { signal });
   railUp.addEventListener('click', () => {
-    railViewport.scrollBy({
-      top: -Math.max(railViewport.clientHeight * 0.75, 120),
-      behavior: prefersReducedMotion.matches ? 'auto' : 'smooth',
-    });
+    if (!activeState) return;
+    goToIndex(activeState.activeIndex - 1);
   }, { signal });
   railDown.addEventListener('click', () => {
-    railViewport.scrollBy({
-      top: Math.max(railViewport.clientHeight * 0.75, 120),
-      behavior: prefersReducedMotion.matches ? 'auto' : 'smooth',
-    });
+    if (!activeState) return;
+    goToIndex(activeState.activeIndex + 1);
   }, { signal });
 
   return {

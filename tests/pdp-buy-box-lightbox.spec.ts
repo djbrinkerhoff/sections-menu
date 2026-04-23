@@ -16,6 +16,10 @@ function activeMediaTrigger(page: import('playwright/test').Page) {
   return page.locator('.pdp-buy-box__media .gallery__item:not([data-gallery-clone]):not([inert]) .gallery__trigger');
 }
 
+function backToTopButton(page: import('playwright/test').Page) {
+  return lightbox(page).locator('.pdp-buy-box-lightbox__back-to-top');
+}
+
 async function activeFigureIndex(page: import('playwright/test').Page) {
   return page.locator('.pdp-buy-box-lightbox__figure').evaluateAll((figures) =>
     figures.findIndex((figure) => figure.getAttribute('data-active') === 'true'),
@@ -91,24 +95,73 @@ test('desktop close button and Escape dismiss the viewer and restore focus to th
   await expect(trigger).toBeFocused();
 });
 
-test('desktop rail scroll controls move the thumbnail rail without changing the active image', async ({ page }) => {
+test('desktop rail controls step through images and disable at the bounds', async ({ page }) => {
   await page.locator('[data-viewport="1280"]').click();
   await activeMediaTrigger(page).click();
 
-  const railViewport = lightbox(page).locator('.pdp-buy-box-lightbox__rail-viewport');
-  const scrollTopBefore = await railViewport.evaluate((element) => {
-    if (!(element instanceof HTMLElement)) throw new Error('Expected rail viewport');
-    return element.scrollTop;
+  const previousButton = lightbox(page).locator('.pdp-buy-box-lightbox__rail-control--up');
+  const nextButton = lightbox(page).locator('.pdp-buy-box-lightbox__rail-control--down');
+
+  await expect(previousButton).toBeDisabled();
+  await expect(nextButton).toBeEnabled();
+
+  await nextButton.click();
+  await expect.poll(async () => activeFigureIndex(page)).toBe(1);
+  await expect.poll(async () => activeRailIndex(page)).toBe(1);
+  await expect(previousButton).toBeEnabled();
+
+  await previousButton.click();
+  await expect.poll(async () => activeFigureIndex(page)).toBe(0);
+  await expect.poll(async () => activeRailIndex(page)).toBe(0);
+  await expect(previousButton).toBeDisabled();
+});
+
+test('desktop rail selection stays on the target thumb while arrow controls animate', async ({ page }) => {
+  await page.locator('[data-viewport="1280"]').click();
+  await activeMediaTrigger(page).click();
+
+  const selectedIndices = await page.evaluate(async () => {
+    const nextButton = document.querySelector('.pdp-buy-box-lightbox__rail-control--down');
+    if (!(nextButton instanceof HTMLButtonElement)) {
+      throw new Error('Expected next rail control');
+    }
+
+    const readSelectedIndex = () =>
+      Array.from(document.querySelectorAll('.pdp-buy-box-lightbox__rail-thumb'))
+        .findIndex((button) => button.getAttribute('data-selected') === 'true');
+
+    const samples = [];
+    nextButton.click();
+    samples.push(readSelectedIndex());
+
+    for (let frame = 0; frame < 8; frame += 1) {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          samples.push(readSelectedIndex());
+          resolve();
+        });
+      });
+    }
+
+    return samples;
   });
 
-  await lightbox(page).locator('.pdp-buy-box-lightbox__rail-control--down').click();
+  expect(Array.from(new Set(selectedIndices))).toEqual([1]);
+});
 
-  await expect
-    .poll(async () => railViewport.evaluate((element) => {
-      if (!(element instanceof HTMLElement)) throw new Error('Expected rail viewport');
-      return element.scrollTop;
-    }))
-    .toBeGreaterThan(scrollTopBefore);
+test('desktop back to top button scrolls the stack back to the first image', async ({ page }) => {
+  await page.locator('[data-viewport="1280"]').click();
+  await activeMediaTrigger(page).click();
+
+  const stack = lightbox(page).locator('.pdp-buy-box-lightbox__stack');
+  await stack.evaluate((element) => {
+    if (!(element instanceof HTMLElement)) throw new Error('Expected lightbox stack');
+    element.scrollTo({ top: element.scrollHeight, behavior: 'auto' });
+  });
+
+  await expect.poll(async () => stackScrollTop(page)).toBeGreaterThan(0);
+  await backToTopButton(page).click();
+  await expect.poll(async () => stackScrollTop(page)).toBe(0);
   await expect.poll(async () => activeFigureIndex(page)).toBe(0);
 });
 
@@ -140,6 +193,7 @@ test('mobile opening from the first image does not pre-scroll the stack', async 
   await activeMediaTrigger(page).click();
 
   await expect(lightbox(page)).toBeVisible();
+  await expect(backToTopButton(page)).toBeVisible();
   await expect.poll(async () => stackScrollTop(page)).toBe(0);
   await expect.poll(async () => activeFigureIndex(page)).toBe(0);
 });
@@ -206,6 +260,26 @@ test('mobile stack scrolling keeps the viewer open and reveals later images', as
 
   await expect(lightbox(page)).toBeVisible();
   await expect.poll(async () => stackScrollTop(page)).toBeGreaterThan(0);
+});
+
+test('mobile back to top button returns the stack to the first image', async ({ page }) => {
+  await activeMediaTrigger(page).click();
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  }));
+
+  const stack = lightbox(page).locator('.pdp-buy-box-lightbox__stack');
+  await stack.evaluate((element) => {
+    if (!(element instanceof HTMLElement)) throw new Error('Expected lightbox stack');
+    element.scrollTo({ top: element.scrollHeight, behavior: 'auto' });
+  });
+
+  await expect.poll(async () => stackScrollTop(page)).toBeGreaterThan(0);
+  await backToTopButton(page).click();
+  await expect.poll(async () => stackScrollTop(page)).toBe(0);
+  await expect.poll(async () => activeFigureIndex(page)).toBe(0);
 });
 
 test('changing the simulated viewport while the lightbox is open closes the viewer', async ({ page }) => {
