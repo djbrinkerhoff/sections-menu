@@ -27,19 +27,15 @@ export const pdpBuyBoxSection: Section = {
         preview.cleanup();
       },
       saveState() {
-        return {
-          productId: preview.getCurrentProductId(),
-          stockStyle: root.dataset.stockStyle ?? 'off',
-          priceDisplay: root.dataset.priceDisplay ?? 'lowest',
-          currencyNotation: root.dataset.currencyNotation ?? 'sign',
-          priceFormat: root.dataset.priceFormat ?? 'decimal',
-          showBnpl: root.dataset.showBnpl ?? 'true',
-          showVariants: root.dataset.showVariants ?? 'true',
-          aspect: root.dataset.aspect ?? 'square',
-          fit: root.dataset.fit ?? 'cover',
-          radius: root.dataset.radius ?? '8',
-          lightbox: root.dataset.lightbox ?? 'true',
-        };
+        const state: Record<string, string> = {};
+
+        for (const [key, value] of Object.entries(root.dataset)) {
+          if (value !== undefined) {
+            state[key] = value;
+          }
+        }
+
+        return state;
       },
     };
   },
