@@ -448,37 +448,10 @@ legend.pdp-buy-box__option-label {
     align-self: start;
   }
 
-  /* Override slideshow → static image grid */
+  /* Static image grid (single column stack) */
   [data-pdp-layout="column"] .gallery__grid,
   [data-pdp-layout="split"] .gallery__grid {
-    display: grid;
     grid-template-columns: 1fr;
-    gap: 16px;
-    overflow: visible;
-    scroll-snap-type: none;
-    scroll-behavior: auto;
-  }
-
-  [data-pdp-layout="column"] .gallery__item,
-  [data-pdp-layout="split"] .gallery__item {
-    scroll-snap-align: unset;
-    scroll-snap-stop: unset;
-  }
-
-  /* Hide slideshow chrome */
-  [data-pdp-layout="column"] .pdp-buy-box__media .gallery__prev,
-  [data-pdp-layout="column"] .pdp-buy-box__media .gallery__next,
-  [data-pdp-layout="column"] .pdp-buy-box__media .gallery__pagination,
-  [data-pdp-layout="split"] .pdp-buy-box__media .gallery__prev,
-  [data-pdp-layout="split"] .pdp-buy-box__media .gallery__next,
-  [data-pdp-layout="split"] .pdp-buy-box__media .gallery__pagination {
-    display: none;
-  }
-
-  /* Hide loop clones */
-  [data-pdp-layout="column"] [data-gallery-clone],
-  [data-pdp-layout="split"] [data-gallery-clone] {
-    display: none;
   }
 }
 
@@ -491,12 +464,12 @@ legend.pdp-buy-box__option-label {
   }
 
   /* First real image (hero) spans full width */
-  [data-pdp-layout="column"] .gallery__item:not([data-gallery-clone]) {
+  [data-pdp-layout="column"] .gallery__item:first-child {
     grid-column: 1 / -1;
   }
 
   /* Subsequent real images: single column each */
-  [data-pdp-layout="column"] .gallery__item:not([data-gallery-clone]) ~ .gallery__item:not([data-gallery-clone]) {
+  [data-pdp-layout="column"] .gallery__item:first-child ~ .gallery__item {
     grid-column: span 1;
   }
 }

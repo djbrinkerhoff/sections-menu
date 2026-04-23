@@ -34,6 +34,11 @@ export function initPdpBuyBoxMedia(
 
   let images: readonly PdpBuyBoxImage[] = [];
   let slideshowHandle: SlideshowHandle | null = null;
+  let currentMode: 'slideshow' | 'static' = 'slideshow';
+
+  function isCarouselLayout(): boolean {
+    return root.dataset.pdpLayout === 'carousel' || !root.dataset.pdpLayout;
+  }
 
   function cleanupSlideshow(): void {
     slideshowHandle?.cleanup();
@@ -91,14 +96,45 @@ export function initPdpBuyBoxMedia(
     }
   }
 
-  function initOrReinitSlideshow(activeIndex = 0): void {
+  const prevBtn = mediaRoot.querySelector<HTMLElement>('.gallery__prev');
+  const nextBtn = mediaRoot.querySelector<HTMLElement>('.gallery__next');
+  const paginationEl = mediaRoot.querySelector<HTMLElement>('.gallery__pagination');
+
+  function setSlideshowChromeHidden(hidden: boolean): void {
+    if (prevBtn) prevBtn.hidden = hidden;
+    if (nextBtn) nextBtn.hidden = hidden;
+    if (paginationEl) paginationEl.hidden = hidden;
+  }
+
+  function enterSlideshowMode(activeIndex = 0): void {
     cleanupSlideshow();
+    mediaRoot.dataset.layout = 'slideshow';
+    setSlideshowChromeHidden(false);
+    buildSlides();
     slideshowHandle = initSlideshow(mediaRoot, signal);
     slideshowHandle.goToIndex(clampIndex(activeIndex, images.length), {
       immediate: true,
       resetAutoplay: false,
     });
+    currentMode = 'slideshow';
     syncTriggerAttributes();
+  }
+
+  function enterStaticMode(): void {
+    cleanupSlideshow();
+    delete mediaRoot.dataset.layout;
+    setSlideshowChromeHidden(true);
+    buildSlides();
+    currentMode = 'static';
+    syncTriggerAttributes();
+  }
+
+  function initOrReinitSlideshow(activeIndex = 0): void {
+    if (isCarouselLayout()) {
+      enterSlideshowMode(activeIndex);
+    } else {
+      enterStaticMode();
+    }
   }
 
   function resolveInvoker(button: HTMLButtonElement, index: number): HTMLElement {
@@ -122,7 +158,6 @@ export function initPdpBuyBoxMedia(
 
   function setImages(nextImages: readonly PdpBuyBoxImage[]): void {
     images = nextImages.slice();
-    buildSlides();
     initOrReinitSlideshow(0);
   }
 
@@ -149,7 +184,14 @@ export function initPdpBuyBoxMedia(
       return images;
     },
     refresh() {
-      slideshowHandle?.syncLayout();
+      const wantSlideshow = isCarouselLayout();
+      if (wantSlideshow && currentMode !== 'slideshow') {
+        enterSlideshowMode(0);
+      } else if (!wantSlideshow && currentMode !== 'static') {
+        enterStaticMode();
+      } else if (slideshowHandle) {
+        slideshowHandle.syncLayout();
+      }
       syncTriggerAttributes();
     },
     setActiveIndex,
