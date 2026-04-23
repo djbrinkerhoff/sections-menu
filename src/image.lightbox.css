@@ -61,7 +61,7 @@
   align-items: center;
   justify-content: center;
   min-block-size: 0;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
 }
 
 .image-lightbox__figure {
@@ -179,7 +179,7 @@
   display: none;
 }
 
-@media (max-width: 767px) {
+@container (max-width: 767px) {
   .image-lightbox__surface {
     padding: 16px 10px 18px;
   }
