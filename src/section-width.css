@@ -46,19 +46,29 @@
   display: none;
 }
 
+/* Hug mode: body carries its own background (set by section CSS).
+   At mobile, border-radius + clip round the body directly.
+   At 768px+, a ::before pseudo extends 16px beyond the body to
+   create breathing room — content stays on the grid columns. */
 [data-bg-width="hug"] > .sw-body {
+  position: relative;
   border-radius: var(--image-radius, 8px);
   overflow: clip;
 }
 
-/* At 768px+ the body is narrower than the grid, so add padding
-   inside the hug background for breathing room. The body's
-   background fills through its padding — that IS the visual
-   extension beyond the content. At mobile, root padding alone
-   handles the edge inset (no double padding). */
 @container preview (min-width: 768px) {
   [data-bg-width="hug"] > .sw-body {
-    padding: 16px;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  [data-bg-width="hug"] > .sw-body::before {
+    content: '';
+    position: absolute;
+    inset: -16px;
+    border-radius: var(--image-radius, 8px);
+    background: inherit;
+    z-index: -1;
   }
 }
 
