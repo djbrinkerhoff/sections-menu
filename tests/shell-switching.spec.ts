@@ -264,19 +264,19 @@ test('gallery state persists across switches', async ({ page }) => {
   await expect(page.locator('.gallery')).toHaveAttribute('data-layout', 'masonry');
 });
 
-test('single-image border radius persists across section switches', async ({ page }) => {
+test('single-image mask shape persists across section switches', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('single-image');
   await expect(page.locator('.single-image')).toBeVisible();
 
-  await setRangeValue(page, 'radius', 3);
-  await expect(page.locator('.single-image')).toHaveAttribute('data-radius', '16');
+  await checkRadio(page, 'mask', 'circle');
+  await expect(page.locator('.single-image')).toHaveAttribute('data-mask', 'circle');
 
   await page.locator('.controls__picker').selectOption('nav');
   await expect(page.locator('.nav')).toBeVisible();
 
   await page.locator('.controls__picker').selectOption('single-image');
-  await expect(page.locator('.single-image')).toHaveAttribute('data-radius', '16');
-  await expect(page.locator('input[name="radius"]')).toHaveValue('3');
+  await expect(page.locator('.single-image')).toHaveAttribute('data-mask', 'circle');
+  await expect(page.locator('input[name="mask"][value="circle"]')).toBeChecked();
 });
 
 test('layout picker switches between grid, slideshow, masonry', async ({ page }) => {
@@ -999,21 +999,21 @@ test('URL state restores the active section, viewport, and both section states o
   await expect(page.locator('[data-control="nav-items"] input[aria-label="Nav items"]')).toHaveValue('5');
 });
 
-test('URL state restores single-image border radius on reload', async ({ page }) => {
+test('URL state restores single-image mask shape on reload', async ({ page }) => {
   await page.locator('.controls__picker').selectOption('single-image');
-  await setRangeValue(page, 'radius', 0);
+  await checkRadio(page, 'mask', 'arch');
   await page.locator('[data-viewport="768"]').click();
 
   const params = await getSearchParams(page);
   expect(params.section).toBe('single-image');
   expect(params.viewport).toBe('768');
-  expect(params['single-image.radius']).toBe('0');
+  expect(params['single-image.mask']).toBe('arch');
 
   await page.goto(page.url());
 
   await expect(page.locator('.controls__picker')).toHaveValue('single-image');
-  await expect(page.locator('.single-image')).toHaveAttribute('data-radius', '0');
-  await expect(page.locator('input[name="radius"]')).toHaveValue('0');
+  await expect(page.locator('.single-image')).toHaveAttribute('data-mask', 'arch');
+  await expect(page.locator('input[name="mask"][value="arch"]')).toBeChecked();
 });
 
 test('reset clears URL params and restores default shell and section state', async ({ page }) => {

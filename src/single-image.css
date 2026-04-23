@@ -63,7 +63,6 @@
 }
 
 .single-image__trigger {
-  border-radius: var(--image-radius, 8px);
   overflow: hidden;
   box-shadow: 0 28px 60px rgba(36, 29, 14, 0.15);
 }
@@ -73,7 +72,33 @@
   inline-size: 100%;
   max-block-size: 70vh;
   object-fit: cover;
-  border-radius: var(--image-radius, 8px);
+}
+
+/* ─── Shape masks ─── */
+
+.single-image[data-mask]:not([data-mask="none"]) .single-image__figure {
+  aspect-ratio: var(--mask-aspect-ratio);
+  max-width: fit-content;
+  margin-inline: auto;
+}
+
+.single-image[data-mask]:not([data-mask="none"]) .single-image__trigger {
+  box-shadow: none;
+  -webkit-mask-image: var(--mask-src);
+  mask-image: var(--mask-src);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  aspect-ratio: var(--mask-aspect-ratio);
+}
+
+.single-image[data-mask]:not([data-mask="none"]) .single-image__image {
+  max-block-size: none;
+  block-size: 100%;
+  object-fit: cover;
 }
 
 .single-image__caption {

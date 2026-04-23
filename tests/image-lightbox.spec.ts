@@ -194,17 +194,17 @@ test.describe('standalone mode', () => {
     await expect(page.locator('.image-lightbox[open]')).toHaveCount(0);
   });
 
-  test('border radius slider updates the standalone image and lightbox close button', async ({ page }) => {
-    await setRangeValue(page, 'radius', 3);
-
-    await expect(page.locator('.single-image')).toHaveAttribute('data-radius', '16');
-    await expect.poll(async () => readBorderRadius(page, '.single-image__trigger')).toBe('16px');
-    await expect.poll(async () => readBorderRadius(page, '.single-image__image')).toBe('16px');
+  test('lightbox shows full unmasked image when a mask shape is active', async ({ page }) => {
+    await checkRadio(page, 'mask', 'circle');
+    await expect(page.locator('.single-image')).toHaveAttribute('data-mask', 'circle');
 
     await page.locator('.single-image__trigger').click();
     await expect(page.locator('.image-lightbox[open]')).toBeVisible();
-    await expect.poll(async () => readBorderRadius(page, '.image-lightbox__image')).toBe('16px');
-    await expect.poll(async () => readBorderRadius(page, '.image-lightbox__close')).toBe('9999px');
+
+    const lightboxMask = await page.locator('.image-lightbox__image').evaluate(
+      (el) => getComputedStyle(el).maskImage,
+    );
+    expect(lightboxMask).toBe('none');
   });
 });
 

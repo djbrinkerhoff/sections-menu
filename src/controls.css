@@ -85,6 +85,10 @@
   @apply grid-cols-3;
 }
 
+.control-group--style .control-group__options--shapes {
+  @apply grid-cols-4;
+}
+
 /* ─── Variant thumbnails (2x2 grid) ─── */
 .variant-thumb {
   @apply relative cursor-pointer flex flex-col items-center gap-1.5 transition-all duration-150;
