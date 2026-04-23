@@ -5,6 +5,7 @@
   background: #ffffff;
   font-family: "Geist", "Space Grotesk", sans-serif;
   container-type: inline-size;
+  container-name: pdp-buy-box;
 }
 
 .pdp-buy-box[data-stock-style="off"] .pdp-buy-box__stock {
@@ -438,7 +439,7 @@ legend.pdp-buy-box__option-label {
 
 /* ─── Column / Split shared: medium ─── */
 
-@container (min-width: 736px) {
+@container pdp-buy-box (min-width: 736px) {
   /* Sticky sidebar */
   [data-pdp-layout="column"] .pdp-buy-box__details,
   [data-pdp-layout="split"] .pdp-buy-box__details {
@@ -464,7 +465,7 @@ legend.pdp-buy-box__option-label {
     scroll-snap-stop: unset;
   }
 
-  /* Hide slideshow chrome (specificity 0-3-0 to beat gallery's [data-layout] selectors) */
+  /* Hide slideshow chrome */
   [data-pdp-layout="column"] .pdp-buy-box__media .gallery__prev,
   [data-pdp-layout="column"] .pdp-buy-box__media .gallery__next,
   [data-pdp-layout="column"] .pdp-buy-box__media .gallery__pagination,
@@ -483,7 +484,7 @@ legend.pdp-buy-box__option-label {
 
 /* ─── Column: large ─── */
 
-@container (min-width: 1100px) {
+@container pdp-buy-box (min-width: 1100px) {
   /* Hero + 2-col sub-grid for images */
   [data-pdp-layout="column"] .gallery__grid {
     grid-template-columns: 1fr 1fr;
@@ -502,7 +503,7 @@ legend.pdp-buy-box__option-label {
 
 /* ─── Split: large (3/6/3 three-zone layout) ─── */
 
-@container (min-width: 1100px) {
+@container pdp-buy-box (min-width: 1100px) {
   /* Break __details open so __buy and __info-group participate in parent grid */
   [data-pdp-layout="split"] .pdp-buy-box__details {
     display: contents;

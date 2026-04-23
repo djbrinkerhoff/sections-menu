@@ -509,3 +509,83 @@ test('showBnpl toggle off hides the BNPL message', async ({ page }) => {
 
   await expect(page.locator('.pdp-buy-box__bnpl')).toBeHidden();
 });
+
+// ─── PDP Layouts ───
+
+test('default layout is column', async ({ page }) => {
+  await expect(page.locator('.pdp-buy-box')).toHaveAttribute('data-pdp-layout', 'column');
+});
+
+test('layout control switches between carousel, column, and split', async ({ page }) => {
+  await checkRadio(page, 'pdpLayout', 'carousel');
+  await expect(page.locator('.pdp-buy-box')).toHaveAttribute('data-pdp-layout', 'carousel');
+
+  await checkRadio(page, 'pdpLayout', 'split');
+  await expect(page.locator('.pdp-buy-box')).toHaveAttribute('data-pdp-layout', 'split');
+
+  await checkRadio(page, 'pdpLayout', 'column');
+  await expect(page.locator('.pdp-buy-box')).toHaveAttribute('data-pdp-layout', 'column');
+});
+
+test('layout state persists across section switches', async ({ page }) => {
+  await checkRadio(page, 'pdpLayout', 'split');
+  await expect(page.locator('.pdp-buy-box')).toHaveAttribute('data-pdp-layout', 'split');
+
+  // Switch to nav and back
+  await page.locator('.controls__picker').selectOption('nav');
+  await expect(page.locator('.nav')).toBeVisible();
+
+  await page.locator('.controls__picker').selectOption('pdp-buy-box');
+  await expect(page.locator('.pdp-buy-box')).toHaveAttribute('data-pdp-layout', 'split');
+});
+
+test('layout serializes to URL and restores on reload', async ({ page }) => {
+  await checkRadio(page, 'pdpLayout', 'carousel');
+
+  const params = await getSearchParams(page);
+  expect(params['pdp-buy-box.pdpLayout']).toBe('carousel');
+
+  await page.goto(page.url());
+
+  await expect(page.locator('.pdp-buy-box')).toHaveAttribute('data-pdp-layout', 'carousel');
+});
+
+test('switching layout preserves product selection', async ({ page }) => {
+  await page.locator('select[name="productId"]').selectOption('ridge-hoodie');
+  await checkRadio(page, 'pdpLayout', 'split');
+
+  await expect(page.locator('.pdp-buy-box')).toHaveAttribute('data-product-id', 'ridge-hoodie');
+  await expect(page.locator('.pdp-buy-box__title')).toHaveText('Heavyweight ridge hoodie');
+});
+
+test('column layout at large hides slideshow navigation', async ({ page }) => {
+  await page.setViewportSize({ width: 1800, height: 1000 });
+  await page.locator('[data-viewport="1280"]').click();
+  await checkRadio(page, 'pdpLayout', 'column');
+
+  await expect(page.locator('.pdp-buy-box__media .gallery__prev')).toBeHidden();
+  await expect(page.locator('.pdp-buy-box__media .gallery__next')).toBeHidden();
+  await expect(page.locator('.pdp-buy-box__media .gallery__pagination')).toBeHidden();
+});
+
+test('carousel layout at large shows slideshow navigation', async ({ page }) => {
+  await page.setViewportSize({ width: 1800, height: 1000 });
+  await page.locator('[data-viewport="1280"]').click();
+  await checkRadio(page, 'pdpLayout', 'carousel');
+
+  await expect(page.locator('.pdp-buy-box__media .gallery__prev')).toBeVisible();
+  await expect(page.locator('.pdp-buy-box__media .gallery__next')).toBeVisible();
+  await expect(page.locator('.pdp-buy-box__media .gallery__pagination')).toBeVisible();
+});
+
+test('column layout at large shows all images visible (not behind carousel scroll)', async ({ page }) => {
+  await page.setViewportSize({ width: 1800, height: 1000 });
+  await page.locator('[data-viewport="1280"]').click();
+  await checkRadio(page, 'pdpLayout', 'column');
+
+  // All non-clone gallery items should have visible overflow (static grid, not flex scroll)
+  const gridDisplay = await page.locator('.pdp-buy-box__media .gallery__grid').evaluate(
+    (el) => getComputedStyle(el).display,
+  );
+  expect(gridDisplay).toBe('grid');
+});

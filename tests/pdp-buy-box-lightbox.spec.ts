@@ -1,4 +1,5 @@
 import { expect, test } from 'playwright/test';
+import { checkRadio } from './helpers';
 
 function lightbox(page: import('playwright/test').Page) {
   return page.locator('.pdp-buy-box-lightbox[open]');
@@ -43,6 +44,8 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.locator('.controls__picker').selectOption('pdp-buy-box');
   await expect(page.locator('.pdp-buy-box')).toBeVisible();
+  // Lightbox tests rely on carousel slideshow (pagination, navigation)
+  await checkRadio(page, 'pdpLayout', 'carousel');
 });
 
 test('desktop opens the Huckberry-style lightbox from the selected source image', async ({ page }) => {
