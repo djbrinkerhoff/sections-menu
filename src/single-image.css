@@ -24,6 +24,10 @@
   gap: 14px;
 }
 
+.single-image__story:has(:not(:empty)) {
+  margin-bottom: 14px;
+}
+
 .single-image__heading {
   margin: 0;
   font-size: clamp(28px, 4.8vw, 46px);
@@ -46,7 +50,7 @@
 }
 
 .single-image__figure {
-  margin: 14px 0 0;
+  margin: 0;
   display: grid;
   gap: 10px;
 }
