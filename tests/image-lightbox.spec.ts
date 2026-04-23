@@ -420,6 +420,21 @@ test.describe('gallery collection mode', () => {
     await expect.poll(async () => readBorderRadius(page, '.image-lightbox__close')).toBe('9999px');
     await expect.poll(async () => readBorderRadius(page, '.image-lightbox__nav--next')).toBe('9999px');
   });
+
+  test('border radius slider updates grid images and lightbox chrome', async ({ page }) => {
+    // Grid is the default layout — no need to switch
+    await expect(page.locator('.gallery')).toHaveAttribute('data-layout', 'grid');
+    await setRangeValue(page, 'radius', 3);
+
+    await expect(page.locator('.gallery')).toHaveAttribute('data-radius', '16');
+    await expect.poll(async () => readBorderRadius(page, '.gallery__item:not([data-gallery-clone]) .gallery__image')).toBe('16px');
+
+    await galleryTriggers(page).first().click();
+    await expect(page.locator('.image-lightbox[open]')).toBeVisible();
+    await expect.poll(async () => readBorderRadius(page, '.image-lightbox__image')).toBe('16px');
+    await expect.poll(async () => readBorderRadius(page, '.image-lightbox__close')).toBe('9999px');
+    await expect.poll(async () => readBorderRadius(page, '.image-lightbox__nav--next')).toBe('9999px');
+  });
 });
 
 // ─── Gallery + Slideshow coordination ───

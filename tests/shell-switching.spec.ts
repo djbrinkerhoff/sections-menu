@@ -1140,3 +1140,105 @@ test('gallery__bg and gallery__body elements exist in the DOM', async ({ page })
   await expect(page.locator('.gallery__body')).toHaveCount(1);
   await expect(page.locator('.gallery__body .gallery__grid')).toHaveCount(1);
 });
+
+// ─── Gallery image set switching ───
+
+test('switching image set rebuilds gallery items with new sources', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+
+  // Default is unsplash with 12 images
+  await expect(page.locator('.gallery__item')).toHaveCount(12);
+
+  // Switch to seller-1 (8 images)
+  await page.locator('select[name="imageSet"]').selectOption('seller-1');
+  await expect(page.locator('.gallery__item')).toHaveCount(8);
+
+  // Verify images have seller-1 sources
+  const firstSrc = await page.locator('.gallery__image').first().getAttribute('src');
+  expect(firstSrc).toContain('/images/seller-1/');
+
+  // Switch to seller-2 (3 images)
+  await page.locator('select[name="imageSet"]').selectOption('seller-2');
+  await expect(page.locator('.gallery__item')).toHaveCount(3);
+
+  const seller2Src = await page.locator('.gallery__image').first().getAttribute('src');
+  expect(seller2Src).toContain('/images/seller-2/');
+});
+
+// ─── Gallery subheading ───
+
+test('subheading input updates data-subheading and .gallery__subheading text', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  const gallery = page.locator('.gallery');
+
+  // Default subheading is empty
+  await expect(gallery).toHaveAttribute('data-subheading', '');
+
+  // Fill subheading
+  const subheadingInput = page.locator('input[name="subheading"]');
+  await subheadingInput.fill('A curated collection');
+  await expect(gallery).toHaveAttribute('data-subheading', 'A curated collection');
+  await expect(page.locator('.gallery__subheading')).toHaveText('A curated collection');
+
+  // Clear subheading
+  await subheadingInput.fill('');
+  await expect(gallery).toHaveAttribute('data-subheading', '');
+  await expect(page.locator('.gallery__subheading')).toHaveText('');
+});
+
+// ─── Gallery heading alignment ───
+
+test('headingAlign segmented control updates data-heading-align', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('gallery');
+  const gallery = page.locator('.gallery');
+
+  // Default is left
+  await expect(gallery).toHaveAttribute('data-heading-align', 'left');
+
+  // Change to center
+  await checkRadio(page, 'headingAlign', 'center');
+  await expect(gallery).toHaveAttribute('data-heading-align', 'center');
+
+  // Change to right
+  await checkRadio(page, 'headingAlign', 'right');
+  await expect(gallery).toHaveAttribute('data-heading-align', 'right');
+});
+
+// ─── Single-image width controls ───
+
+test('single-image width controls update data attributes', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('single-image');
+  const singleImage = page.locator('.single-image');
+
+  // Defaults
+  await expect(singleImage).toHaveAttribute('data-bg-width', 'full');
+  await expect(singleImage).toHaveAttribute('data-content-width', 'medium');
+
+  // Change bgWidth to hug
+  await checkRadio(page, 'bgWidth', 'hug');
+  await expect(singleImage).toHaveAttribute('data-bg-width', 'hug');
+
+  // Change contentWidth to narrow
+  await checkRadio(page, 'contentWidth', 'narrow');
+  await expect(singleImage).toHaveAttribute('data-content-width', 'narrow');
+});
+
+test('single-image width state persists across section switches', async ({ page }) => {
+  await page.locator('.controls__picker').selectOption('single-image');
+
+  await checkRadio(page, 'bgWidth', 'hug');
+  await checkRadio(page, 'contentWidth', 'narrow');
+
+  // Switch away and back
+  await page.locator('.controls__picker').selectOption('nav');
+  await expect(page.locator('.nav')).toBeVisible();
+  await page.locator('.controls__picker').selectOption('single-image');
+
+  const singleImage = page.locator('.single-image');
+  await expect(singleImage).toHaveAttribute('data-bg-width', 'hug');
+  await expect(singleImage).toHaveAttribute('data-content-width', 'narrow');
+
+  // Controls reflect restored state
+  await expect(page.locator('input[name="bgWidth"][value="hug"]')).toBeChecked();
+  await expect(page.locator('input[name="contentWidth"][value="narrow"]')).toBeChecked();
+});

@@ -290,3 +290,87 @@ test('changing the simulated viewport while the lightbox is open closes the view
 
   await expect(lightbox(page)).toHaveCount(0);
 });
+
+test('focus is trapped inside the desktop lightbox', async ({ page }) => {
+  await page.locator('[data-viewport="1280"]').click();
+  await activeMediaTrigger(page).click();
+  await expect(lightbox(page)).toBeVisible();
+
+  // Close button should receive focus on open
+  await expect(lightbox(page).locator('.pdp-buy-box-lightbox__close')).toBeFocused();
+
+  // Tab should stay within the lightbox dialog
+  await page.keyboard.press('Tab');
+  const focusedAfterTab = await page.evaluate(() => {
+    const active = document.activeElement;
+    return active?.closest('.pdp-buy-box-lightbox') !== null;
+  });
+  expect(focusedAfterTab).toBe(true);
+
+  // Shift+Tab should also stay within the lightbox dialog
+  await page.keyboard.press('Shift+Tab');
+  const focusedAfterShiftTab = await page.evaluate(() => {
+    const active = document.activeElement;
+    return active?.closest('.pdp-buy-box-lightbox') !== null;
+  });
+  expect(focusedAfterShiftTab).toBe(true);
+});
+
+test('backdrop click closes the desktop lightbox', async ({ page }) => {
+  await page.locator('[data-viewport="1280"]').click();
+  await activeMediaTrigger(page).click();
+  await expect(lightbox(page)).toBeVisible();
+
+  // The backdrop sits behind the surface in z-order, so dispatch click directly
+  await page.locator('.pdp-buy-box-lightbox__backdrop').dispatchEvent('click');
+  await expect(lightbox(page)).toHaveCount(0);
+});
+
+test('ArrowLeft at index 0 clamps and stays at 0 (does not wrap)', async ({ page }) => {
+  await page.locator('[data-viewport="1280"]').click();
+  await activeMediaTrigger(page).click();
+  await expect.poll(async () => activeFigureIndex(page)).toBe(0);
+
+  await page.keyboard.press('ArrowLeft');
+  await expect.poll(async () => activeFigureIndex(page)).toBe(0);
+});
+
+test('ArrowRight at the last index clamps and stays at the last (does not wrap)', async ({ page }) => {
+  await page.locator('[data-viewport="1280"]').click();
+  await activeMediaTrigger(page).click();
+  await expect(lightbox(page)).toBeVisible();
+
+  // Jump to the last image via rail thumbnail (use dispatchEvent to avoid
+  // stability-check timeouts while the rail animates)
+  const thumbs = lightbox(page).locator('.pdp-buy-box-lightbox__rail-thumb');
+  const thumbCount = await thumbs.count();
+  const lastIndex = thumbCount - 1;
+  await thumbs.nth(lastIndex).dispatchEvent('click');
+  await expect.poll(async () => activeFigureIndex(page)).toBe(lastIndex);
+
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(async () => activeFigureIndex(page)).toBe(lastIndex);
+});
+
+test('lightbox does not persist across section switches and leaves no stale inert attributes', async ({ page }) => {
+  await page.locator('[data-viewport="1280"]').click();
+  await activeMediaTrigger(page).click();
+  await expect(lightbox(page)).toBeVisible();
+
+  // Switch to nav
+  await page.locator('.controls__picker').selectOption('nav');
+  await expect(page.locator('.nav')).toBeVisible();
+
+  // Switch back to PDP buy box
+  await page.locator('.controls__picker').selectOption('pdp-buy-box');
+  await expect(page.locator('.pdp-buy-box')).toBeVisible();
+
+  // Lightbox should not be open
+  await expect(lightbox(page)).toHaveCount(0);
+
+  // No stale inert attributes on PDP children
+  const hasInert = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.pdp-buy-box > [inert]')).length;
+  });
+  expect(hasInert).toBe(0);
+});

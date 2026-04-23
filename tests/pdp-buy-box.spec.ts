@@ -417,3 +417,102 @@ test('viewport changes preserve selected product', async ({ page }) => {
   await expect(page.locator('.pdp-buy-box')).toHaveAttribute('data-product-id', 'ridge-hoodie');
   await expect(page.locator('.pdp-buy-box__title')).toHaveText('Heavyweight ridge hoodie');
 });
+
+// ─── Price display modes ───
+
+test('priceDisplay range shows min–max when no chip is selected', async ({ page }) => {
+  await checkRadio(page, 'priceDisplay', 'range');
+
+  // summit-tee chips: $12, $12, $14, $18 → range is $12.00–$18.00
+  await expect(page.locator('.pdp-buy-box__price')).toHaveText('$12.00–$18.00');
+});
+
+test('priceDisplay highest shows max price when no chip is selected', async ({ page }) => {
+  await checkRadio(page, 'priceDisplay', 'highest');
+
+  // summit-tee max chip price is $18.00 (XL)
+  await expect(page.locator('.pdp-buy-box__price')).toHaveText('$18.00');
+});
+
+test('currencyNotation code shows price with USD suffix', async ({ page }) => {
+  await checkRadio(page, 'currencyNotation', 'code');
+
+  await expect(page.locator('.pdp-buy-box__price')).toContainText('USD');
+  // Default product lowest chip is $12.00 → "12.00 USD"
+  await expect(page.locator('.pdp-buy-box__price')).toHaveText('12.00 USD');
+});
+
+test('currencyNotation none shows bare number without symbol or code', async ({ page }) => {
+  await checkRadio(page, 'currencyNotation', 'none');
+
+  // Default product lowest chip is $12.00 → "12.00"
+  const priceText = await page.locator('.pdp-buy-box__price').textContent();
+  expect(priceText).toBe('12.00');
+  expect(priceText).not.toContain('$');
+  expect(priceText).not.toContain('USD');
+});
+
+test('priceFormat whole removes decimal places', async ({ page }) => {
+  await checkRadio(page, 'priceFormat', 'whole');
+
+  // Default product lowest chip is $12 → "$12"
+  const priceText = await page.locator('.pdp-buy-box__price').textContent();
+  expect(priceText).toBe('$12');
+  expect(priceText).not.toContain('.');
+});
+
+// ─── Sold-out variant interactions ───
+
+test('selecting a fully sold-out color disables all chips', async ({ page }) => {
+  // 'Mist' has soldOut: true → all chips should become disabled
+  await page.locator('.pdp-buy-box__select').selectOption('Mist');
+
+  const chips = page.locator('.pdp-buy-box__chip');
+  const chipCount = await chips.count();
+  expect(chipCount).toBe(4);
+
+  for (let i = 0; i < chipCount; i++) {
+    await expect(chips.nth(i)).toHaveAttribute('aria-disabled', 'true');
+    await expect(chips.nth(i)).toHaveAttribute('data-sold-out', 'true');
+    await expect(chips.nth(i)).toBeDisabled();
+  }
+});
+
+test('selecting a color with conditional sold-out disables only affected chips', async ({ page }) => {
+  // 'Bone' makes Large soldOut (soldOut: ['Bone']), but not others
+  await page.locator('.pdp-buy-box__select').selectOption('Bone');
+
+  const chips = page.locator('.pdp-buy-box__chip');
+
+  // Small — not sold out
+  await expect(chips.filter({ hasText: 'Small' })).not.toHaveAttribute('aria-disabled', 'true');
+  // Medium — not sold out
+  await expect(chips.filter({ hasText: 'Medium' })).not.toHaveAttribute('aria-disabled', 'true');
+  // Large — sold out for Bone
+  await expect(chips.filter({ hasText: 'Large' })).toHaveAttribute('aria-disabled', 'true');
+  await expect(chips.filter({ hasText: 'Large' })).toBeDisabled();
+  // XL — not sold out for Bone (only for Charcoal)
+  await expect(chips.filter({ hasText: 'XL' })).not.toHaveAttribute('aria-disabled', 'true');
+});
+
+// ─── Control toggles ───
+
+test('showVariants toggle off hides both option groups', async ({ page }) => {
+  // Verify option groups are visible first
+  await expect(page.locator('.pdp-buy-box__option-group').nth(0)).toBeVisible();
+  await expect(page.locator('.pdp-buy-box__option-group').nth(1)).toBeVisible();
+
+  await checkRadio(page, 'showVariants', 'false');
+
+  await expect(page.locator('.pdp-buy-box__option-group').nth(0)).toBeHidden();
+  await expect(page.locator('.pdp-buy-box__option-group').nth(1)).toBeHidden();
+});
+
+test('showBnpl toggle off hides the BNPL message', async ({ page }) => {
+  // Verify BNPL message is visible first
+  await expect(page.locator('.pdp-buy-box__bnpl')).toBeVisible();
+
+  await checkRadio(page, 'showBnpl', 'false');
+
+  await expect(page.locator('.pdp-buy-box__bnpl')).toBeHidden();
+});
