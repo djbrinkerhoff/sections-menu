@@ -205,7 +205,6 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
 
   function hasResolvedVariantSelection(): boolean {
     if (!hasVariantOptions()) return false;
-    if (root.dataset.showVariants === 'false') return false;
     if (hasSelectOptions() && !selectedSelectValue) return false;
     if (hasChipOptions() && !selectedChipValue) return false;
     if (hasSelectOptions() && isSelectedVariantSoldOut()) return false;

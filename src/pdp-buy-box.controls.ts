@@ -87,9 +87,6 @@ export function initPdpBuyBoxControls(
     }));
   }
 
-  addToggle('showVariants', 'Variants', 'showVariants', () => {
-    preview.syncStockLabel();
-  });
   wrapper.appendChild(createSegmentedGroup({
     name: 'stockStyle',
     label: 'Stock label',

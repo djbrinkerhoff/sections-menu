@@ -493,17 +493,6 @@ test('selecting a color with conditional sold-out disables only affected chips',
 
 // ─── Control toggles ───
 
-test('showVariants toggle off hides both option groups', async ({ page }) => {
-  // Verify option groups are visible first
-  await expect(page.locator('.pdp-buy-box__option-group').nth(0)).toBeVisible();
-  await expect(page.locator('.pdp-buy-box__option-group').nth(1)).toBeVisible();
-
-  await checkRadio(page, 'showVariants', 'false');
-
-  await expect(page.locator('.pdp-buy-box__option-group').nth(0)).toBeHidden();
-  await expect(page.locator('.pdp-buy-box__option-group').nth(1)).toBeHidden();
-});
-
 test('showBnpl toggle off hides the BNPL message', async ({ page }) => {
   // Verify BNPL message is visible first
   await expect(page.locator('.pdp-buy-box__bnpl')).toBeVisible();

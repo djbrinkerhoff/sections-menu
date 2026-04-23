@@ -16,10 +16,6 @@
   display: none;
 }
 
-.pdp-buy-box[data-show-variants="false"] .pdp-buy-box__option-group {
-  display: none;
-}
-
 .pdp-buy-box__layout {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
