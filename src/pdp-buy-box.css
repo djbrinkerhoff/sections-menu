@@ -391,7 +391,7 @@ legend.pdp-buy-box__option-label {
     margin-inline: auto;
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 32px 16px;
-    padding: 48px 0;
+    padding: 48px 16px;
   }
 
   .pdp-buy-box__media {

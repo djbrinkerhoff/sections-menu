@@ -387,8 +387,8 @@ test('768 viewport matches the planned medium geometry', async ({ page }) => {
 
   const metrics = await readBuyBoxMetrics(page);
   expect(Math.abs(metrics.mediaTop - metrics.detailsTop)).toBeLessThanOrEqual(1);
-  expect(Math.abs(metrics.mediaWidth - 376)).toBeLessThanOrEqual(1);
-  expect(Math.abs(metrics.detailsWidth - 376)).toBeLessThanOrEqual(1);
+  expect(Math.abs(metrics.mediaWidth - 360)).toBeLessThanOrEqual(1);
+  expect(Math.abs(metrics.detailsWidth - 360)).toBeLessThanOrEqual(1);
   expect(Math.abs(metrics.columnGap - 16)).toBeLessThanOrEqual(1);
 });
 
