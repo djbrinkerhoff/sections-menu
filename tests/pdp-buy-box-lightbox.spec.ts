@@ -144,6 +144,52 @@ test('mobile opening from the first image does not pre-scroll the stack', async 
   await expect.poll(async () => activeFigureIndex(page)).toBe(0);
 });
 
+test('mobile opens without a surface bounce before the first frame', async ({ page }) => {
+  const samples = await page.evaluate(async () => {
+    const trigger = document.querySelector('.pdp-buy-box__media .gallery__item:not([data-gallery-clone]):not([inert]) .gallery__trigger');
+    const dialog = document.querySelector('.pdp-buy-box-lightbox');
+    if (!(trigger instanceof HTMLElement) || !(dialog instanceof HTMLDialogElement)) {
+      throw new Error('Expected mobile lightbox trigger and dialog');
+    }
+
+    const readSample = () => {
+      const surface = dialog.querySelector('.pdp-buy-box-lightbox__surface');
+      const stack = dialog.querySelector('.pdp-buy-box-lightbox__stack');
+      const surfaceRect = surface instanceof HTMLElement ? surface.getBoundingClientRect() : null;
+      const stackRect = stack instanceof HTMLElement ? stack.getBoundingClientRect() : null;
+
+      return {
+        stackTop: stackRect ? Math.round(stackRect.top * 100) / 100 : null,
+        surfaceTop: surfaceRect ? Math.round(surfaceRect.top * 100) / 100 : null,
+        transform: surface instanceof HTMLElement ? window.getComputedStyle(surface).transform : null,
+      };
+    };
+
+    const result = [];
+    trigger.click();
+    result.push(readSample());
+
+    for (let frame = 0; frame < 4; frame += 1) {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          result.push(readSample());
+          resolve();
+        });
+      });
+    }
+
+    return result;
+  });
+
+  const surfaceTops = samples.map((sample) => sample.surfaceTop);
+  const stackTops = samples.map((sample) => sample.stackTop);
+
+  expect(new Set(samples.map((sample) => sample.transform)).size).toBe(1);
+  expect(samples[0]?.transform).toBe('none');
+  expect(Math.max(...surfaceTops) - Math.min(...surfaceTops)).toBe(0);
+  expect(Math.max(...stackTops) - Math.min(...stackTops)).toBe(0);
+});
+
 test('mobile stack scrolling keeps the viewer open and reveals later images', async ({ page }) => {
   await activeMediaTrigger(page).click();
   await page.evaluate(() => new Promise<void>((resolve) => {

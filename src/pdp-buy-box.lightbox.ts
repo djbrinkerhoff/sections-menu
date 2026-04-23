@@ -266,7 +266,8 @@ export function initPdpBuyBoxLightbox(
   function getFigureScrollTop(figure: HTMLElement): number {
     const stackRect = stack.getBoundingClientRect();
     const figureRect = figure.getBoundingClientRect();
-    return figureRect.top - stackRect.top + stack.scrollTop;
+    const paddingTop = Number.parseFloat(window.getComputedStyle(stack).paddingTop) || 0;
+    return Math.max(0, figureRect.top - stackRect.top + stack.scrollTop - paddingTop);
   }
 
   function syncActiveIndexFromScroll(): void {
@@ -385,12 +386,8 @@ export function initPdpBuyBoxLightbox(
     activeState.figures = figures;
     activeState.thumbButtons = thumbButtons;
     syncActiveIndex(activeState.activeIndex);
-
-    requestAnimationFrame(() => {
-      if (!activeState) return;
-      goToIndex(activeState.activeIndex, true);
-      updateRailControls();
-    });
+    goToIndex(activeState.activeIndex, true);
+    updateRailControls();
   }
 
   function finishClose(restoreTarget: HTMLElement | null, restoreFocus: boolean): void {
@@ -570,6 +567,7 @@ export function initPdpBuyBoxLightbox(
         window.clearTimeout(closeTimer);
         closeTimer = 0;
       }
+      dialog.removeAttribute('data-state');
 
       if (activeState?.invoker && activeState.invoker !== invoker) {
         setTriggerExpanded(activeState.invoker, false);
@@ -585,6 +583,7 @@ export function initPdpBuyBoxLightbox(
       };
 
       setTriggerExpanded(invoker, true);
+      dialog.dataset.mode = activeState.mode;
       syncDialogPosition();
       lockScroll();
       applyInert();
@@ -592,15 +591,13 @@ export function initPdpBuyBoxLightbox(
         dialog.show();
       }
 
-      dialog.dataset.state = 'opening';
       render();
 
       requestAnimationFrame(() => {
         if (!activeState || destroyed) return;
         syncDialogPosition();
         dialog.dataset.state = 'open';
-        goToIndex(activeState.activeIndex, true);
-        closeButton.focus();
+        closeButton.focus({ preventScroll: true });
       });
     },
   };
