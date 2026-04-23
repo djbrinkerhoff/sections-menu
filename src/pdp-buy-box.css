@@ -75,6 +75,18 @@
   gap: 16px;
 }
 
+.pdp-buy-box__buy {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.pdp-buy-box__info-group {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
 .pdp-buy-box__header {
   display: grid;
   gap: 8px;

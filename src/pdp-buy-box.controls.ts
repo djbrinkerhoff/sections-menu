@@ -21,6 +21,22 @@ export function initPdpBuyBoxControls(
   wrapper.className = 'controls';
   applyImageRadius(root, root.dataset.radius);
 
+  // ─── Layout picker ───
+
+  wrapper.appendChild(createSegmentedGroup({
+    name: 'pdpLayout',
+    label: 'Layout',
+    values: ['carousel', 'column', 'split'],
+    labels: { carousel: 'Carousel', column: 'Column', split: 'Split' },
+    initialValue: root.dataset.pdpLayout ?? 'column',
+    onChange: (v) => {
+      root.dataset.pdpLayout = v;
+      preview.syncLayout();
+      onStateChange();
+    },
+    signal,
+  }));
+
   // ─── Product picker ───
 
   const group = document.createElement('fieldset');
