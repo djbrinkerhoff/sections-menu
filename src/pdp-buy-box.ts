@@ -1,3 +1,4 @@
+import { MorphController } from 'torph';
 import { DEFAULT_PDP_BUY_BOX_PRODUCT_ID, getPdpBuyBoxProduct } from './pdp-buy-box.data';
 import { initPdpBuyBoxLightbox } from './pdp-buy-box.lightbox';
 import { initPdpBuyBoxMedia, type PdpBuyBoxMediaHandle } from './pdp-buy-box.media';
@@ -89,6 +90,9 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
   const abortController = new AbortController();
   const { signal } = abortController;
   const elements = getElements(root);
+
+  const priceMorph = new MorphController();
+  priceMorph.attach(elements.price, { duration: 350, scale: true });
 
   function syncScrollViewportHeight(): void {
     const scrollParent = root.parentElement;
@@ -321,7 +325,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
 
   function syncPrice(): void {
     if (currentProduct.chipGroup.options.length === 0) {
-      elements.price.textContent = formatCents(parsePriceCents(currentProduct.price));
+      priceMorph.update(formatCents(parsePriceCents(currentProduct.price)));
       return;
     }
 
@@ -331,7 +335,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     if (selectedChipValue) {
       const match = currentProduct.chipGroup.options.find((o) => o.label === selectedChipValue);
       if (match) {
-        elements.price.textContent = formatCents(parsePriceCents(match.price));
+        priceMorph.update(formatCents(parsePriceCents(match.price)));
         return;
       }
     }
@@ -342,11 +346,11 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     const max = Math.max(...chipPrices);
 
     if (min === max || mode === 'lowest') {
-      elements.price.textContent = formatCents(min);
+      priceMorph.update(formatCents(min));
     } else if (mode === 'highest') {
-      elements.price.textContent = formatCents(max);
+      priceMorph.update(formatCents(max));
     } else {
-      elements.price.textContent = `${formatCents(min)}–${formatCents(max)}`;
+      priceMorph.update(`${formatCents(min)}–${formatCents(max)}`);
     }
   }
 
@@ -493,6 +497,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
 
   return {
     cleanup() {
+      priceMorph.destroy();
       media?.cleanup();
       lightbox.cleanup();
       abortController.abort();

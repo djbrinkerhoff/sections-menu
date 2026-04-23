@@ -442,19 +442,14 @@ test('currencyNotation none shows bare number without symbol or code', async ({ 
   await checkRadio(page, 'currencyNotation', 'none');
 
   // Default product lowest chip is $12.00 → "12.00"
-  const priceText = await page.locator('.pdp-buy-box__price').textContent();
-  expect(priceText).toBe('12.00');
-  expect(priceText).not.toContain('$');
-  expect(priceText).not.toContain('USD');
+  await expect(page.locator('.pdp-buy-box__price')).toHaveText('12.00');
 });
 
 test('priceFormat whole removes decimal places', async ({ page }) => {
   await checkRadio(page, 'priceFormat', 'whole');
 
   // Default product lowest chip is $12 → "$12"
-  const priceText = await page.locator('.pdp-buy-box__price').textContent();
-  expect(priceText).toBe('$12');
-  expect(priceText).not.toContain('.');
+  await expect(page.locator('.pdp-buy-box__price')).toHaveText('$12');
 });
 
 // ─── Sold-out variant interactions ───
