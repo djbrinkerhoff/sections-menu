@@ -544,7 +544,7 @@ export function initGalleryControls(
 
   wrapper.appendChild(createSegmentedGroup({
     name: 'aspect', label: 'Aspect ratio', values: ASPECTS,
-    labels: { square: '1:1', landscape: '4:3', portrait: '3:4', auto: 'Auto' },
+    labels: { square: 'Square', landscape: 'Landscape', portrait: 'Portrait', auto: 'Auto' },
     initialValue: galleryRoot.dataset.aspect,
     onChange: (v) => setControl('aspect', v),
     signal,
