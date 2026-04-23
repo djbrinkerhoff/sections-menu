@@ -35,6 +35,13 @@ export const singleImageSection: Section = {
           }
         }
 
+        for (const prop of ['--single-image-color', '--single-image-accent'] as const) {
+          const val = root.style.getPropertyValue(prop).trim();
+          if (val) {
+            state[`css:${prop}`] = val;
+          }
+        }
+
         return state;
       },
     };

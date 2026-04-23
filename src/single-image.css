@@ -1,26 +1,20 @@
 .single-image {
-  min-height: 100%;
   position: relative;
   container-type: inline-size;
-  color: #1d1b17;
+  color: var(--single-image-accent, #1d1b17);
 }
 
 /* ─── Section-specific background/body visuals ─── */
 
 .single-image__bg {
-  background:
-    radial-gradient(circle at top left, rgba(183, 214, 255, 0.34), transparent 32%),
-    linear-gradient(180deg, #faf8f3 0%, #f2eee4 100%);
+  background-color: var(--single-image-color, #ffffff);
 }
 
 [data-bg-width="hug"] > .single-image__body {
-  background:
-    radial-gradient(circle at top left, rgba(183, 214, 255, 0.34), transparent 32%),
-    linear-gradient(180deg, #faf8f3 0%, #f2eee4 100%);
+  background-color: var(--single-image-color, #ffffff);
 }
 
 .single-image__body {
-  padding: 28px;
 }
 
 /* ─── Content ─── */
@@ -30,15 +24,7 @@
   gap: 14px;
 }
 
-.single-image__eyebrow {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  opacity: 0.65;
-}
-
-.single-image__title {
+.single-image__heading {
   margin: 0;
   font-size: clamp(28px, 4.8vw, 46px);
   line-height: 0.95;
@@ -46,7 +32,12 @@
   letter-spacing: -0.05em;
 }
 
-.single-image__lede {
+.single-image__heading:empty,
+.single-image__subheading:empty {
+  display: none;
+}
+
+.single-image__subheading {
   margin: 0;
   max-width: 42ch;
   font-size: 15px;
@@ -70,6 +61,25 @@
   inline-size: 100%;
   max-block-size: 70vh;
   object-fit: cover;
+}
+
+/* ─── Aspect ratio (only when no mask) ─── */
+
+.single-image[data-mask="none"][data-aspect="square"] .single-image__trigger {
+  aspect-ratio: 1 / 1;
+}
+
+.single-image[data-mask="none"][data-aspect="landscape"] .single-image__trigger {
+  aspect-ratio: 4 / 3;
+}
+
+.single-image[data-mask="none"][data-aspect="portrait"] .single-image__trigger {
+  aspect-ratio: 3 / 4;
+}
+
+.single-image[data-mask="none"][data-aspect]:not([data-aspect="auto"]) .single-image__image {
+  max-block-size: none;
+  block-size: 100%;
 }
 
 /* ─── Shape masks ─── */
@@ -106,10 +116,6 @@
 }
 
 @container (max-width: 500px) {
-  .single-image__body {
-    padding: 20px;
-  }
-
   .single-image__story {
     gap: 12px;
   }
