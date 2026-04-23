@@ -115,6 +115,7 @@
   background: #09090b;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .variant-thumb:hover .variant-thumb__preview {
