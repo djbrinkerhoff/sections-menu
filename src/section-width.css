@@ -46,27 +46,13 @@
   display: none;
 }
 
-/* Hug mode: a ::before pseudo provides the visible background.
-   Content stays on the grid columns (no padding/margin on body).
-   Mobile: bleeds horizontally to section edges (full-width bg).
-   768px+: extends 16px in all directions with rounded corners. */
+/* Hug mode: .sw-bg is hidden, section-specific CSS puts the background
+   on the body instead. Root padding creates the visible page-background
+   border; border-radius rounds the body card. Same across all viewports. */
 [data-bg-width="hug"] > .sw-body {
-  position: relative;
-}
-
-[data-bg-width="hug"] > .sw-body::before {
-  content: '';
-  position: absolute;
-  inset: 0 -16px;
-  background: inherit;
-  z-index: -1;
-}
-
-@container preview (min-width: 768px) {
-  [data-bg-width="hug"] > .sw-body::before {
-    inset: -16px;
-    border-radius: var(--image-radius, 8px);
-  }
+  padding: 16px;
+  border-radius: var(--image-radius, 8px);
+  overflow: clip;
 }
 
 /* ─── Content layer ─── */
