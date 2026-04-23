@@ -7,11 +7,14 @@ const MAX_QUANTITY = 9;
 interface PdpBuyBoxElements {
   title: HTMLElement;
   price: HTMLElement;
-  stock: HTMLElement;
+  headerStock: HTMLElement;
+  variantStock: HTMLElement;
   bnplMessage: HTMLElement;
   shippingNote: HTMLElement;
+  selectGroup: HTMLElement;
   selectLabel: HTMLElement;
   selectInput: HTMLSelectElement;
+  chipGroup: HTMLElement;
   chipLabel: HTMLElement;
   chipRow: HTMLElement;
   quantityValue: HTMLInputElement;
@@ -43,16 +46,27 @@ function queryRequired<T extends Element>(root: HTMLElement, selector: string): 
 }
 
 function getElements(root: HTMLElement): PdpBuyBoxElements {
+  const selectInput = queryRequired<HTMLSelectElement>(root, '.pdp-buy-box__select');
+  const selectGroup = selectInput.closest<HTMLElement>('.pdp-buy-box__option-group');
+  if (!selectGroup) throw new Error('Missing required PDP buy box select group');
+
+  const chipRow = queryRequired<HTMLElement>(root, '[data-pdp-slot="chip-row"]');
+  const chipGroup = chipRow.closest<HTMLElement>('.pdp-buy-box__option-group');
+  if (!chipGroup) throw new Error('Missing required PDP buy box chip group');
+
   return {
     title: queryRequired(root, '[data-pdp-slot="title"]'),
     price: queryRequired(root, '[data-pdp-slot="price"]'),
-    stock: queryRequired(root, '[data-pdp-slot="stock"]'),
+    headerStock: queryRequired(root, '[data-pdp-slot="stock-header"]'),
+    variantStock: queryRequired(root, '[data-pdp-slot="stock-variant"]'),
     bnplMessage: queryRequired(root, '[data-pdp-slot="bnpl-message"]'),
     shippingNote: queryRequired(root, '[data-pdp-slot="shipping-note"]'),
+    selectGroup,
     selectLabel: queryRequired(root, '[data-pdp-slot="select-label"]'),
-    selectInput: queryRequired(root, '.pdp-buy-box__select'),
+    selectInput,
+    chipGroup,
     chipLabel: queryRequired(root, '[data-pdp-slot="chip-label"]'),
-    chipRow: queryRequired(root, '[data-pdp-slot="chip-row"]'),
+    chipRow,
     quantityValue: queryRequired(root, '[data-pdp-slot="quantity-value"]'),
     ctaLabel: queryRequired(root, '[data-pdp-slot="cta-label"]'),
     descriptionTitle: queryRequired(root, '[data-pdp-slot="description-title"]'),
@@ -96,6 +110,9 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
 
   function renderSelectOptions(): void {
     elements.selectInput.replaceChildren();
+    elements.selectInput.value = '';
+
+    if (currentProduct.selectGroup.options.length === 0) return;
 
     const placeholderOption = document.createElement('option');
     placeholderOption.value = '';
@@ -128,6 +145,8 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
 
   function renderChipOptions(): void {
     elements.chipRow.replaceChildren();
+    if (currentProduct.chipGroup.options.length === 0) return;
+
     const variantSoldOut = isSelectedVariantSoldOut();
 
     for (const option of currentProduct.chipGroup.options) {
@@ -159,19 +178,105 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     }
   }
 
+  function hasSelectOptions(): boolean {
+    return currentProduct.selectGroup.options.length > 0;
+  }
+
+  function hasChipOptions(): boolean {
+    return currentProduct.chipGroup.options.length > 0;
+  }
+
+  function hasVariantOptions(): boolean {
+    return hasSelectOptions() || hasChipOptions();
+  }
+
+  function getSelectedChipOption(): { label: string; price: string; soldOut?: boolean | string[] } | null {
+    if (!selectedChipValue) return null;
+    return currentProduct.chipGroup.options.find((option) => option.label === selectedChipValue) ?? null;
+  }
+
+  function hasResolvedVariantSelection(): boolean {
+    if (!hasVariantOptions()) return false;
+    if (root.dataset.showVariants === 'false') return false;
+    if (hasSelectOptions() && !selectedSelectValue) return false;
+    if (hasChipOptions() && !selectedChipValue) return false;
+    if (hasSelectOptions() && isSelectedVariantSoldOut()) return false;
+
+    const selectedChipOption = getSelectedChipOption();
+    if (hasChipOptions() && (!selectedChipOption || isChipSoldOut(selectedChipOption))) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function getSelectedVariantStockKey(): string | null {
+    const parts: string[] = [];
+
+    if (hasSelectOptions()) {
+      if (!selectedSelectValue) return null;
+      parts.push(`select:${selectedSelectValue}`);
+    }
+
+    if (hasChipOptions()) {
+      if (!selectedChipValue) return null;
+      parts.push(`chip:${selectedChipValue}`);
+    }
+
+    return parts.length > 0 ? parts.join('|') : null;
+  }
+
+  function resolveActiveStockCount(): number | null {
+    if (!hasVariantOptions()) {
+      return currentProduct.stockCount ?? null;
+    }
+
+    if (!hasResolvedVariantSelection()) {
+      return null;
+    }
+
+    const variantKey = getSelectedVariantStockKey();
+    if (!variantKey) return null;
+    return currentProduct.variantStockCounts?.[variantKey] ?? null;
+  }
+
+  function formatStockText(style: string, stockCount: number | null): string {
+    if (style === 'count') {
+      return stockCount == null ? '' : `${stockCount} left in stock`;
+    }
+
+    if (style === 'limited') {
+      if (stockCount != null) {
+        return stockCount <= 3 ? 'Low stock' : 'In stock';
+      }
+      return currentProduct.stockLabel;
+    }
+
+    return '';
+  }
+
+  function setStockContent(element: HTMLElement, text: string): void {
+    element.textContent = text;
+    element.hidden = text.length === 0;
+  }
+
   function syncStockLabel(): void {
     const style = root.dataset.stockStyle ?? 'off';
-    switch (style) {
-      case 'off':
-        elements.stock.textContent = '';
-        break;
-      case 'limited':
-        elements.stock.textContent = 'Limited quantities available';
-        break;
-      case 'count':
-        elements.stock.textContent = `${3 + (currentProduct.id.length % 5)} left in stock`;
-        break;
+    if (style === 'off') {
+      setStockContent(elements.headerStock, '');
+      setStockContent(elements.variantStock, '');
+      return;
     }
+
+    const stockCount = resolveActiveStockCount();
+    if (!hasVariantOptions()) {
+      setStockContent(elements.headerStock, formatStockText(style, stockCount));
+      setStockContent(elements.variantStock, '');
+      return;
+    }
+
+    setStockContent(elements.headerStock, '');
+    setStockContent(elements.variantStock, hasResolvedVariantSelection() ? formatStockText(style, stockCount) : '');
   }
 
   function parsePriceCents(price: string): number {
@@ -189,6 +294,11 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
   }
 
   function syncPrice(): void {
+    if (currentProduct.chipGroup.options.length === 0) {
+      elements.price.textContent = formatCents(parsePriceCents(currentProduct.price));
+      return;
+    }
+
     const chipPrices = currentProduct.chipGroup.options.map((o) => parsePriceCents(o.price));
 
     // If a chip is selected, show its exact price
@@ -222,6 +332,10 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     lightbox.close({ animate: false, restoreFocus: false });
     media?.setImages(currentProduct.images);
     root.dataset.productId = currentProduct.id || DEFAULT_PDP_BUY_BOX_PRODUCT_ID;
+
+    elements.selectGroup.hidden = currentProduct.selectGroup.options.length === 0;
+    elements.selectInput.disabled = currentProduct.selectGroup.options.length === 0;
+    elements.chipGroup.hidden = currentProduct.chipGroup.options.length === 0;
 
     elements.title.textContent = currentProduct.title;
     syncPrice();
@@ -261,8 +375,13 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     const target = event.target;
     if (!(target instanceof HTMLSelectElement) || target !== elements.selectInput) return;
     selectedSelectValue = target.value;
+    const selectedChipOption = getSelectedChipOption();
+    if (selectedChipOption && isChipSoldOut(selectedChipOption)) {
+      selectedChipValue = null;
+    }
     renderChipOptions();
     syncPrice();
+    syncStockLabel();
   }, { signal });
 
   root.addEventListener('click', (event) => {
@@ -289,6 +408,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     selectedChipValue = selectedChipValue === nextValue ? null : nextValue;
     renderChipOptions();
     syncPrice();
+    syncStockLabel();
   }, { signal });
 
   elements.quantityValue.addEventListener('change', () => {

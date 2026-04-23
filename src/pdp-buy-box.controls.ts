@@ -55,7 +55,7 @@ export function initPdpBuyBoxControls(
 
   // ─── Toggle helpers ───
 
-  function addToggle(name: string, label: string, dataAttr: string): void {
+  function addToggle(name: string, label: string, dataAttr: string, onPreviewChange: (() => void) | null = null): void {
     wrapper.appendChild(createSegmentedGroup({
       name,
       label,
@@ -64,18 +64,21 @@ export function initPdpBuyBoxControls(
       initialValue: root.dataset[dataAttr] ?? 'true',
       onChange: (v) => {
         root.dataset[dataAttr] = v;
+        onPreviewChange?.();
         onStateChange();
       },
       signal,
     }));
   }
 
-  addToggle('showVariants', 'Variants', 'showVariants');
+  addToggle('showVariants', 'Variants', 'showVariants', () => {
+    preview.syncStockLabel();
+  });
   wrapper.appendChild(createSegmentedGroup({
     name: 'stockStyle',
     label: 'Stock label',
     values: ['off', 'limited', 'count'],
-    labels: { off: 'Off', limited: 'Limited', count: 'X left' },
+    labels: { off: 'Off', limited: 'Low', count: 'X left' },
     initialValue: root.dataset.stockStyle ?? 'off',
     onChange: (v) => {
       root.dataset.stockStyle = v;

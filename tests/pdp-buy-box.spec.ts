@@ -139,7 +139,7 @@ test('switching product from controls updates the active page image, title, pric
   await expect(page.locator('.pdp-buy-box__chip').nth(0)).toHaveText('Short');
 });
 
-test('switching product resets select, chip selection, and quantity', async ({ page }) => {
+test('switching to a simple product hides variant controls and resets quantity', async ({ page }) => {
   await page.locator('.pdp-buy-box__select').selectOption('Bone');
 
   // Select a chip on default product
@@ -153,13 +153,68 @@ test('switching product resets select, chip selection, and quantity', async ({ p
   // Switch product
   await page.locator('select[name="productId"]').selectOption('ridge-hoodie');
 
-  // Preview-only controls should be reset
-  await expect(page.locator('.pdp-buy-box__select')).toHaveValue('');
-  const chips = page.locator('.pdp-buy-box__chip');
-  for (let i = 0; i < 4; i++) {
-    await expect(chips.nth(i)).toHaveAttribute('data-selected', 'false');
-  }
+  // Simple products should hide variant controls entirely.
+  await expect(page.locator('.pdp-buy-box__option-group').nth(0)).toBeHidden();
+  await expect(page.locator('.pdp-buy-box__option-group').nth(1)).toBeHidden();
+  await expect(page.locator('.pdp-buy-box__chip')).toHaveCount(0);
+  await expect(page.locator('.pdp-buy-box__price')).toContainText('$88.00');
   await expect(page.locator('.pdp-buy-box__quantity-value')).toHaveValue('1');
+});
+
+test('switching back from a simple product restores variant controls for configurable products', async ({ page }) => {
+  await page.locator('select[name="productId"]').selectOption('ridge-hoodie');
+  await expect(page.locator('.pdp-buy-box__option-group').nth(0)).toBeHidden();
+  await expect(page.locator('.pdp-buy-box__option-group').nth(1)).toBeHidden();
+
+  await page.locator('select[name="productId"]').selectOption('summit-tee');
+
+  await expect(page.locator('.pdp-buy-box__option-group').nth(0)).toBeVisible();
+  await expect(page.locator('.pdp-buy-box__option-group').nth(1)).toBeVisible();
+  await expect(page.locator('.pdp-buy-box__option-label').first()).toHaveText('Color');
+  await expect(page.locator('.pdp-buy-box__option-label').nth(1)).toHaveText('Size');
+  await expect(page.locator('.pdp-buy-box__chip')).toHaveCount(4);
+});
+
+test('simple products keep the stock label in the price row', async ({ page }) => {
+  await checkRadio(page, 'stockStyle', 'limited');
+  await page.locator('select[name="productId"]').selectOption('ridge-hoodie');
+
+  await expect(page.locator('[data-pdp-slot="stock-header"]')).toHaveText('Low stock');
+  await expect(page.locator('[data-pdp-slot="stock-header"]')).toBeVisible();
+  await expect(page.locator('[data-pdp-slot="stock-variant"]')).toBeHidden();
+});
+
+test('configurable products move stock below variants and only show it after a full selection', async ({ page }) => {
+  await checkRadio(page, 'stockStyle', 'count');
+
+  const headerStock = page.locator('[data-pdp-slot="stock-header"]');
+  const variantStock = page.locator('[data-pdp-slot="stock-variant"]');
+
+  await expect(headerStock).toBeHidden();
+  await expect(variantStock).toBeHidden();
+
+  await page.locator('.pdp-buy-box__select').selectOption('Bone');
+  await expect(variantStock).toBeHidden();
+
+  await page.locator('.pdp-buy-box__chip').filter({ hasText: 'Medium' }).click();
+  await expect(headerStock).toBeHidden();
+  await expect(variantStock).toHaveText('5 left in stock');
+  await expect(variantStock).toBeVisible();
+
+  const positions = await page.evaluate(() => {
+    const chipGroup = document.querySelectorAll<HTMLElement>('.pdp-buy-box__option-group')[1];
+    const stock = document.querySelector<HTMLElement>('[data-pdp-slot="stock-variant"]');
+    if (!chipGroup || !stock) throw new Error('Missing stock positioning elements');
+
+    const chipRect = chipGroup.getBoundingClientRect();
+    const stockRect = stock.getBoundingClientRect();
+    return {
+      chipBottom: chipRect.bottom,
+      stockTop: stockRect.top,
+    };
+  });
+
+  expect(positions.stockTop).toBeGreaterThan(positions.chipBottom);
 });
 
 test('all three products render with correct info sections', async ({ page }) => {

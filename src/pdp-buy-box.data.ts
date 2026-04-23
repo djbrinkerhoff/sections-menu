@@ -38,6 +38,8 @@ export interface PdpBuyBoxProduct {
   title: string;
   price: string;
   stockLabel: string;
+  stockCount?: number;
+  variantStockCounts?: Record<string, number>;
   bnplMessage: string;
   shippingNote: string;
   ctaLabel: string;
@@ -50,6 +52,10 @@ export interface PdpBuyBoxProduct {
   returns: PdpBuyBoxInfoSection;
 }
 
+function createVariantStockKey(selectValue: string, chipValue: string): string {
+  return `select:${selectValue}|chip:${chipValue}`;
+}
+
 export const PDP_BUY_BOX_PRODUCTS: PdpBuyBoxProduct[] = [
   {
     id: 'summit-tee',
@@ -57,6 +63,18 @@ export const PDP_BUY_BOX_PRODUCTS: PdpBuyBoxProduct[] = [
     title: 'Very cool t-shirt',
     price: '$12.00',
     stockLabel: 'In stock',
+    variantStockCounts: {
+      [createVariantStockKey('Charcoal', 'Small')]: 9,
+      [createVariantStockKey('Charcoal', 'Medium')]: 7,
+      [createVariantStockKey('Charcoal', 'Large')]: 4,
+      [createVariantStockKey('Bone', 'Small')]: 8,
+      [createVariantStockKey('Bone', 'Medium')]: 5,
+      [createVariantStockKey('Bone', 'XL')]: 2,
+      [createVariantStockKey('Clay', 'Small')]: 6,
+      [createVariantStockKey('Clay', 'Medium')]: 4,
+      [createVariantStockKey('Clay', 'Large')]: 3,
+      [createVariantStockKey('Clay', 'XL')]: 1,
+    },
     bnplMessage: 'As low as $10/month or interest free. See plans',
     shippingNote: 'Ships in 5 business days • Returns accepted',
     ctaLabel: 'Add to [cart]',
@@ -147,6 +165,18 @@ export const PDP_BUY_BOX_PRODUCTS: PdpBuyBoxProduct[] = [
     title: 'Medium nylon crescent bag',
     price: '$64.00',
     stockLabel: 'In stock',
+    variantStockCounts: {
+      [createVariantStockKey('Black', 'Short')]: 7,
+      [createVariantStockKey('Black', 'Regular')]: 5,
+      [createVariantStockKey('Black', 'Crossbody')]: 2,
+      [createVariantStockKey('Moss', 'Short')]: 6,
+      [createVariantStockKey('Moss', 'Regular')]: 4,
+      [createVariantStockKey('Moss', 'Long')]: 2,
+      [createVariantStockKey('Clay', 'Short')]: 5,
+      [createVariantStockKey('Clay', 'Regular')]: 4,
+      [createVariantStockKey('Clay', 'Long')]: 2,
+      [createVariantStockKey('Clay', 'Crossbody')]: 1,
+    },
     bnplMessage: 'As low as $16/month or interest free. See plans',
     shippingNote: 'Ships in 3 business days • Returns accepted',
     ctaLabel: 'Add to [cart]',
@@ -237,28 +267,19 @@ export const PDP_BUY_BOX_PRODUCTS: PdpBuyBoxProduct[] = [
     title: 'Heavyweight ridge hoodie',
     price: '$88.00',
     stockLabel: 'Low stock',
+    stockCount: 2,
     bnplMessage: 'As low as $22/month or interest free. See plans',
     shippingNote: 'Ships in 4 business days • Returns accepted',
     ctaLabel: 'Add to [cart]',
     selectGroup: {
-      label: 'Color',
-      placeholder: 'Choose...',
-      options: [
-        { label: 'Graphite', price: '$88.00' },
-        { label: 'Faded Navy', price: '$88.00' },
-        { label: 'Oat', price: '$92.00' },
-        { label: 'Pine', price: '$92.00', soldOut: true },
-      ],
+      label: '',
+      placeholder: '',
+      options: [],
       defaultValue: '',
     },
     chipGroup: {
-      label: 'Size',
-      options: [
-        { label: 'Small', price: '$88.00', soldOut: ['Graphite'] },
-        { label: 'Medium', price: '$88.00' },
-        { label: 'Large', price: '$92.00', soldOut: ['Faded Navy'] },
-        { label: 'XL', price: '$98.00' },
-      ],
+      label: '',
+      options: [],
       defaultValue: null,
     },
     quantityDefault: 1,
@@ -334,6 +355,8 @@ export function getPdpBuyBoxProduct(productId: string | undefined): PdpBuyBoxPro
       title: '',
       price: '',
       stockLabel: '',
+      stockCount: 0,
+      variantStockCounts: {},
       bnplMessage: '',
       shippingNote: '',
       ctaLabel: '',
