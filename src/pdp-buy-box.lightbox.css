@@ -21,7 +21,6 @@
   display: block;
 }
 
-.pdp-buy-box-lightbox[open][data-state="opening"],
 .pdp-buy-box-lightbox[open][data-state="open"] {
   opacity: 1;
   pointer-events: auto;
@@ -44,7 +43,6 @@
   transition: transform 180ms ease;
 }
 
-.pdp-buy-box-lightbox[open][data-state="opening"] .pdp-buy-box-lightbox__surface,
 .pdp-buy-box-lightbox[open][data-state="open"] .pdp-buy-box-lightbox__surface {
   transform: translateY(0);
 }
@@ -216,7 +214,6 @@
 }
 
 .pdp-buy-box-lightbox[data-mode="mobile"] .pdp-buy-box-lightbox__surface,
-.pdp-buy-box-lightbox[open][data-state="opening"][data-mode="mobile"] .pdp-buy-box-lightbox__surface,
 .pdp-buy-box-lightbox[open][data-state="open"][data-mode="mobile"] .pdp-buy-box-lightbox__surface {
   transform: none;
 }

@@ -5,8 +5,8 @@
 export const BG_WIDTHS = ['full', 'hug'] as const;
 export const CONTENT_WIDTHS = ['full', 'wide', 'medium', 'narrow'] as const;
 
-export type BgWidth = (typeof BG_WIDTHS)[number];
-export type ContentWidth = (typeof CONTENT_WIDTHS)[number];
+type BgWidth = (typeof BG_WIDTHS)[number];
+type ContentWidth = (typeof CONTENT_WIDTHS)[number];
 
 export const BG_WIDTH_LABELS: Record<BgWidth, string> = {
   full: 'Full',

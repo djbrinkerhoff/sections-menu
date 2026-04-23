@@ -7,11 +7,11 @@ export const LOGO_STYLES = ['small', 'stacked'] as const;
 export const FONT_SCALES = ['0', '1', '2', '3', '4'] as const;
 
 export type Variant = (typeof VARIANTS)[number];
-export type ButtonStyle = (typeof BUTTON_STYLES)[number];
-export type Alignment = (typeof ALIGNMENTS)[number];
-export type Capitalization = (typeof CAPITALIZATIONS)[number];
-export type CartIcon = (typeof CART_ICONS)[number];
-export type LogoStyle = (typeof LOGO_STYLES)[number];
+type ButtonStyle = (typeof BUTTON_STYLES)[number];
+type Alignment = (typeof ALIGNMENTS)[number];
+type Capitalization = (typeof CAPITALIZATIONS)[number];
+type CartIcon = (typeof CART_ICONS)[number];
+type LogoStyle = (typeof LOGO_STYLES)[number];
 export type FontScale = (typeof FONT_SCALES)[number];
 
 export type ControlMap = {

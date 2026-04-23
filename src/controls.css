@@ -41,11 +41,6 @@
   outline: none;
 }
 
-.controls__title {
-  @apply text-sm font-semibold tracking-tight;
-  color: #f4f4f5;
-}
-
 /* ─── Control group (fieldset) ─── */
 .control-group {
   @apply border-0 m-0 p-0 flex flex-col gap-2.5 py-4;
@@ -172,18 +167,6 @@
 .swatch--transparent {
   background-image: repeating-conic-gradient(#3f3f46 0% 25%, #18181b 0% 50%);
   background-size: 6px 6px;
-}
-
-.swatch--transparent-disabled {
-  @apply opacity-40 cursor-not-allowed relative;
-  background-image: repeating-conic-gradient(#3f3f46 0% 25%, #18181b 0% 50%);
-  background-size: 6px 6px;
-}
-
-.swatch--transparent-disabled::after {
-  content: '';
-  @apply absolute inset-0 rounded-full;
-  background: linear-gradient(135deg, transparent 40%, #dc2626 40%, #dc2626 60%, transparent 60%);
 }
 
 /* ─── Segmented buttons ─── */

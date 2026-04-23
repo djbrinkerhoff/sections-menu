@@ -1,4 +1,4 @@
-export const ZOOM_TRIGGER_SELECTOR = '[data-zoom-target]';
+const ZOOM_TRIGGER_SELECTOR = '[data-zoom-target]';
 
 export interface ZoomTarget {
   readonly trigger: HTMLElement;
@@ -26,7 +26,7 @@ export function getZoomTrigger(target: EventTarget | null): HTMLElement | null {
   return target.closest<HTMLElement>(ZOOM_TRIGGER_SELECTOR);
 }
 
-export function resolveZoomTarget(trigger: HTMLElement): ZoomTarget | null {
+function resolveZoomTarget(trigger: HTMLElement): ZoomTarget | null {
   const image = getZoomImage(trigger);
   if (!(image instanceof HTMLImageElement)) return null;
 

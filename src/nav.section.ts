@@ -2,7 +2,7 @@ import type { Section, MountedSection, SectionInitContext } from './shell';
 import { getSavedState, setOnViewportChange } from './shell';
 import navHtml from './nav.partial.html?raw';
 import { initNavBehavior, resetEphemeralState, resetNavModuleState } from './nav';
-import { initControls } from './controls';
+import { initControls } from './nav.controls';
 
 const EPHEMERAL_KEYS = new Set(['open', 'topInline', 'simpleInline', 'tileInline']);
 

@@ -5,12 +5,8 @@ export const IMAGE_RADIUS_STOPS = [
   { value: '16', label: 'Very Round', imageRadius: '16px', buttonRadius: '9999px' },
 ] as const;
 
-export type ImageRadiusStop = (typeof IMAGE_RADIUS_STOPS)[number];
-export type ImageRadiusValue = ImageRadiusStop['value'];
-
-export const DEFAULT_IMAGE_RADIUS: ImageRadiusValue = '8';
-
-export function getImageRadiusStop(rawValue: string | undefined): ImageRadiusStop {
+type ImageRadiusStop = (typeof IMAGE_RADIUS_STOPS)[number];
+function getImageRadiusStop(rawValue: string | undefined): ImageRadiusStop {
   return IMAGE_RADIUS_STOPS.find((stop) => stop.value === rawValue) ?? IMAGE_RADIUS_STOPS[2];
 }
 
