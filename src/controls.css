@@ -137,8 +137,9 @@
 
 .variant-thumb__shape {
   display: block;
-  width: 100%;
+  width: 60%;
   aspect-ratio: 1;
+  margin: auto;
   background: currentColor;
   -webkit-mask-size: contain;
   mask-size: contain;
