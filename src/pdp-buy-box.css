@@ -499,3 +499,36 @@ legend.pdp-buy-box__option-label {
     grid-column: span 1;
   }
 }
+
+/* ─── Split: large (3/6/3 three-zone layout) ─── */
+
+@container (min-width: 1100px) {
+  /* Break __details open so __buy and __info-group participate in parent grid */
+  [data-pdp-layout="split"] .pdp-buy-box__details {
+    display: contents;
+  }
+
+  /* Info rail: left 3 columns, sticky */
+  [data-pdp-layout="split"] .pdp-buy-box__info-group {
+    grid-column: 1 / span 3;
+    grid-row: 1;
+    position: sticky;
+    top: 48px;
+    align-self: start;
+  }
+
+  /* Media: center 6 columns */
+  [data-pdp-layout="split"] .pdp-buy-box__media {
+    grid-column: 4 / span 6;
+    grid-row: 1;
+  }
+
+  /* Buy rail: right 3 columns, sticky */
+  [data-pdp-layout="split"] .pdp-buy-box__buy {
+    grid-column: 10 / -1;
+    grid-row: 1;
+    position: sticky;
+    top: 48px;
+    align-self: start;
+  }
+}
