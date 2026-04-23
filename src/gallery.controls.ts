@@ -6,6 +6,7 @@ import { COLORS, COLOR_LABELS } from './colors';
 import type { ColorName, ColorValue } from './colors';
 import { createStepperGroup, createSegmentedGroup } from './control-builders';
 import { createLabeledRangeGroup } from './range-control';
+import { BG_WIDTHS, BG_WIDTH_LABELS, CONTENT_WIDTHS, CONTENT_WIDTH_LABELS } from './section-width';
 
 // ─── Image set data ───
 
@@ -70,10 +71,6 @@ const TIMINGS = ['2', '4', '6', '8'] as const;
 const PAGINATIONS = ['dots', 'dashes', 'counter', 'thumbnails'] as const;
 
 const HEADING_ALIGNS = ['left', 'center', 'right'] as const;
-
-// Section width schema
-const BG_WIDTHS = ['full', 'hug'] as const;
-const CONTENT_WIDTHS = ['full', 'wide', 'medium', 'narrow'] as const;
 
 type Layout = (typeof LAYOUTS)[number];
 type GalleryControlKey = 'layout' | 'columns' | 'gap' | 'aspect' | 'fit' | 'captions' | 'lightbox' | 'autoplay' | 'timing' | 'pagination' | 'bgWidth' | 'contentWidth' | 'headingAlign';
@@ -383,10 +380,10 @@ export function initGalleryControls(
   // 1. Layout picker
   wrapper.appendChild(createLayoutGroup());
 
-  // Section width controls
+  // Section width controls (shared schema from section-width.ts)
   wrapper.appendChild(createSegmentedGroup({
     name: 'bgWidth', label: 'Background width', values: BG_WIDTHS,
-    labels: { full: 'Full', hug: 'Hug content' },
+    labels: BG_WIDTH_LABELS,
     initialValue: galleryRoot.dataset.bgWidth,
     onChange: (v) => setControl('bgWidth', v),
     signal,
@@ -394,7 +391,7 @@ export function initGalleryControls(
 
   wrapper.appendChild(createSegmentedGroup({
     name: 'contentWidth', label: 'Content width', values: CONTENT_WIDTHS,
-    labels: { full: 'Full', wide: 'Wide', medium: 'Medium', narrow: 'Narrow' },
+    labels: CONTENT_WIDTH_LABELS,
     initialValue: galleryRoot.dataset.contentWidth,
     onChange: (v) => setControl('contentWidth', v),
     signal, description: 'Visible at wider viewports.',

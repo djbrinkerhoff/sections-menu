@@ -4,6 +4,7 @@
   /* Reserved for future token extensions */
 }
 
+@import "./section-width.css";
 @import "./nav.css";
 @import "./gallery.css";
 @import "./image.lightbox.css";

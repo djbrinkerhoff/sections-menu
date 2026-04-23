@@ -1,12 +1,29 @@
 .single-image {
   min-height: 100%;
   position: relative;
+  container-type: inline-size;
+  color: #1d1b17;
+}
+
+/* ─── Section-specific background/body visuals ─── */
+
+.single-image__bg {
   background:
     radial-gradient(circle at top left, rgba(183, 214, 255, 0.34), transparent 32%),
     linear-gradient(180deg, #faf8f3 0%, #f2eee4 100%);
-  color: #1d1b17;
+}
+
+[data-bg-width="hug"] > .single-image__body {
+  background:
+    radial-gradient(circle at top left, rgba(183, 214, 255, 0.34), transparent 32%),
+    linear-gradient(180deg, #faf8f3 0%, #f2eee4 100%);
+}
+
+.single-image__body {
   padding: 28px;
 }
+
+/* ─── Content ─── */
 
 .single-image__story {
   max-width: 640px;
@@ -66,8 +83,8 @@
   opacity: 0.72;
 }
 
-@media (max-width: 767px) {
-  .single-image {
+@container (max-width: 500px) {
+  .single-image__body {
     padding: 20px;
   }
 

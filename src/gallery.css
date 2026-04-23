@@ -6,52 +6,21 @@
   position: relative;
   container-type: inline-size;
   container-name: gallery-section;
-
-  /* Section width grid — 7-column named-lines ("Layout Breakouts" pattern) */
-  display: grid;
-  grid-template-columns:
-    [full-start] minmax(0, 1fr)
-    [wide-start] minmax(0, calc((1200px - 768px) / 2))
-    [medium-start] minmax(0, calc((768px - 480px) / 2))
-    [narrow-start] min(480px, 100%) [narrow-end]
-    minmax(0, calc((768px - 480px) / 2)) [medium-end]
-    minmax(0, calc((1200px - 768px) / 2)) [wide-end]
-    minmax(0, 1fr) [full-end];
 }
 
-/* ─── Section width: background layer ─── */
+/* ─── Gallery-specific background/body visuals ─── */
 
 .gallery__bg {
-  grid-row: 1;
-  grid-column: full;
-  z-index: 0;
   background-color: var(--gallery-color, #ffffff);
-}
-
-/* Hug: background matches content width with rounded corners */
-[data-bg-width="hug"] > .gallery__bg {
-  display: none;
 }
 
 [data-bg-width="hug"] > .gallery__body {
   background-color: var(--gallery-color, #ffffff);
-  border-radius: var(--image-radius, 8px);
-  overflow: clip;
 }
-
-/* ─── Section width: content layer ─── */
 
 .gallery__body {
   container-type: inline-size;
-  grid-row: 1;
-  z-index: 1;
-  padding: 16px;
 }
-
-[data-content-width="full"] > .gallery__body    { grid-column: full; }
-[data-content-width="wide"] > .gallery__body    { grid-column: wide; }
-[data-content-width="medium"] > .gallery__body  { grid-column: medium; }
-[data-content-width="narrow"] > .gallery__body  { grid-column: narrow; }
 
 
 .gallery__viewport {
