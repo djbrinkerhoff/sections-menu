@@ -93,7 +93,7 @@ test('default product hydrates title, price, and active page image', async ({ pa
   await expect(page.locator('.pdp-buy-box__title')).toHaveText('Very cool t-shirt');
   await expect(page.locator('.pdp-buy-box__price')).toContainText('$12.00');
 
-  await expect(page.locator('.pdp-buy-box__media .gallery__item:first-child .gallery__image')).toHaveAttribute('src', /summit-tee-01\.png$/);
+  await expect(activeMediaImage(page)).toHaveAttribute('src', /summit-tee-01\.png$/);
 });
 
 test('default product renders select options', async ({ page }) => {
@@ -125,7 +125,7 @@ test('switching product from controls updates the active page image, title, pric
   await expect(page.locator('.pdp-buy-box__title')).toHaveText('Medium nylon crescent bag');
   await expect(page.locator('.pdp-buy-box__price')).toContainText('$64.00');
 
-  await expect(page.locator('.pdp-buy-box__media .gallery__item:first-child .gallery__image')).toHaveAttribute('src', /crescent-bag-01\.png$/);
+  await expect(activeMediaImage(page)).toHaveAttribute('src', /crescent-bag-01\.png$/);
 
   // Chip group should show bag-specific options
   await expect(page.locator('.pdp-buy-box__option-label').nth(1)).toHaveText('Strap');

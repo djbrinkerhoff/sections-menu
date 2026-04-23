@@ -37,7 +37,9 @@ export function initPdpBuyBoxMedia(
   let currentMode: 'slideshow' | 'static' = 'slideshow';
 
   function isCarouselLayout(): boolean {
-    return root.dataset.pdpLayout === 'carousel' || !root.dataset.pdpLayout;
+    if (root.dataset.pdpLayout === 'carousel' || !root.dataset.pdpLayout) return true;
+    // Mobile: always use slideshow regardless of layout setting
+    return root.offsetWidth < 736;
   }
 
   function cleanupSlideshow(): void {
