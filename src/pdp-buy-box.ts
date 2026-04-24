@@ -311,6 +311,20 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     setStockContent(elements.variantStock, hasResolvedVariantSelection() ? formatStockText(style, stockCount) : '');
   }
 
+  function isCurrentSelectionSoldOut(): boolean {
+    if (isSelectedVariantSoldOut()) return true;
+    const chipOption = getSelectedChipOption();
+    if (chipOption && isChipSoldOut(chipOption)) return true;
+    return false;
+  }
+
+  function syncCta(): void {
+    const soldOut = isCurrentSelectionSoldOut();
+    const button = elements.ctaLabel as HTMLButtonElement;
+    button.disabled = soldOut;
+    button.textContent = soldOut ? 'Sold Out' : currentProduct.ctaLabel;
+  }
+
   function parsePriceCents(price: string): number {
     return Math.round(Number.parseFloat(price.replace(/[^0-9.]/g, '')) * 100);
   }
@@ -376,7 +390,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     elements.shippingNote.textContent = currentProduct.shippingNote;
     elements.selectLabel.textContent = currentProduct.selectGroup.label;
     elements.chipLabel.textContent = currentProduct.chipGroup.label;
-    elements.ctaLabel.textContent = currentProduct.ctaLabel;
+    syncCta();
     elements.descriptionTitle.textContent = currentProduct.description.title;
     elements.descriptionBody.textContent = currentProduct.description.body;
     elements.shippingTitle.textContent = currentProduct.shipping.title;
@@ -419,6 +433,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     renderChipOptions();
     syncPrice();
     syncStockLabel();
+    syncCta();
   }, { signal });
 
   root.addEventListener('click', (event) => {
@@ -452,6 +467,7 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
     renderChipOptions();
     syncPrice();
     syncStockLabel();
+    syncCta();
   }, { signal });
 
   elements.quantityValue.addEventListener('change', () => {

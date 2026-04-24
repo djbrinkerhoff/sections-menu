@@ -296,6 +296,11 @@ legend.pdp-buy-box__option-label {
   cursor: pointer;
 }
 
+.pdp-buy-box__cta:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .pdp-buy-box__shipping-note {
   margin: -6px 0 0;
   text-align: center;
