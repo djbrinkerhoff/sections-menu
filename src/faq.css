@@ -134,7 +134,7 @@
 }
 
 .faq__answer {
-  padding: 0 0 24px 38px;
+  padding: 0 0 24px 32px;
   color: var(--faq-answer-color, var(--faq-text-color, #000000));
   font-size: 15px;
   line-height: 1.55;
@@ -163,7 +163,7 @@
   margin-top: 20px;
   margin-left: -12px;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--faq-link-radius, 10px);
   background-color: transparent;
   color: var(--faq-highlight-color, #ed1818);
   font-size: 15px;
@@ -222,7 +222,7 @@
 
 .faq[data-layout="cards"] .faq__item {
   border: 1px solid color-mix(in oklch, var(--faq-text-color, #000000) 14%, transparent);
-  border-radius: 8px;
+  border-radius: var(--faq-card-radius, 8px);
   padding: 20px;
   background: color-mix(in oklch, var(--faq-color, #ffffff) 92%, var(--faq-text-color, #000000));
 }

@@ -1,9 +1,36 @@
 import { createSegmentedGroup, createStepperGroup } from './control-builders';
+import { createLabeledRangeGroup } from './range-control';
 import { COLORS, COLOR_LABELS } from './colors';
 import type { ColorName, ColorValue } from './colors';
 import { FAQ_ITEMS } from './faq.data';
 import type { FaqHandle } from './faq';
 import { BG_WIDTHS, BG_WIDTH_LABELS, CONTENT_WIDTHS, CONTENT_WIDTH_LABELS } from './section-width';
+
+const FAQ_RADIUS_STOPS = [
+  { value: '0', label: 'Sharp', cardRadius: '0px', linkRadius: '0px' },
+  { value: '4', label: 'Soft', cardRadius: '4px', linkRadius: '4px' },
+  { value: '8', label: 'Rounded', cardRadius: '8px', linkRadius: '8px' },
+  { value: '16', label: 'Very Round', cardRadius: '16px', linkRadius: '9999px' },
+] as const;
+
+type FaqRadiusStop = (typeof FAQ_RADIUS_STOPS)[number];
+
+function getFaqRadiusStop(rawValue: string | undefined): FaqRadiusStop {
+  return FAQ_RADIUS_STOPS.find((s) => s.value === rawValue) ?? FAQ_RADIUS_STOPS[2]!;
+}
+
+function getFaqRadiusIndex(rawValue: string | undefined): number {
+  const stop = getFaqRadiusStop(rawValue);
+  return FAQ_RADIUS_STOPS.findIndex((s) => s.value === stop.value);
+}
+
+function applyFaqRadius(root: HTMLElement, rawValue: string | undefined): void {
+  const stop = getFaqRadiusStop(rawValue);
+  root.dataset.radius = stop.value;
+  root.style.setProperty('--faq-card-radius', stop.cardRadius);
+  root.style.setProperty('--faq-link-radius', stop.linkRadius);
+  root.style.setProperty('--image-radius', stop.cardRadius);
+}
 
 const LAYOUTS = ['list', 'cards'] as const;
 const HEADING_PLACEMENTS = ['above', 'beside'] as const;
@@ -262,6 +289,23 @@ export function initFaqControls(
   }));
 
   wrapper.appendChild(createTextGroup('linkLabel', 'Link label', 'See More FAQs'));
+
+  applyFaqRadius(root, root.dataset.radius);
+
+  wrapper.appendChild(createLabeledRangeGroup({
+    name: 'radius',
+    label: 'Border radius',
+    steps: FAQ_RADIUS_STOPS.map((s) => s.label),
+    initialIndex: getFaqRadiusIndex(root.dataset.radius),
+    onInput: (index) => {
+      const stop = FAQ_RADIUS_STOPS[index];
+      if (!stop) return;
+      applyFaqRadius(root, stop.value);
+      preview.sync();
+      onStateChange();
+    },
+    signal,
+  }));
   wrapper.appendChild(createColorGroup({
     name: 'background-color',
     label: 'Background',
