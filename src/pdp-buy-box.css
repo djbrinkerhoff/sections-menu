@@ -3,7 +3,6 @@
   min-height: 100%;
   color: #10100b;
   background: #ffffff;
-  font-family: "Geist", "Space Grotesk", sans-serif;
   container-type: inline-size;
   container-name: pdp-buy-box;
 }
@@ -109,7 +108,7 @@
 }
 
 .pdp-buy-box__price {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.25;
 }
 
@@ -472,6 +471,14 @@ legend.pdp-buy-box__option-label {
 /* ─── Column / Split shared: medium ─── */
 
 @container pdp-buy-box (min-width: 736px) {
+  .pdp-buy-box__title {
+    font-size: 24px;
+  }
+
+  .pdp-buy-box__price {
+    font-size: 24px;
+  }
+
   /* Sticky sidebar */
   [data-pdp-layout="column"] .pdp-buy-box__details,
   [data-pdp-layout="split"] .pdp-buy-box__details {
