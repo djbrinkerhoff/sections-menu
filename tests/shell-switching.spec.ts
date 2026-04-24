@@ -151,14 +151,15 @@ test('boots with Navigation as default and shows picker', async ({ page }) => {
   await expect(page.locator('.nav')).toBeVisible();
 });
 
-test('picker shows Navigation, Image Gallery, Single Image, and PDP Buy Box options', async ({ page }) => {
+test('picker shows Navigation, Image Gallery, Single Image, PDP Buy Box, and FAQ options', async ({ page }) => {
   const picker = page.locator('.controls__picker');
   const options = picker.locator('option');
-  await expect(options).toHaveCount(4);
+  await expect(options).toHaveCount(5);
   await expect(options.nth(0)).toHaveText('Navigation');
   await expect(options.nth(1)).toHaveText('Image Gallery');
   await expect(options.nth(2)).toHaveText('Single Image');
   await expect(options.nth(3)).toHaveText('PDP Buy Box');
+  await expect(options.nth(4)).toHaveText('FAQ');
 });
 
 test('switching to gallery unmounts nav and shows gallery', async ({ page }) => {
@@ -1075,7 +1076,7 @@ test('width controls update data attributes on the gallery root', async ({ page 
 
   // Defaults
   await expect(gallery).toHaveAttribute('data-bg-width', 'full');
-  await expect(gallery).toHaveAttribute('data-content-width', 'full');
+  await expect(gallery).toHaveAttribute('data-content-width', 'wide');
 
   // Change background width
   await checkRadio(page, 'bgWidth', 'hug');
