@@ -73,7 +73,7 @@
 }
 
 .control-group--style .control-group__label {
-  @apply pt-4;
+  @apply pt-4 mb-1;
   color: #a1a1aa;
 }
 
