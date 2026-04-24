@@ -808,6 +808,7 @@
   @apply static w-full opacity-100 border border-current bg-transparent text-base;
   padding: 16px;
   padding-right: 48px;
+  border-radius: var(--border-radius, 0px);
   transition: none;
 }
 
