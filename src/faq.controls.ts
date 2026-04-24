@@ -54,6 +54,8 @@ export function initFaqControls(
   const wrapper = document.createElement('div');
   wrapper.className = 'controls';
 
+  let savedHeadingPlacement: string | undefined;
+
   function syncControlVisibility(): void {
     const showLinkControls = root.dataset.linkEnabled === 'true';
     for (const name of ['linkLabel']) {
@@ -64,10 +66,21 @@ export function initFaqControls(
     const isNarrow = root.dataset.contentWidth === 'narrow';
     const placementFieldset = wrapper.querySelector<HTMLFieldSetElement>(`[data-control="headingPlacement"]`);
     if (placementFieldset) placementFieldset.hidden = isNarrow;
-    if (isNarrow && root.dataset.headingPlacement !== 'beside') {
-      root.dataset.headingPlacement = 'beside';
-      const radio = wrapper.querySelector<HTMLInputElement>('input[name="headingPlacement"][value="beside"]');
+    if (isNarrow) {
+      if (savedHeadingPlacement === undefined) {
+        savedHeadingPlacement = root.dataset.headingPlacement;
+      }
+      if (root.dataset.headingPlacement !== 'beside') {
+        root.dataset.headingPlacement = 'beside';
+        const radio = wrapper.querySelector<HTMLInputElement>('input[name="headingPlacement"][value="beside"]');
+        if (radio) radio.checked = true;
+        preview.sync();
+      }
+    } else if (savedHeadingPlacement !== undefined) {
+      root.dataset.headingPlacement = savedHeadingPlacement;
+      const radio = wrapper.querySelector<HTMLInputElement>(`input[name="headingPlacement"][value="${savedHeadingPlacement}"]`);
       if (radio) radio.checked = true;
+      savedHeadingPlacement = undefined;
       preview.sync();
     }
   }

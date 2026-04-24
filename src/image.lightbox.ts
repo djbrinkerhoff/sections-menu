@@ -221,6 +221,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   let hiddenThumbnail: HTMLImageElement | null = null;
   let scrollContainer: HTMLElement | null = null;
   let wheelCloseDistance = 0;
+  let wheelAbort: AbortController | null = null;
 
   function resolveScrollContainer(): HTMLElement | null {
     if (!scrollContainer) scrollContainer = findScrollContainer(host);
@@ -508,6 +509,10 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     if (targets.length === 0 || activeIndex === -1) return;
 
     // Reset stale close state — a new open cancels any in-progress close
+    if (activeState) {
+      setTriggerExpanded(activeState.invoker, false);
+      showSourceThumbnail();
+    }
     isClosing = false;
     clearStaleAnimations();
 
@@ -542,6 +547,9 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
     syncChrome();
     closeButton.focus();
     startScrollClose();
+    wheelAbort?.abort();
+    wheelAbort = new AbortController();
+    dialog.addEventListener('wheel', onWheel, { passive: false, signal: wheelAbort.signal });
     options.onOpen?.(getSession(activeState));
 
     requestAnimationFrame(() => {
@@ -566,6 +574,8 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
       isClosing = true;
       pendingRenderId += 1;
       stopScrollClose();
+      wheelAbort?.abort();
+      wheelAbort = null;
       swipeState = null;
       wheelCloseDistance = 0;
 
@@ -683,7 +693,7 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
   }
 
   dialog.addEventListener('keydown', handleKeyboard, { signal });
-  dialog.addEventListener('wheel', onWheel, { passive: false, signal });
+  // wheel listener added/removed in open/close to avoid passive:false perf cost when idle
   closeButton.addEventListener('click', () => { void close(); }, { signal });
   prevButton.addEventListener('click', () => {
     if (!activeState) return;
@@ -737,6 +747,8 @@ export function initImageLightbox(host: HTMLElement, options: ImageLightboxOptio
       activeState = null;
       swipeState = null;
       wheelCloseDistance = 0;
+      wheelAbort?.abort();
+      wheelAbort = null;
       clearStaleAnimations();
       abortController.abort();
       stopScrollClose();

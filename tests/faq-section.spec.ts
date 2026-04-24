@@ -303,7 +303,7 @@ test('beside heading placement is side-by-side on desktop and stacked on mobile'
 
 test('above heading placement lets the heading use the available content width', async ({ page }) => {
   await page.getByRole('button', { name: '1280' }).click();
-  await checkRadio(page, 'contentWidth', 'narrow');
+  await checkRadio(page, 'contentWidth', 'wide');
   await checkRadio(page, 'headingPlacement', 'above');
 
   await expect(page.locator('.faq')).toHaveAttribute('data-heading-placement', 'above');
@@ -321,6 +321,26 @@ test('above heading placement lets the heading use the available content width',
   });
 
   expect(widthDelta).toBeLessThanOrEqual(1);
+});
+
+test('narrow content width forces beside placement and hides the control', async ({ page }) => {
+  await checkRadio(page, 'headingPlacement', 'above');
+  await checkRadio(page, 'contentWidth', 'narrow');
+
+  await expect(page.locator('.faq')).toHaveAttribute('data-heading-placement', 'beside');
+  const fieldset = page.locator('[data-control="headingPlacement"]');
+  await expect(fieldset).toBeHidden();
+});
+
+test('widening content width restores original heading placement', async ({ page }) => {
+  await checkRadio(page, 'headingPlacement', 'above');
+  await checkRadio(page, 'contentWidth', 'narrow');
+  await expect(page.locator('.faq')).toHaveAttribute('data-heading-placement', 'beside');
+
+  await checkRadio(page, 'contentWidth', 'wide');
+  await expect(page.locator('.faq')).toHaveAttribute('data-heading-placement', 'above');
+  const fieldset = page.locator('[data-control="headingPlacement"]');
+  await expect(fieldset).toBeVisible();
 });
 
 test('FAQ state serializes to URL and restores before controls initialize', async ({ page }) => {

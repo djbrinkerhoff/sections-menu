@@ -197,7 +197,9 @@ export function initPdpBuyBox(root: HTMLElement): PdpBuyBoxHandle {
 
   function activateTab(index: number): void {
     for (const btn of elements.tabLabels) {
-      btn.setAttribute('aria-selected', btn.dataset.tabIndex === String(index) ? 'true' : 'false');
+      const isSelected = btn.dataset.tabIndex === String(index);
+      btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      btn.tabIndex = isSelected ? 0 : -1;
     }
     for (const section of elements.infoSections) {
       if (section.dataset.infoIndex === String(index)) {

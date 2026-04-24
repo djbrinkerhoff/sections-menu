@@ -135,9 +135,8 @@ function deriveAnswerColor(text: RGB, background: RGB): RGB {
 }
 
 function syncDerivedColors(root: HTMLElement): void {
-  const styles = getComputedStyle(root);
-  const background = parseHexColor(styles.getPropertyValue('--faq-color'), [255, 255, 255]);
-  const text = parseHexColor(styles.getPropertyValue('--faq-text-color'), [0, 0, 0]);
+  const background = parseHexColor(root.style.getPropertyValue('--faq-color'), [255, 255, 255]);
+  const text = parseHexColor(root.style.getPropertyValue('--faq-text-color'), [0, 0, 0]);
 
   root.style.setProperty('--faq-answer-color', formatRgb(deriveAnswerColor(text, background)));
 }

@@ -66,11 +66,11 @@
 
       <div class="pdp-buy-box__info-group">
         <div class="pdp-buy-box__tab-bar" role="tablist" aria-label="Product information">
-          <button class="pdp-buy-box__tab" role="tab" type="button" data-tab-index="0" aria-selected="true" data-pdp-slot="tab-label-0"></button>
-          <button class="pdp-buy-box__tab" role="tab" type="button" data-tab-index="1" aria-selected="false" data-pdp-slot="tab-label-1"></button>
+          <button class="pdp-buy-box__tab" role="tab" type="button" data-tab-index="0" aria-selected="true" aria-controls="pdp-tabpanel-0" tabindex="0" data-pdp-slot="tab-label-0"></button>
+          <button class="pdp-buy-box__tab" role="tab" type="button" data-tab-index="1" aria-selected="false" aria-controls="pdp-tabpanel-1" tabindex="-1" data-pdp-slot="tab-label-1"></button>
         </div>
 
-        <details class="pdp-buy-box__info" data-info-index="0" open>
+        <details class="pdp-buy-box__info" id="pdp-tabpanel-0" role="tabpanel" data-info-index="0" open>
           <summary class="pdp-buy-box__info-summary">
             <h3 class="pdp-buy-box__info-title" data-pdp-slot="description-title"></h3>
           </summary>
@@ -78,7 +78,7 @@
           <ul class="pdp-buy-box__info-list" data-pdp-slot="description-bullets"></ul>
         </details>
 
-        <details class="pdp-buy-box__info" data-info-index="1" open>
+        <details class="pdp-buy-box__info" id="pdp-tabpanel-1" role="tabpanel" data-info-index="1" open>
           <summary class="pdp-buy-box__info-summary">
             <h3 class="pdp-buy-box__info-title" data-pdp-slot="shipping-title"></h3>
           </summary>

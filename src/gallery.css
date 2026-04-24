@@ -51,7 +51,7 @@
   opacity: 0.7;
 }
 
-[data-heading]:not([data-heading=""]) + .gallery__subheading {
+[data-heading]:not([data-heading=""]) .gallery__subheading {
   margin-top: -4px;
 }
 

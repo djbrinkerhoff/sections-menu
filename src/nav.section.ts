@@ -29,7 +29,8 @@ export const navSection: Section = {
     if (saved) {
       const navItems = saved['custom:navItemCount'];
       if (navItems !== undefined) {
-        controls.setNavItemCount(Number.parseInt(navItems, 10) || 4);
+        const parsed = Number.parseInt(navItems, 10);
+        controls.setNavItemCount(Number.isFinite(parsed) ? parsed : 4);
       }
       const cartCount = saved['custom:cartCount'];
       if (cartCount !== undefined) {
