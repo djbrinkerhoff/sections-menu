@@ -224,7 +224,7 @@
   border: 1px solid color-mix(in oklch, var(--faq-text-color, #000000) 14%, transparent);
   border-radius: var(--faq-card-radius, 8px);
   padding: 20px;
-  background: color-mix(in oklch, var(--faq-color, #ffffff) 92%, var(--faq-text-color, #000000));
+  background: color-mix(in oklch, var(--faq-color, #ffffff) 96%, var(--faq-text-color, #000000));
 }
 
 .faq[data-layout="cards"] .faq__question-button {
